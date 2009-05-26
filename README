@@ -1,0 +1,24 @@
+Thank you for choosing to use pulled_pork!  This file provides some basic guidance on usage of pulled_pork.
+
+-=Basic Usage=-
+
+A simple example of how to use pulled_pork would be to specify all of your configuration directives inside of the
+pulled_pork.conf file.  Specifically for minimal function, i.e. NO Shared Object rule processing you must define 
+at a minimum the rule_file, oinkcode, temp_path, tar_path, and rule_path values.  Below are some examples of this. 
+
+./pulledpork.pl -o /usr/local/etc/snort/rules/ -O 12345667778523452344234234  \
+-f snortrules-snapshot-2.8_s.tar.gz -T
+
+The above will fetch the snortrules-snapshot-2.8_s.tar.gz tarball from snort.org using the specified oinkcode of 
+12345667778523452344234234 and put the rules files from that tarball into the output path of 
+/usr/local/etc/snort/rules/ and the -T option tells pulledpork to not process for any shared object rules.
+
+./pulledpork.pl -c pulledpork.conf -T
+
+Similar to the first example but all options specified in the pulledpork.conf file...
+
+I'll probably add more info later, the --help or --? will display all runtime options and the pulledpork.conf is
+pretty well annotated... so if you can't figure it out... try harder!  And once you figure it out, please feel 
+free to contribute with additional readme / help foo.. thx!
+
+J
