@@ -32,7 +32,7 @@ use Archive::Tar;
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulle_Pork v0.1 Beta 2";
+my $VERSION = "Pulled_Pork v0.1 Beta 2";
 
 # routine grab our config from the defined config file
 sub parse_config_file {
@@ -168,19 +168,21 @@ sub compare_md5
 	if ($Verbose)
 	    { print "The MD5 for $rule_file matched $md5 so I'm not gonna download the rules file again suckas!\n"; }
 	    rule_extract($oinkcode,$rule_file,$temp_path);
-	} elsif (!$Hash)
+	} 
+	elsif (!$Hash)
 	    {
 		if ($Verbose)
 		    { print "The MD5 for $rule_file did not match the latest digest... so I am gonna fetch the latest rules file!\n"; }
 		    rulefetch($oinkcode,$rule_file,$temp_path);
                     md5sum($rule_file,$temp_path);
                     compare_md5 ($oinkcode,$rule_file,$temp_path,$Hash);
-	    } else {
-                if ($Verbose)
-                { print "Ok, not verifying the digest.. lame, but that's what you specified!\n";
-                 print "So if the rules tarball doesn't extract properly and this script dies.. it's your fault!\n";}
-                rule_extract($oinkcode,$rule_file,$temp_path);
-            }
+		} 
+	else {
+            if ($Verbose)
+            { print "Ok, not verifying the digest.. lame, but that's what you specified!\n";
+				print "So if the rules tarball doesn't extract properly and this script dies.. it's your fault!\n";}
+            rule_extract($oinkcode,$rule_file,$temp_path);
+         }
 }
 
 ## time to grab the real 0xb33f
@@ -227,6 +229,7 @@ sub md5file
           or die $!;
     $md5 = <FILE>;
     chomp ($md5);
+	$md5 =~ /[0-9a-bA-B]{32}/;  ## Lets just grab the hash out of the string.. don't care about the rest!
     if ($Verbose)
 	    { print "\nmost recent rules file digest: $md5\n"; }
     close (FILE);
