@@ -15,15 +15,16 @@ Release 0.1:
   * handle both rules and so_rules 
   * Capability to generate stub files
 
-
 Release 0.2:
   * Rule modification, i.e. disabling of specific rules within rule sets
-  * Capability to compile so_rules from source
   * Outputs changes in rules files if any rules have been added / modified
   * Compares new rules files with current rule sets
-  * Option to use Emerging-Threats rules in addition to snort.org rules
-  * Option to define custom URL to fetch rules tarballs from
   * Automated retrieval of certain variables (Distro, Snort Version.. etc)
+
+Release 0.3:
+  * Capability to compile so_rules from source
+  * Option to use Emerging-Threats rules or specify a custom url
+  * More automation!
 
 Next Release...
   * TBD by community needs / requests
