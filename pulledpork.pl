@@ -32,7 +32,7 @@ use Archive::Tar;
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.1 Beta 2";
+my $VERSION = "Pulled_Pork v0.2 Beta 1";
 
 # routine grab our config from the defined config file
 sub parse_config_file {
@@ -60,8 +60,8 @@ sub parse_config_file {
 }
 
 my ($Verbose,$Logging,$Hash,$ALogger,$Me,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs);
-my ($Snort_config,$Snort_path,$Textonly,$Tar_path);
-undef($Verbose);
+my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf);
+$Verbose = 0;
 undef($Logging);
 undef($Hash);
 undef($ALogger);
@@ -83,6 +83,7 @@ sub Help
     #printf("\tVersion: 0.1 Beta 1\n\n");
     printf("\tOptions:\n");
     printf("\t-c\tWhere the pulledpork config file lives.\n");
+	printf("\t-i\tWhere the disablesid config file lives.\n");
     printf("\t-o\tWhere do you want me to put generic rules files?\n");
     printf("\t-O\tWhat is your Oinkcode?\n");
     printf("\t-T\tProcess text based rules files only, i.e. DO NOT process so_rules\n");
@@ -145,18 +146,20 @@ sub temp_cleanup
 sub rule_extract
 {	
     my ($oinkcode,$rule_file,$temp_path) = @_;
+	print "Prepping files for work....\n";
     if ( -d $temp_path."/tha_rules") { 
 	if ($Verbose)
-	    { print "oh, we need to perform some cleanup... an unclean run last time?\n"; }
+	    { print "\toh, we need to perform some cleanup... an unclean run last time?\n"; }
 		temp_cleanup($temp_path);
     }
     if ($Verbose)
-	{ print "extracting contents of $temp_path/$rule_file to $temp_path/tha_rules to conduct an excercism on them!\n"; }
+	{ print "\textracting contents of $temp_path/$rule_file to $temp_path/tha_rules to conduct an excercism on them!\n"; }
     my $mk_tmp = mkpath("$temp_path/tha_rules");
     
     system ( "$Tar_path xfz ".$temp_path."/".$rule_file." -C ".$temp_path."/tha_rules" );
     if ($Verbose)
-	{ print "rules have been extracted, time to move them where they belong!\n"; }
+	{ print "\trules have been extracted, time to move them where they belong!\n"; }
+	if (!$Verbose) { print "\tDone!\n"; }
     #rule_move();	
 }
 
@@ -164,23 +167,27 @@ sub rule_extract
 sub compare_md5
 {
     my ($oinkcode,$rule_file,$temp_path,$Hash) = @_;
+	#print "Checking the MD5....\n";
     if ($rule_digest =~ $md5 && !$Hash){
 	if ($Verbose)
-	    { print "The MD5 for $rule_file matched $md5 so I'm not gonna download the rules file again suckas!\n"; }
-	    rule_extract($oinkcode,$rule_file,$temp_path);
+	    { print "\tThe MD5 for $rule_file matched $md5 so I'm not gonna download the rules file again suckas!\n"; }
+	    if (!$Verbose) { print "\tThey Match\n\tDone!\n"; }
+		rule_extract($oinkcode,$rule_file,$temp_path);
 	} 
 	elsif (!$Hash)
 	    {
 		if ($Verbose)
-		    { print "The MD5 for $rule_file did not match the latest digest... so I am gonna fetch the latest rules file!\n"; }
-		    rulefetch($oinkcode,$rule_file,$temp_path);
+		    { print "\tThe MD5 for $rule_file did not match the latest digest... so I am gonna fetch the latest rules file!\n"; }
+		if (!$Verbose) { print "\tNo Match\n\tDone\n"; }
+			rulefetch($oinkcode,$rule_file,$temp_path);
                     md5sum($rule_file,$temp_path);
                     compare_md5 ($oinkcode,$rule_file,$temp_path,$Hash);
 		} 
 	else {
             if ($Verbose)
-            { print "Ok, not verifying the digest.. lame, but that's what you specified!\n";
-				print "So if the rules tarball doesn't extract properly and this script dies.. it's your fault!\n";}
+            { print "\tOk, not verifying the digest.. lame, but that's what you specified!\n";
+				print "\tSo if the rules tarball doesn't extract properly and this script dies.. it's your fault!\n";}
+			if (!$Verbose) { print "\tNo Verify Set\n\tDone!\n"; }
             rule_extract($oinkcode,$rule_file,$temp_path);
          }
 }
@@ -189,14 +196,16 @@ sub compare_md5
 sub rulefetch
 {
     my ($oinkcode,$rule_file,$temp_path) = @_;
-    if ($Verbose)
-	{ print "Fetching rules file: $rule_file\n";
+    print "Rules tarball download....\n";
+	if ($Verbose)
+	{ print "\tFetching rules file: $rule_file\n";
         if ($Hash) { print "But not verifying MD5\n"; }
          }
     my $getrules_rule = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file,$temp_path."/".$rule_file);
-    die "Error $getrules_rule when fetching http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file unless is_success($getrules_rule);
+    die "\tError $getrules_rule when fetching http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file unless is_success($getrules_rule);
     if ($Verbose)
-	{ print ("storing file at: $temp_path/$rule_file\n\n"); }
+	{ print ("\tstoring file at: $temp_path/$rule_file\n\n"); }
+	if (!$Verbose) { "\tDone!\n"; }
 }
 
 #subroutine to deterine the md5 digest of the current rules file
@@ -213,17 +222,18 @@ sub md5sum
 	return "";
     }
     if ($Verbose)
-	{ print "current local rules file  digest: $rule_digest\n\n"; }
+	{ print "\tcurrent local rules file  digest: $rule_digest\n"; }
 }
 
 #subroutine to fetch the latest md5 digest signature file from snort.org
 sub md5file
 {
-    my ($oinkcode,$rule_file,$temp_path) = @_;
+	my ($oinkcode,$rule_file,$temp_path) = @_;
+	print "Checking latest MD5....\n";
     if ($Verbose)
-	{ print "\nFetching md5sum for comparing from: http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file.".md5\n"; }
+	{ print "\tFetching md5sum for comparing from: http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file.".md5\n"; }
     my $getrules_md5 = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file.".md5",$temp_path."/".$rule_file.".md5");
-    die "Error $getrules_md5 when fetching http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file.".md5" unless is_success($getrules_md5);
+    die "\tError $getrules_md5 when fetching http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file.".md5" unless is_success($getrules_md5);
     #print ("storing file at: $path\n");
     my $rule_open = open (FILE,"$temp_path/$rule_file.md5")
           or die $!;
@@ -231,7 +241,7 @@ sub md5file
     chomp ($md5);
 	$md5 =~ /[0-9a-bA-B]{32}/;  ## Lets just grab the hash out of the string.. don't care about the rest!
     if ($Verbose)
-	    { print "\nmost recent rules file digest: $md5\n"; }
+	    { print "\tmost recent rules file digest: $md5\n"; }
     close (FILE);
 }
 
@@ -298,6 +308,7 @@ sub diff_files
 sub copy_rules
 {
     my ($temp_path,$Output) = @_;
+	print "Copying rules files....\n";
     if ($Verbose) {
         compare_dirs("$temp_path/tha_rules/rules/",$Output);
     }
@@ -307,21 +318,23 @@ sub copy_rules
 	closedir(DIR);
     
 	foreach my $file (@files) {
-            if ($Verbose) { diff_files("$temp_path/tha_rules/rules/$file","$Output$file"); }
+            if ($Verbose && !$SID_conf) { diff_files("$temp_path/tha_rules/rules/$file","$Output$file"); }
 	    if ( -f "$temp_path/tha_rules/rules/$file") {
-	        copy("$temp_path/tha_rules/rules/$file","$Output$file") || print "Copy failed with error: $!\n";
+	        copy("$temp_path/tha_rules/rules/$file","$Output$file") || print "\tCopy failed with error: $!\n";
 	        if ($Verbose == 2) {
-	          print ("Copied $temp_path/tha_rules/rules/$file to $Output$file\n");
+	          print ("\tCopied $temp_path/tha_rules/rules/$file to $Output$file\n");
 	        }
 	    }
 	}
     }
+	if (!$Verbose) { print "\tDone!\n"; }
 }
 
 sub copy_sorules
 {
     #print "$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/\n";
     my ($temp_path,$Sorules,$Distro,$Snort) = @_;
+	print "Copying Shared Object Rules....\n";
     if ( -d "$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/") {
 	opendir (SODIR,"$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/");
 	my @sofiles = readdir(SODIR);
@@ -329,19 +342,20 @@ sub copy_sorules
     
 	foreach my $sofile (@sofiles) {
 	    if ( -f "$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/$sofile") {
-	        copy("$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/$sofile","$Sorules$sofile") || print "Copy failed with error: $!\n";
+	        copy("$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/$sofile","$Sorules$sofile") || print "\tCopy failed with error: $!\n";
 	        if ($Verbose == 2) {
-	          print ("Copying $temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/$sofile to $Sorules$sofile\n");
+	          print ("\tCopying $temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/$sofile to $Sorules$sofile\n");
 	        }
 	    }
 	}
-    } else { print "I couldn't copy the so rules, errors are above.\n"; }
+    } else { print "\tI couldn't copy the so rules, errors are above.\n"; }
+	if (!$Verbose) { print "\tDone!\n"; }
 }
 
 # sub to generate stub files using the snort --dump-dynamic-rules option
 sub gen_stubs
 {
-    my ($Snort_path,$Snort_config,$Sostubs) =@_;
+    my ($Snort_path,$Snort_config,$Sostubs) = @_;
     if (-d $Sostubs && -f $Snort_path && -f $Snort_config) {
         if ($Verbose) { print ("Generating shared object stubs via:$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs\n");}
         system ("$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs");
@@ -354,6 +368,106 @@ sub gen_stubs
         }
     }
 }   
+
+sub disablesid  #routine to disable the sids.. this is a rough approximation of what it will be, still needs some work, multilin handling etc
+{
+	my ($SID_conf,$Output,$Sostubs) = @_;
+	my (@sid_disable,$sidlist,$outlist,$solist,$sid_disable,$rule_line,$so_line);
+	my $sidcount = 0;
+	my $dircount = 0;
+	my $sidlines = 0;
+	my $txtsid = "";
+	my $sosid = "";
+	print "Disabling your chosen SID's....\n";
+	if (-f $SID_conf){
+		if ($Verbose) { print ("\tProcessing disablesid configuration from $SID_conf\n"); }
+		my $SIDDATA = open(DATA, "$SID_conf"); #need to add error foo here
+		while (<DATA>) {
+			$sidlist=$_;
+			chop($sidlist);
+			$sidlist =~ s/^\s*//;     # Remove spaces at the start of the line
+			$sidlist =~ s/\s*$//;     # Remove spaces at the end of the line
+			if ( ($sidlist !~ /^#/) && ($sidlist ne "") && ($sidcount < 1) ){
+				@sid_disable=split(/,/,$sidlist);  #split up the sids that we want to disable
+				$sidcount++
+			} elsif (($sidlist !~ /^#/) && ($sidlist ne "")) {
+				push(@sid_disable,split(/,/,$sidlist));
+			} else {}
+		}
+		close (DATA);
+		if (-d $Sostubs) {
+			opendir(DIR,"$Sostubs"); ## Open the stubs directory
+			while (defined($solist=readdir DIR)){
+				open(DATA,"$Sostubs$solist");  #Open the shared object stubs
+				my @so_lines = <DATA>;
+				close(DATA);
+				$sidcount = 0;
+				foreach $so_line(@so_lines) {
+					$so_line=~s/^\s*//;
+					$so_line=~s/\s*$//;
+					if ( ($so_line !~ /^#/) && ($so_line ne"") ){  #don't want already disabled lines or blank ones!
+						foreach $sid_disable(@sid_disable) {
+							if ($sid_disable=~/^3:/) {
+								$sosid=$sid_disable;
+								$sosid=s/^3://;
+								if (($sosid ne "") && ($so_line=~/sid:$sosid;/i)) {
+									$sidcount++;
+									$so_line = "# $so_line ## DISABLED Shared Object BY PULLEDPORK per directive in $SID_conf";
+									if ($Verbose) { print "\tDisabled in $Sostubs$solist -> $so_line\n"; }
+								}
+							}
+						}
+						$so_line = "$so_line\n";
+					}
+				}
+				if ($sidcount > 0) {
+					open(WRITE,">$Sostubs$solist");
+					print WRITE @so_lines;
+					close(WRITE);
+					if (!$Verbose) { print "\tDisabled $sidcount rules in $Sostubs$solist\n"; }
+				}
+			}
+		}
+		close(DIR);
+		opendir(DIR,"$Output"); #need to add error foo here
+		while (defined($outlist=readdir DIR)){
+			open(DATA,"$Output$outlist");  #open the file that we are gonna sed to disable the sid, this is GID1's only
+			my @rule_lines = <DATA>;
+			close (DATA);
+			$dircount = 0;
+			foreach $rule_line(@rule_lines) {	
+				$rule_line=~s/^\s*//;
+				$rule_line=~s/\s*$//;
+				if ( ($rule_line !~ /^#/) && ($rule_line ne"") ){  #don't want already disabled lines or blank ones!
+					foreach $sid_disable(@sid_disable) {
+						#print "\t$sid_disable\n";
+						if ($sid_disable=~/^1:/) { 
+							$txtsid=$sid_disable;
+							$txtsid=~s/^1://;
+						#print "\tsid:$txtsid;\n";
+							if (($txtsid ne "") && ($rule_line=~/sid:$txtsid;/i)) {
+								#$sidcount++;
+								$dircount++;
+								$rule_line =  "# $rule_line ## DISABLED BY PULLEDPORK per directive in $SID_conf";
+								if ($Verbose) { print "\tDisabled in $Output$outlist -> $rule_line\n"; }
+							}
+						}
+					}
+				$rule_line = "$rule_line\n";
+				}
+			}
+			if ($dircount > 0) {
+				open(WRITE,">$Output$outlist");
+				print WRITE @rule_lines;
+				close (WRITE);
+				if (!$Verbose) { print "\tDisabled $dircount rules in $Output$outlist\n"; }
+			}
+		}
+		close (DIR);
+	}
+	print "\tDone\n";
+}
+
 
 sub Version
 {
@@ -369,19 +483,20 @@ GetOptions ( "v+" => \$Verbose,
 		"d!" => \$Hash,
 		"l!" => \$Logging,
 		"a!" => \$Auto,
-                "T!" => \$Textonly,
+        "T!" => \$Textonly,
 		#"h!" => sub { Help() },
-                "O=s" => \$oinkcode,
+        "O=s" => \$oinkcode,
 		"s=s" => \$Sorules,
-                "t=s" => \$Sostubs,
+        "t=s" => \$Sostubs,
 		"S=s" => \$Snort,
-                "p=s" => \$Snort_path,
-                "P=s" => \$Tar_path,
+        "p=s" => \$Snort_path,
+        "P=s" => \$Tar_path,
 		"D=s" => \$Distro,
 		"c=s" => \$Config_file,
-                "C=s" => \$Snort_config,
+		"i=s" => \$SID_conf,
+        "C=s" => \$Snort_config,
 		"o=s" => \$Output,
-                "f=s" => \$rule_file,
+        "f=s" => \$rule_file,
 		"help|?" => sub { Help() });
 
 # Dump our variables for verbose/debug output
@@ -399,6 +514,7 @@ if ($Verbose) {
     if ($Snort_path) {print "\tSnort Path is: $Snort_path\n";}
     if ($Tar_path) {print "\tTar Path is: $Tar_path\n";}
     if ($Snort_config) {print "\tSnort Config File: $Snort_config\n";}
+	if ($SID_conf) {print "\tPath to disablesid file: $SID_conf\n";}
     if ($Distro) {print "\tDistro Def is: $Distro\n";}
     if ($Verbose) {print "\tVerbose Flag is Set\n";}
     if ($Verbose == 2) {print "\tExtra Verbose Flag is Set\n";}
@@ -500,6 +616,9 @@ if ($oinkcode && $rule_file && -d $temp_path)
 
 if ($temp_path) {
     temp_cleanup();
+}
+if ($SID_conf && -d $Output) {
+	disablesid($SID_conf,$Output,$Sostubs)
 }
 
 print ("Fly Piggy Fly!\n");
