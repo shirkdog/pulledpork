@@ -409,7 +409,7 @@ sub disablesid  #routine to disable the sids.. this is a rough approximation of 
 						foreach $sid_disable(@sid_disable) {
 							if ($sid_disable=~/^3:/) {
 								$sosid=$sid_disable;
-								$sosid=s/^3://;
+								$sosid=~s/^3://;
 								if (($sosid ne "") && ($so_line=~/sid:$sosid;/i)) {
 									$sidcount++;
 									$so_line = "# $so_line ## DISABLED Shared Object BY PULLEDPORK per directive in $SID_conf";
