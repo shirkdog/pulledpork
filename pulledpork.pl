@@ -28,11 +28,12 @@ use Digest::MD5;
 use File::Path;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use Archive::Tar;
+use POSIX qw(:errno_h)  ## For Addind signal handling
 
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.2 Beta 1";
+my $VERSION = "Pulled_Pork v0.2.1";
 
 # routine grab our config from the defined config file
 sub parse_config_file {
@@ -334,19 +335,21 @@ sub copy_sorules
 {
     #print "$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/\n";
     my ($temp_path,$Sorules,$Distro,$Snort) = @_;
+	my $arch = "i386";
+	if ($Distro =~ "RHEL-5.0" || $Distro =~ "Ubuntu-8.04") { $arch = "x86-64"; } 
 	print "Copying Shared Object Rules....\n";
-    if ( -d "$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/") {
-	opendir (SODIR,"$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/");
+    if ( -d "$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/") {
+	opendir (SODIR,"$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/");
 	my @sofiles = readdir(SODIR);
 	closedir(SODIR);
     
 	foreach my $sofile (@sofiles) {
-	    if ( -f "$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/$sofile") {
-	        copy("$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/$sofile","$Sorules$sofile") || print "\tCopy failed with error: $!\n";
+	    if ( -f "$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile") {
+	        copy("$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile","$Sorules$sofile") || print "\tCopy failed with error: $!\n";
 	        if ($Verbose == 2) {
-	          print ("\tCopying $temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/$sofile to $Sorules$sofile\n");
+	          print ("\tCopying $temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile to $Sorules$sofile\n");
 	        }
-	    }
+	    } else { print ("\tERROR! DOES NOT EXIST:$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile");
 	}
     } else { print "\tI couldn't copy the so rules, errors are above.\n"; }
 	if (!$Verbose) { print "\tDone!\n"; }
