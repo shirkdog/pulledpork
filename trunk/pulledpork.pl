@@ -28,7 +28,7 @@ use Digest::MD5;
 use File::Path;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use Archive::Tar;
-use POSIX qw(:errno_h)  ## For Addind signal handling
+use POSIX qw(:errno_h);  ## For Addind signal handling
 
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
@@ -349,7 +349,7 @@ sub copy_sorules
 	        if ($Verbose == 2) {
 	          print ("\tCopying $temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile to $Sorules$sofile\n");
 	        }
-	    } else { print ("\tERROR! DOES NOT EXIST:$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile");
+	    } else { print ("\tERROR! DOES NOT EXIST:$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile");}
 	}
     } else { print "\tI couldn't copy the so rules, errors are above.\n"; }
 	if (!$Verbose) { print "\tDone!\n"; }
