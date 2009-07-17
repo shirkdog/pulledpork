@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-## pulledpork v0.1 Beta1
+## pulledpork v(whatever it says below!)
 ## cummingsj@gmail.com
 
 # Copyright (C) 2009 JJ Cummings
@@ -27,13 +27,13 @@ use Carp;
 use Digest::MD5;
 use File::Path;
 use Getopt::Long qw(:config no_ignore_case bundling);
-use Archive::Tar;
+#use Archive::Tar;  # I dont' need this just yet
 use POSIX qw(:errno_h);  ## For Addind signal handling
 
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.2.1";
+my $VERSION = "Pulled_Pork v0.2.2";
 
 # routine grab our config from the defined config file
 sub parse_config_file {
@@ -61,7 +61,7 @@ sub parse_config_file {
 }
 
 my ($Verbose,$Logging,$Hash,$ALogger,$Me,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs);
-my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf);
+my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$pid_path,$SigHup,$NoDownload);
 $Verbose = 0;
 undef($Logging);
 undef($Hash);
@@ -77,7 +77,7 @@ sub Help
     close(ME);
 
     #$_ = substr($_, 16, 20);
-    printf("Usage:\t%s [-lvvVdaT? -help] -c <config filename> -o <rule output path> \t/\n", $Me);
+    printf("Usage:\t%s [-lvvVdnHT? -help] -c <config filename> -o <rule output path> \t/\n", $Me);
     printf("\t-O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer> \t/\n");
     printf("\t-p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>\n");
     printf("\n\tUsed to fetch and validate latest Snort rules from snort.org.\n\n");
@@ -101,7 +101,8 @@ sub Help
     printf("\t-v\tVerbose mode, you know.. for troubleshooting and such nonsense.\n");
     printf("\t-vv\tEXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.\n");
     printf("\t-d\tDo not verify signature of rules tarball, why though?.\n");
-    printf("\t-a\tRun in auto mode (all options will be specified in the config file, not at runtime)\n");
+    printf("\t-H\tSend a SIGHUP to the pids listed in the config file\n");
+	printf("\t-n\tDo everything other than download of new files (disablesid, etc)\n");
     printf("\t-V\tPrint Version and exit\n");
     printf("\t-help/?\tPrint this help info.\n\n");
     exit(0);
@@ -260,8 +261,6 @@ sub compare_dirs
     opendir(DIRTWO,"$dir_two");
     my @secondDir = readdir DIRTWO;
     closedir(DIRTWO);
-    #my $length1 = @firstDir;
-    #my $length2 = @secondDir;
     
     foreach $item (@secondDir) { $seen{$item} = 1 }
     foreach $item (@firstDir) {
@@ -471,6 +470,26 @@ sub disablesid  #routine to disable the sids.. this is a rough approximation of 
 	print "\tDone\n";
 }
 
+sub sig_hup
+{
+	my ($pidlist) = @_;
+	my @pids=split(/,/,$pidlist);
+	my $pid;
+	print "HangUP Time....\n";
+	foreach $pid(@pids) {
+		my $pid_open = open (FILE,"$pid")
+			or die $!;
+		my $realpid = <FILE>;
+		chomp($realpid);
+		close (FILE);
+		my $hupres = kill 1, $realpid;
+		if ($Verbose) {print "\tSent kill signal to $realpid from $pid with result $hupres\n";}
+	}
+	if (!$Verbose) {print "\tDone!\n";}
+	
+}
+	
+
 
 sub Version
 {
@@ -487,6 +506,8 @@ GetOptions ( "v+" => \$Verbose,
 		"l!" => \$Logging,
 		"a!" => \$Auto,
         "T!" => \$Textonly,
+		"H!" => \$SigHup,
+		"n!" => \$NoDownload,
 		#"h!" => sub { Help() },
         "O=s" => \$oinkcode,
 		"s=s" => \$Sorules,
@@ -523,6 +544,8 @@ if ($Verbose) {
     if ($Verbose == 2) {print "\tExtra Verbose Flag is Set\n";}
     if ($Logging) {print "\tLogging Flag is Set\n";}
     if ($Textonly) {print "\tText Rules only Flag is Set\n";}
+	if ($SigHup) {print "\tSIGHUP Flag is Set\n";}
+	if ($NoDownload) {print "\tNo Download Flag is Set\n";}
     if ($Hash) {print "\tNo MD5 Flag is Set, uhm, ok? I'm gonna fetch the latest file no matter what!\n";}
 }
 
@@ -541,6 +564,9 @@ if ($Verbose)
 }
 
 # Check to see if we have command line inputs, if so, they superseed any config file values!
+
+$pid_path = ($Config_info{'pid_path'});
+
 if (!$Output) {
     $Output = ($Config_info{'rule_path'});
     if (!$Output) {Help();}
@@ -587,24 +613,28 @@ if (!$temp_path) {Help();}
 #let's fetch the most recent md5 file
 if ($oinkcode && $rule_file && -d $temp_path)
 {
-    # fetch the latest md5 file
-    if (!$Hash) {
-        md5file($oinkcode,$rule_file,$temp_path);
-    }
-    #and now lets determine the md5 of the last saved rules file if it exists
-    if ( -f "$temp_path/$rule_file" && !$Hash){
-        md5sum($rule_file,$temp_path);
-    }
-    else { # the file didn't exsist so lets get it
-        rulefetch($oinkcode,$rule_file,$temp_path);
-        if ( -f "$temp_path/$rule_file" && !$Hash){
-            md5sum($rule_file,$temp_path);
-        }
-    }
+    if (!$NoDownload) {  #only process hup and disablesid changes
+		# fetch the latest md5 file
+		if (!$Hash) {
+			md5file($oinkcode,$rule_file,$temp_path);
+		}
+		#and now lets determine the md5 of the last saved rules file if it exists
+		if ( -f "$temp_path/$rule_file" && !$Hash){
+			md5sum($rule_file,$temp_path);
+		}
+		else { # the file didn't exsist so lets get it
+			rulefetch($oinkcode,$rule_file,$temp_path);
+			if ( -f "$temp_path/$rule_file" && !$Hash){
+				md5sum($rule_file,$temp_path);
+			}
+		}
 
-    # compare the online current md5 against against the md5 of the rules file on system
-    compare_md5($oinkcode,$rule_file,$temp_path,$Hash);
-    
+		# compare the online current md5 against against the md5 of the rules file on system
+		compare_md5($oinkcode,$rule_file,$temp_path,$Hash);
+    }
+	if ($NoDownload) {
+		rule_extract($oinkcode,$rule_file,$temp_path);
+	}
     if ($Output){
 	copy_rules($temp_path,$Output);
     }
@@ -623,5 +653,7 @@ if ($temp_path) {
 if ($SID_conf && -d $Output) {
 	disablesid($SID_conf,$Output,$Sostubs)
 }
-
+if ($SigHup && $pid_path ne "") {
+	sig_hup($pid_path);
+}
 print ("Fly Piggy Fly!\n");
