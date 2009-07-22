@@ -348,7 +348,7 @@ sub copy_sorules
 	        if ($Verbose == 2) {
 	          print ("\tCopying $temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile to $Sorules$sofile\n");
 	        }
-	    } else { print ("\tERROR! DOES NOT EXIST:$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile");}
+	    } elsif ($Verbose && ($sofile != "." || $sofile != "..") { print ("\tERROR! DOES NOT EXIST:$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile");}
 	}
     } else { print "\tI couldn't copy the so rules, errors are above.\n"; }
 	if (!$Verbose) { print "\tDone!\n"; }
