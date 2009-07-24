@@ -47,7 +47,7 @@ sub parse_config_file {
     open (CONFIG, "$FileConf");
     while (<CONFIG>) {
         $config_line=$_;
-        chop ($config_line);          # Get rid of the trailling \n
+        chomp ($config_line);          # Get rid of the trailling \n
         $config_line =~ s/^\s*//;     # Remove spaces at the start of the line
         $config_line =~ s/\s*$//;     # Remove spaces at the end of the line
         if ( ($config_line !~ /^#/) && ($config_line ne "") ){    # Ignore lines starting with # and blank lines
@@ -60,70 +60,70 @@ sub parse_config_file {
 
 }
 
-my ($Verbose,$Logging,$Hash,$ALogger,$Me,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs);
+my ($Verbose,$Logging,$Hash,$ALogger,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs);
 my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$pid_path,$SigHup,$NoDownload);
 $Verbose = 0;
 undef($Logging);
 undef($Hash);
 undef($ALogger);
-($Me)=split("/", reverse($0));
-($Me)=split(" ", reverse($Me));
 
 ## Help routine.. display help to stdout then exit
 sub Help
 {
-    open(ME, "<$0");
-    for ($i=0; $i<38; $i++) { $_=<ME>; }
-    close(ME);
+print<<__EOT;
+  Usage: $0 [-lvvVdnHT? -help] -c <config filename> -o <rule output path>
+   -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
+   -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
+  
+   Options:
+   -c Where the pulledpork config file lives.
+   -i Where the disablesid config file lives.
+   -o Where do you want me to put generic rules files?
+   -O What is your Oinkcode?
+   -T Process text based rules files only, i.e. DO NOT process so_rules
+   -s Where do you want me to put the so_rules?
+   -S Specify your Snort version
+      Valid options for this value 2.8.0.1,2.8.0.2,2.8.1,2.8.2,2.8.2.1,2.8.2.2,2.8.3,2.8.3.1,2.8.3.2,2.8.4
+   -C Path to your snort.conf
+   -p Path to your Snort binary
+   -P Path to your tar binary
+   -t Where do you want me to put the so_rule stub files? ** Thus MUST be uniquely different from the -o option value
+   -D What Distro are you running on, for the so_rules
+      Valid Distro Types=CentOS-4.6,CentOS-5.0,Debian-Lenny,FC-5,FC-9,FreeBSD-7.0,RHEL-5.0,Ubuntu-6.01.1,Ubuntu-8.04
+   -l Log information to logger rather than stdout messages.  **not yet implemented**
+   -v Verbose mode, you know.. for troubleshooting and such nonsense.
+   -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
+   -d Do not verify signature of rules tarball, why though?.
+   -H Send a SIGHUP to the pids listed in the config file
+   -n Do everything other than download of new files (disablesid, etc)
+   -V Print Version and exit
+   -help/? Print this help info.
 
-    #$_ = substr($_, 16, 20);
-    printf("Usage:\t%s [-lvvVdnHT? -help] -c <config filename> -o <rule output path> \t/\n", $Me);
-    printf("\t-O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer> \t/\n");
-    printf("\t-p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>\n");
-    printf("\n\tUsed to fetch and validate latest Snort rules from snort.org.\n\n");
-    #printf("\tVersion: 0.1 Beta 1\n\n");
-    printf("\tOptions:\n");
-    printf("\t-c\tWhere the pulledpork config file lives.\n");
-	printf("\t-i\tWhere the disablesid config file lives.\n");
-    printf("\t-o\tWhere do you want me to put generic rules files?\n");
-    printf("\t-O\tWhat is your Oinkcode?\n");
-    printf("\t-T\tProcess text based rules files only, i.e. DO NOT process so_rules\n");
-    printf("\t-s\tWhere do you want me to put the so_rules?\n");
-    printf("\t-S\tSpecify your Snort version\n");
-    printf("\t\tValid options for this value 2.8.0.1,2.8.0.2,2.8.1,2.8.2,2.8.2.1,2.8.2.2,2.8.3,2.8.3.1,2.8.3.2,2.8.4\n");
-    printf("\t-C\tPath to your snort.conf\n");
-    printf("\t-p\tPath to your Snort binary\n");
-    printf("\t-P\tPath to your tar binary\n");
-    printf("\t-t\tWhere do you want me to put the so_rule stub files? ** Thus MUST be uniquely different from the -o option value\n");
-    printf("\t-D\tWhat Distro are you running on, for the so_rules\n");
-    printf("\t\tValid Distro Types=CentOS-4.6,CentOS-5.0,Debian-Lenny,FC-5,FC-9,FreeBSD-7.0,RHEL-5.0,Ubuntu-6.01.1,Ubuntu-8.04\n");
-    printf("\t-l\tLog information to logger rather than stdout messages.  **not yet implemented**\n");
-    printf("\t-v\tVerbose mode, you know.. for troubleshooting and such nonsense.\n");
-    printf("\t-vv\tEXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.\n");
-    printf("\t-d\tDo not verify signature of rules tarball, why though?.\n");
-    printf("\t-H\tSend a SIGHUP to the pids listed in the config file\n");
-	printf("\t-n\tDo everything other than download of new files (disablesid, etc)\n");
-    printf("\t-V\tPrint Version and exit\n");
-    printf("\t-help/?\tPrint this help info.\n\n");
+__EOT
+
     exit(0);
 }
 
 ## OMG We MUST HAVE FLYING PIGS!
 sub pulledpork
 {
-    system("clear");
-    #printf("\n\npulledpork!!! I Can Haz Snort Rules to Fly With?\n");
-    printf("http://code.google.com/p/pulledpork/\n\n");
-    printf("\t     _____ ____\n");
-    printf("\t    `----,\\    )\n");
-    printf("\t     `--==\\\\  /\t\t$VERSION\n");
-    printf("\t      `--==\\\\/\n");
-    printf("\t    .-~~~~-.Y|\\\\_\tCopyright (C) 2009 JJ Cummings\n");
-    printf("\t \@_/        /  66\\_\tcummingsj\@gmail.com\n");
-    printf("\t   |    \\   \\   _(\")\n");
-    printf("\t    \\   /-| ||'--'\tRules give me wings!\n");
-    printf("\t     \\_\\  \\_\\\\\n\n");
-    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
+
+print<<__EOT;
+
+    http://code.google.com/p/pulledpork/
+      _____ ____
+     `----,\\    )
+      `--==\\\\  /    $VERSION
+       `--==\\\\/
+     .-~~~~-.Y|\\\\_  Copyright (C) 2009 JJ Cummings
+  \@_/        /  66\\_  cummingsj\@gmail.com
+    |    \\   \\   _(\")
+     \\   /-| ||'--'  Rules give me wings!
+      \\_\\  \\_\\\\
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+__EOT
+
 }
 
 ## initialize some vars
@@ -347,8 +347,8 @@ sub copy_sorules
 	        copy("$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile","$Sorules$sofile") || print "\tCopy failed with error: $!\n";
 	        if ($Verbose == 2) {
 	          print ("\tCopying $temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile to $Sorules$sofile\n");
+	    } #elsif ($Verbose && ($sofile ne ".") || ($sofile ne "..")) { print ("\tERROR! DOES NOT EXIST:$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile");}
 	        }
-	    } elsif ($Verbose && ($sofile != "." || $sofile != "..") { print ("\tERROR! DOES NOT EXIST:$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile");}
 	}
     } else { print "\tI couldn't copy the so rules, errors are above.\n"; }
 	if (!$Verbose) { print "\tDone!\n"; }
@@ -386,7 +386,7 @@ sub disablesid  #routine to disable the sids.. this is a rough approximation of 
 		my $SIDDATA = open(DATA, "$SID_conf"); #need to add error foo here
 		while (<DATA>) {
 			$sidlist=$_;
-			chop($sidlist);
+			chomp($sidlist);
 			$sidlist =~ s/^\s*//;     # Remove spaces at the start of the line
 			$sidlist =~ s/\s*$//;     # Remove spaces at the end of the line
 			if ( ($sidlist !~ /^#/) && ($sidlist ne "") && ($sidcount < 1) ){
@@ -657,3 +657,5 @@ if ($SigHup && $pid_path ne "") {
 	sig_hup($pid_path);
 }
 print ("Fly Piggy Fly!\n");
+
+__END__
