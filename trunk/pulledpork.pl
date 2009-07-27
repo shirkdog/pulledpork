@@ -61,7 +61,7 @@ sub parse_config_file {
 }
 
 my ($Verbose,$Logging,$Hash,$ALogger,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs);
-my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$pid_path,$SigHup,$NoDownload,$data);
+my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$pid_path,$SigHup,$NoDownload,$data,$sid_msg_map);
 $Verbose = 0;
 undef($Logging);
 undef($Hash);
@@ -71,7 +71,7 @@ undef($ALogger);
 sub Help
 {
 print<<__EOT;
-  Usage: $0 [-lvvVdnHT? -help] -c <config filename> -o <rule output path>
+  Usage: $0 [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
   
@@ -81,6 +81,7 @@ print<<__EOT;
    -o Where do you want me to put generic rules files?
    -O What is your Oinkcode?
    -T Process text based rules files only, i.e. DO NOT process so_rules
+   -m where do you want me to put the sid-msg.map file?
    -s Where do you want me to put the so_rules?
    -S Specify your Snort version
       Valid options for this value 2.8.0.1,2.8.0.2,2.8.1,2.8.2,2.8.2.1,2.8.2.2,2.8.3,2.8.3.1,2.8.3.2,2.8.4
@@ -493,47 +494,53 @@ sub sid_msg
 {
     my ($dir)=@_;
     my ($list,$sid,$msg,$ref,$sidline,@sids);
-    opendir (DIR,"$dir");
-    while (defined($list=readdir DIR)){
-        open (DATA,"$dir$list");
-        my @sid_lines = <DATA>;
-        close (DATA);
+	if (-d $dir){
+		opendir (DIR,"$dir");
+		while (defined($list=readdir DIR)){
+			open (DATA,"$dir$list");
+			my @sid_lines = <DATA>;
+			close (DATA);
 
-        foreach $data(@sid_lines){
-            if (($data!~/^#/) && ($data ne "")){ #We don't want blanklines or commented lines
-                $sid=$data;
-                $msg=$data;
-                $ref=$data;
-                #get the sid of the rule
-                if ($sid=~/sid:\d+;/i) {
-                    $sid=$&;
-                    $sid=~s/(sid:|;)//ig;
-                    $sidline="$sid || ";
-                }
-                # get the msg of the rule
-                if ($msg=~/msg:"(\w| |\-|\.|\+|\/|\$|\%|\^|\&|\*|\!)+";/i) {
-                    $msg=$&;
-                    $msg=~s/(msg:"|";)//ig;
-                    $sidline="$sidline$msg";
-                }
-                # get the reference(s) out of the rule
-                if ($ref=~/reference:(\/\/|\w|\.|,| |:)+;/i) {
-                    my @refs = split (/;/,$ref);
-                    foreach $ref(@refs){
-                        #$ref=$&;
-                        if ($ref=~/reference:(\/\/|\w|\.|,| |:)+/i) {
-                            $ref=~s/reference://ig;
-                            $sidline="$sidline || $ref";
-                        }
-                    } $sidline="$sidline";
-                } else { $sidline="$sidline";}
-                push (@sids,$sidline); #stick it all into an array so we can dedupe later
-            }
-        }
-    }
-    close (DIR);
-    @sids = do { my %h; @h{@sids} = @sids; values %h }; #dedupe the shiz
-    return @sids;
+			foreach $data(@sid_lines){
+				if (($data!~/^#/) && ($data ne "")){ #We don't want blanklines or commented lines
+					$sid=$data;
+					$msg=$data;
+					$ref=$data;
+					#get the sid of the rule
+					if ($sid=~/sid:\d+;/i) {
+						$sid=$&;
+						$sid=~s/(sid:|;)//ig;
+						$sidline="$sid || ";
+					}
+					# get the msg of the rule
+					if ($msg=~/msg:"(\w| |\-|\.|\+|\/|\$|\%|\^|\&|\*|\!)+";/i) {
+						$msg=$&;
+						$msg=~s/(msg:"|";)//ig;
+						$sidline="$sidline$msg";
+					}
+					# get the reference(s) out of the rule
+					if ($ref=~/reference:(\/\/|\w|\.|,| |:)+;/i) {
+						my @refs = split (/;/,$ref);
+						foreach $ref(@refs){
+							#$ref=$&;
+							if ($ref=~/reference:(\/\/|\w|\.|,| |:)+/i) {
+								$ref=~s/reference://ig;
+								$sidline="$sidline || $ref";
+							}
+						} $sidline="$sidline";
+					} else { $sidline="$sidline";}
+					push (@sids,$sidline); #stick it all into an array so we can dedupe later
+				}
+			}
+		}
+		close (DIR);
+		@sids = do { my %h; @h{@sids} = @sids; values %h }; #dedupe the shiz
+		foreach $sidline(@sids){
+			$sidline="$sidline\n";
+		}
+		@sids=sort(@sids);
+		return @sids;
+	}
 }	
 
 
@@ -560,6 +567,7 @@ GetOptions ( "v+" => \$Verbose,
         "t=s" => \$Sostubs,
 		"S=s" => \$Snort,
         "p=s" => \$Snort_path,
+		"m=s" => \$sid_msg_map,
         "P=s" => \$Tar_path,
 		"D=s" => \$Distro,
 		"c=s" => \$Config_file,
@@ -580,6 +588,7 @@ if ($Verbose) {
     if ($Output) {print "\tOutput Path is: $Output\n";}
     if ($Sorules) {print "\tSO Output Path is: $Sorules\n";}
     if ($Sostubs) {print "\tSO Stub Output Path is: $Sostubs\n";}
+	if ($sid_msg_map) {print "\tsid-msg.map Output Path is: $sid_msg_map\n";}
     if ($Snort) {print "\tSnort Version is: $Snort\n";}
     if ($Snort_path) {print "\tSnort Path is: $Snort_path\n";}
     if ($Tar_path) {print "\tTar Path is: $Tar_path\n";}
@@ -638,6 +647,9 @@ if (!$Snort_config) {
 if (!$Tar_path) {
     $Tar_path = ($Config_info{'tar_path'});
     if (!$Tar_path) {Help();}
+}
+if (!$sid_msg_map){
+	$sid_msg_map = ($Config_info{'sid_msg'});
 }
 # Define the snort rule file that we want
 if (!$rule_file) {
@@ -698,6 +710,17 @@ if ($temp_path) {
 }
 if ($SID_conf && -d $Output) {
 	disablesid($SID_conf,$Output,$Sostubs)
+}
+if ($sid_msg_map && -d $Output) { 
+	print "Generating sid-msg.map...\n";
+	my @sidlist=sid_msg($Output);
+	if (-d $Sostubs && !$Textonly) {
+		push (@sidlist,sid_msg($Sostubs));
+	}
+	open(WRITE,">$sid_msg_map");
+	print WRITE @sidlist;
+	close(WRITE);
+	print "\tDone\n";
 }
 if ($SigHup && $pid_path ne "") {
 	sig_hup($pid_path);
