@@ -507,6 +507,7 @@ sub sid_msg
 			close (DATA);
 
 			foreach $data(@sid_lines){
+				$data=trim($data);
 				if (($data!~/^#/) && ($data ne "")){ #We don't want blanklines or commented lines
 					$sid=$data;
 					$msg=$data;
@@ -533,9 +534,9 @@ sub sid_msg
 								$ref=trim($ref);
 								$sidline="$sidline || $ref";
 							}
-						} if ($sidline && $sidline !~ /^\s+/g){$sidline="$sidline";}
-					} elsif ($sidline && $sidline !~ /^\s+/g){ $sidline="$sidline";}
-					if ($sidline && $sidline !~ /^\s+/g) {
+						} if ($sidline && $sidline !~ /^\s+/g){$sidline="$sidline\n";}
+					} elsif ($sidline && $sidline !~ /^\s+/g){ $sidline="$sidline\n";}
+					if ($sidline && $sidline !~ /^\s+/g){
 						push (@sids,$sidline); #stick it all into an array so we can dedupe later
 					}
 				}
@@ -543,9 +544,6 @@ sub sid_msg
 		}
 		close (DIR);
 		@sids = do { my %h; @h{@sids} = @sids; values %h }; #dedupe the shiz
-		foreach $sidline(@sids){
-			$sidline="$sidline\n";
-		}
 		@sids=sort(@sids);
 		return @sids;
 	}
