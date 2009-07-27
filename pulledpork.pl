@@ -61,7 +61,7 @@ sub parse_config_file {
 }
 
 my ($Verbose,$Logging,$Hash,$ALogger,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs);
-my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$pid_path,$SigHup,$NoDownload);
+my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$pid_path,$SigHup,$NoDownload,$data);
 $Verbose = 0;
 undef($Logging);
 undef($Hash);
@@ -155,7 +155,7 @@ sub rule_extract
 		temp_cleanup($temp_path);
     }
     if ($Verbose)
-	{ print "\textracting contents of $temp_path/$rule_file to $temp_path/tha_rules to conduct an excercism on them!\n"; }
+	{ print "\textracting contents of $temp_path/$rule_file to $temp_path/tha_rules to conduct an excorcism on them!\n"; }
     my $mk_tmp = mkpath("$temp_path/tha_rules");
     
     system ( "$Tar_path xfz ".$temp_path."/".$rule_file." -C ".$temp_path."/tha_rules" );
@@ -488,7 +488,53 @@ sub sig_hup
 	if (!$Verbose) {print "\tDone!\n";}
 	
 }
-	
+
+sub sid_msg
+{
+    my ($dir)=@_;
+    my ($list,$sid,$msg,$ref,$sidline,@sids);
+    opendir (DIR,"$dir");
+    while (defined($list=readdir DIR)){
+        open (DATA,"$dir$list");
+        my @sid_lines = <DATA>;
+        close (DATA);
+
+        foreach $data(@sid_lines){
+            if (($data!~/^#/) && ($data ne "")){ #We don't want blanklines or commented lines
+                $sid=$data;
+                $msg=$data;
+                $ref=$data;
+                #get the sid of the rule
+                if ($sid=~/sid:\d+;/i) {
+                    $sid=$&;
+                    $sid=~s/(sid:|;)//ig;
+                    $sidline="$sid || ";
+                }
+                # get the msg of the rule
+                if ($msg=~/msg:"(\w| |\-|\.|\+|\/|\$|\%|\^|\&|\*|\!)+";/i) {
+                    $msg=$&;
+                    $msg=~s/(msg:"|";)//ig;
+                    $sidline="$sidline$msg";
+                }
+                # get the reference(s) out of the rule
+                if ($ref=~/reference:(\/\/|\w|\.|,| |:)+;/i) {
+                    my @refs = split (/;/,$ref);
+                    foreach $ref(@refs){
+                        #$ref=$&;
+                        if ($ref=~/reference:(\/\/|\w|\.|,| |:)+/i) {
+                            $ref=~s/reference://ig;
+                            $sidline="$sidline || $ref";
+                        }
+                    } $sidline="$sidline";
+                } else { $sidline="$sidline";}
+                push (@sids,$sidline); #stick it all into an array so we can dedupe later
+            }
+        }
+    }
+    close (DIR);
+    @sids = do { my %h; @h{@sids} = @sids; values %h }; #dedupe the shiz
+    return @sids;
+}	
 
 
 sub Version
