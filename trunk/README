@@ -15,8 +15,9 @@ Usage:	pulledpork.pl [-lvvVdaT? -help] -c <config filename> -o <rule output path
 	-O	What is your Oinkcode?
 	-T	Process text based rules files only, i.e. DO NOT process so_rules
 	-s	Where do you want me to put the so_rules?
+	-m where do you want me to put the sid-msg.map file?
 	-S	Specify your Snort version
-		Valid options for this value 2.8.0.1,2.8.0.2,2.8.1,2.8.2,2.8.2.1,2.8.2.2,2.8.3,2.8.3.1,2.8.3.2,2.8.4
+		Valid options for this value 2.8.0.1,2.8.0.2,2.8.1,2.8.2,2.8.2.1,2.8.2.2,2.8.3,2.8.3.1,2.8.3.2,2.8.4,2.8.4.1
 	-C	Path to your snort.conf
 	-p	Path to your Snort binary
 	-P	Path to your tar binary
@@ -52,9 +53,10 @@ disablesid.conf lives, and the -T option tells pulledpork to not process for any
 
 Similar to the first example but all options specified in the pulledpork.conf file (other than disablesid and -H)...
 
-./pulledpork.pl -c pulledpork.conf -i disablesid.conf -Hn
+./pulledpork.pl -c pulledpork.conf -i disablesid.conf -m /usr/local/etc/snort/sid-msg.map -Hn
 
-The above will simply read the disablesid and disable as defined, then send a Hangup signal without downloading anything.
+The above will simply read the disablesid and disable as defined, then send a Hangup signal after generating the sid-msg.map
+at the specified location without downloading anything.
 Highly useful when tuning / making changes etc..
 
 I'll probably add more info later, the --help or --? will display all runtime options and the pulledpork.conf is
