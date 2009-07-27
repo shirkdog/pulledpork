@@ -525,11 +525,15 @@ sub sid_msg
 							#$ref=$&;
 							if (($ref=~/reference:(\/|\w|\.|,| |:|\-|\$|\@|\?|\=|\|\%')+/i) && ($ref!~/arachnids/i)) {
 								$ref=~s/reference://ig;
+								$ref=~s/\s+$//g;  #gotta lose the damn whitespace
+								$ref=~s/^\s+//g; # at the beginning too!
 								$sidline="$sidline || $ref";
 							}
-						} $sidline="$sidline";
-					} else { $sidline="$sidline";}
-					push (@sids,$sidline); #stick it all into an array so we can dedupe later
+						} if ($sidline && $sidline !~ /^\s+/g){$sidline="$sidline";}
+					} elsif ($sidline && $sidline !~ /^\s+/g){ $sidline="$sidline";}
+					if ($sidline && $sidline !~ /^\s+/g) {
+						push (@sids,$sidline); #stick it all into an array so we can dedupe later
+					}
 				}
 			}
 		}
