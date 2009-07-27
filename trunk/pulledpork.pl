@@ -513,17 +513,17 @@ sub sid_msg
 						$sidline="$sid || ";
 					}
 					# get the msg of the rule
-					if ($msg=~/msg:"(\w| |\-|\.|\+|\/|\$|\%|\^|\&|\*|\!|\[|\]|\~|\>|\<|\/|,|\#)+";/i) {
+					if ($msg=~/msg:"(\w| |\-|\.|\+|\/|\$|\%|\^|\&|\*|\!|\[|\]|\~|\>|\<|\/|,|\#|\?|\$|\@|\=|\')+";/i) {
 						$msg=$&;
 						$msg=~s/(msg:"|";)//ig;
 						$sidline="$sidline$msg";
 					}
 					# get the reference(s) out of the rule (everything but arachnids anyway)
-					if ($ref=~/reference:(\/|\w|\.|,| |:|\-)+;/i) {
+					if ($ref=~/reference:(\/|\w|\.|,| |:|\-|\$|\@|\?|\=|\|\%')+;/i) {
 						my @refs = split (/;/,$ref);
 						foreach $ref(@refs){
 							#$ref=$&;
-							if (($ref=~/reference:(\/|\w|\.|,| |:|\-)+/i) && ($ref!~/arachnids/i)) {
+							if (($ref=~/reference:(\/|\w|\.|,| |:|\-|\$|\@|\?|\=|\|\%')+/i) && ($ref!~/arachnids/i)) {
 								$ref=~s/reference://ig;
 								$sidline="$sidline || $ref";
 							}
