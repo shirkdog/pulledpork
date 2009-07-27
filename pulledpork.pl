@@ -36,6 +36,15 @@ my ($oinkcode,$temp_path,$rule_file);
 my $VERSION = "Pulled_Pork v0.2.2";
 
 # routine grab our config from the defined config file
+
+sub trim
+{
+	my ($trimmer)=@_;
+	$trimmer=~s/^\s*//;
+	$trimmer=~s/\s*$//;
+	return $trimmer;
+}
+
 sub parse_config_file {
     my ($FileConf, $Config_val) = @_;
     my ($config_line, $Name, $Value);
@@ -48,8 +57,7 @@ sub parse_config_file {
     while (<CONFIG>) {
         $config_line=$_;
         chomp ($config_line);          # Get rid of the trailling \n
-        $config_line =~ s/^\s*//;     # Remove spaces at the start of the line
-        $config_line =~ s/\s*$//;     # Remove spaces at the end of the line
+        $config_line=trim($config_line);
         if ( ($config_line !~ /^#/) && ($config_line ne "") ){    # Ignore lines starting with # and blank lines
             ($Name, $Value) = split (/=/, $config_line);          # Split each line into name value pairs
             $$Config_val{$Name} = $Value;                             # Create a hash of the name value pairs
@@ -388,8 +396,7 @@ sub disablesid  #routine to disable the sids.. this is a rough approximation of 
 		while (<DATA>) {
 			$sidlist=$_;
 			chomp($sidlist);
-			$sidlist =~ s/^\s*//;     # Remove spaces at the start of the line
-			$sidlist =~ s/\s*$//;     # Remove spaces at the end of the line
+			$sidlist=trim($sidlist);
 			if ( ($sidlist !~ /^#/) && ($sidlist ne "") && ($sidcount < 1) ){
 				@sid_disable=split(/,/,$sidlist);  #split up the sids that we want to disable
 				$sidcount++
@@ -406,8 +413,7 @@ sub disablesid  #routine to disable the sids.. this is a rough approximation of 
 				close(DATA);
 				$sidcount = 0;
 				foreach $so_line(@so_lines) {
-					$so_line=~s/^\s*//;
-					$so_line=~s/\s*$//;
+					$so_line=trim($so_line);
 					if ( ($so_line !~ /^#/) && ($so_line ne"") ){  #don't want already disabled lines or blank ones!
 						foreach $sid_disable(@sid_disable) {
 							if ($sid_disable=~/^3:/) {
@@ -439,8 +445,7 @@ sub disablesid  #routine to disable the sids.. this is a rough approximation of 
 			close (DATA);
 			$dircount = 0;
 			foreach $rule_line(@rule_lines) {	
-				$rule_line=~s/^\s*//;
-				$rule_line=~s/\s*$//;
+				$rule_line=trim($rule_line);
 				if ( ($rule_line !~ /^#/) && ($rule_line ne"") ){  #don't want already disabled lines or blank ones!
 					foreach $sid_disable(@sid_disable) {
 						#print "\t$sid_disable\n";
@@ -525,8 +530,7 @@ sub sid_msg
 							#$ref=$&;
 							if (($ref=~/reference:(\/|\w|\.|,| |:|\-|\$|\@|\?|\=|\|\%')+/i) && ($ref!~/arachnids/i)) {
 								$ref=~s/reference://ig;
-								$ref=~s/\s+$//g;  #gotta lose the damn whitespace
-								$ref=~s/^\s+//g; # at the beginning too!
+								$ref=trim($ref);
 								$sidline="$sidline || $ref";
 							}
 						} if ($sidline && $sidline !~ /^\s+/g){$sidline="$sidline";}
@@ -546,7 +550,6 @@ sub sid_msg
 		return @sids;
 	}
 }	
-
 
 sub Version
 {
