@@ -84,7 +84,7 @@ print<<__EOT;
    -m where do you want me to put the sid-msg.map file?
    -s Where do you want me to put the so_rules?
    -S Specify your Snort version
-      Valid options for this value 2.8.0.1,2.8.0.2,2.8.1,2.8.2,2.8.2.1,2.8.2.2,2.8.3,2.8.3.1,2.8.3.2,2.8.4
+      Valid options for this value 2.8.0.1,2.8.0.2,2.8.1,2.8.2,2.8.2.1,2.8.2.2,2.8.3,2.8.3.1,2.8.3.2,2.8.4,2.8.4.1
    -C Path to your snort.conf
    -p Path to your Snort binary
    -P Path to your tar binary
