@@ -529,7 +529,7 @@ sub sid_msg
 								$sidline="$sidline || $ref";
 							}
 						} $sidline="$sidline";
-					} else { $sidline="$sidline";}
+					} #else { $sidline="$sidline";}
 					$sidline=trim($sidline);
 					if ($sidline && $sidline !~ /^\s+/g){
 						push (@sids,$sidline); #stick it all into an array so we can dedupe later
