@@ -79,6 +79,7 @@ print<<__EOT;
    -c Where the pulledpork config file lives.
    -i Where the disablesid config file lives.
    -o Where do you want me to put generic rules files?
+   -f What snort rules tarball do you want to fetch (i.e. snortrules-snapshot-2.8_s.tar.gz)
    -O What is your Oinkcode?
    -T Process text based rules files only, i.e. DO NOT process so_rules
    -m where do you want me to put the sid-msg.map file?
