@@ -550,9 +550,11 @@ sub sid_msg
 sub trim
 {
 	my ($trimmer)=@_;
-	$trimmer=~s/^\s*//;
-	$trimmer=~s/\s*$//;
-	return $trimmer;
+	if (($trimmer!~/\s/) && ($trimmer ne "")){
+		$trimmer=~s/^\s*//;
+		$trimmer=~s/\s*$//;
+		return $trimmer;
+	}
 }
 
 sub Version
