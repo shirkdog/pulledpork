@@ -205,6 +205,7 @@ sub rulefetch
         if ($Hash) { print "But not verifying MD5\n"; }
          }
     my $getrules_rule = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file,$temp_path."/".$rule_file);
+    if ($getrules_rule=~"403"){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
     die "\tError $getrules_rule when fetching http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file unless is_success($getrules_rule);
     if ($Verbose)
 	{ print ("\tstoring file at: $temp_path/$rule_file\n\n"); }
@@ -235,7 +236,8 @@ sub md5file
 	print "Checking latest MD5....\n";
     if ($Verbose)
 	{ print "\tFetching md5sum for comparing from: http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file.".md5\n"; }
-    my $getrules_md5 = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file.".md5",$temp_path."/".$rule_file.".md5");
+	my $getrules_md5 = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file.".md5",$temp_path."/".$rule_file.".md5");
+    if ($getrules_md5=~"403"){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
     die "\tError $getrules_md5 when fetching http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file.".md5" unless is_success($getrules_md5);
     #print ("storing file at: $path\n");
     my $rule_open = open (FILE,"$temp_path/$rule_file.md5")
@@ -550,7 +552,7 @@ sub sid_msg
 sub trim
 {
 	my ($trimmer)=@_;
-	if (($trimmer!~/\s/) && ($trimmer ne "")){
+	if ($trimmer){
 		$trimmer=~s/^\s*//;
 		$trimmer=~s/\s*$//;
 		return $trimmer;
