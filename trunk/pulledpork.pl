@@ -33,17 +33,9 @@ use POSIX qw(:errno_h);  ## For Addind signal handling
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.2.2";
+my $VERSION = "Pulled_Pork v0.2.5";
 
 # routine grab our config from the defined config file
-
-sub trim
-{
-	my ($trimmer)=@_;
-	$trimmer=~s/^\s*//;
-	$trimmer=~s/\s*$//;
-	return $trimmer;
-}
 
 sub parse_config_file {
     my ($FileConf, $Config_val) = @_;
@@ -56,7 +48,7 @@ sub parse_config_file {
     open (CONFIG, "$FileConf");
     while (<CONFIG>) {
         $config_line=$_;
-        chomp ($config_line);          # Get rid of the trailling \n
+        chomp($config_line);          # Get rid of the trailling \n
         $config_line=trim($config_line);
         if ( ($config_line !~ /^#/) && ($config_line ne "") ){    # Ignore lines starting with # and blank lines
             ($Name, $Value) = split (/=/, $config_line);          # Split each line into name value pairs
@@ -516,12 +508,14 @@ sub sid_msg
 					if ($sid=~/sid:\d+;/i) {
 						$sid=$&;
 						$sid=~s/(sid:|;)//ig;
+						$sid=trim($sid);
 						$sidline="$sid || ";
 					}
 					# get the msg of the rule
 					if ($msg=~/msg:"(\w| |\-|\.|\+|\/|\$|\%|\^|\&|\*|\!|\[|\]|\~|\>|\<|\/|,|\#|\?|\$|\@|\=|\')+";/i) {
 						$msg=$&;
 						$msg=~s/(msg:"|";)//ig;
+						$msg=trim($msg);
 						$sidline="$sidline$msg";
 					}
 					# get the reference(s) out of the rule (everything but arachnids anyway)
@@ -534,8 +528,9 @@ sub sid_msg
 								$ref=trim($ref);
 								$sidline="$sidline || $ref";
 							}
-						} if ($sidline && $sidline !~ /^\s+/g){$sidline="$sidline\n";}
-					} elsif ($sidline && $sidline !~ /^\s+/g){ $sidline="$sidline\n";}
+						} $sidline="$sidline";
+					} else { $sidline="$sidline";}
+					$sidline=trim($sidline);
 					if ($sidline && $sidline !~ /^\s+/g){
 						push (@sids,$sidline); #stick it all into an array so we can dedupe later
 					}
@@ -545,9 +540,20 @@ sub sid_msg
 		close (DIR);
 		@sids = do { my %h; @h{@sids} = @sids; values %h }; #dedupe the shiz
 		@sids=sort(@sids);
+		foreach $sidline(@sids){
+			$sidline="$sidline\n";
+		}
 		return @sids;
 	}
 }	
+
+sub trim
+{
+	my ($trimmer)=@_;
+	$trimmer=~s/^\s*//;
+	$trimmer=~s/\s*$//;
+	return $trimmer;
+}
 
 sub Version
 {
@@ -699,14 +705,11 @@ if ($oinkcode && $rule_file && -d $temp_path)
 		rule_extract($oinkcode,$rule_file,$temp_path);
 	}
     if ($Output){
-	copy_rules($temp_path,$Output);
+		copy_rules($temp_path,$Output);
     }
     if ($Sorules && $Distro && $Snort && !$Textonly){
-	copy_sorules($temp_path,$Sorules,$Distro,$Snort);
-	
-        # Copy stubs is now deprecated, fast, I know!
-        #copy_stubs($temp_path,$Output);
-        gen_stubs($Snort_path,$Snort_config,$Sostubs);
+		copy_sorules($temp_path,$Sorules,$Distro,$Snort);
+		gen_stubs($Snort_path,$Snort_config,$Sostubs);
     }
 } else { Help(); }
 
