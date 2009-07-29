@@ -141,9 +141,9 @@ if($#ARGV==-1){Help();}
 sub temp_cleanup
 {
     #my $temp_path = @_;
-    my $remove = rmtree ( $temp_path."/tha_rules" );
+    my $remove = rmtree ( $temp_path."tha_rules" );
     if ($Verbose)
-	{ print "removed $remove temporary snort files or directories from $temp_path/tha_rules!\n"; }
+	{ print "removed $remove temporary snort files or directories from $temp_path"."tha_rules!\n"; }
 }
 
 # subroutine to extract the files to a temp path so that we can compare the new with the old and report our findings!
@@ -151,16 +151,16 @@ sub rule_extract
 {	
     my ($oinkcode,$rule_file,$temp_path) = @_;
 	print "Prepping files for work....\n";
-    if ( -d $temp_path."/tha_rules") { 
+    if ( -d $temp_path."tha_rules") { 
 	if ($Verbose)
 	    { print "\toh, we need to perform some cleanup... an unclean run last time?\n"; }
 		temp_cleanup($temp_path);
     }
     if ($Verbose)
-	{ print "\textracting contents of $temp_path/$rule_file to $temp_path/tha_rules to conduct an excorcism on them!\n"; }
-    my $mk_tmp = mkpath("$temp_path/tha_rules");
+	{ print "\textracting contents of $temp_path$rule_file to $temp_path"."tha_rules to conduct an excorcism on them!\n"; }
+    my $mk_tmp = mkpath($temp_path."tha_rules");
     
-    system ( "$Tar_path xfz ".$temp_path."/".$rule_file." -C ".$temp_path."/tha_rules" );
+    system ( "$Tar_path xfz ".$temp_path.$rule_file." -C ".$temp_path."tha_rules" );
     if ($Verbose)
 	{ print "\trules have been extracted, time to move them where they belong!\n"; }
 	if (!$Verbose) { print "\tDone!\n"; }
@@ -205,11 +205,11 @@ sub rulefetch
 	{ print "\tFetching rules file: $rule_file\n";
         if ($Hash) { print "But not verifying MD5\n"; }
          }
-    my $getrules_rule = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file,$temp_path."/".$rule_file);
-    if ($getrules_rule=~"403"){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
+    my $getrules_rule = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file,$temp_path.$rule_file);
+    if ($getrules_rule==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
     die "\tError $getrules_rule when fetching http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file unless is_success($getrules_rule);
     if ($Verbose)
-	{ print ("\tstoring file at: $temp_path/$rule_file\n\n"); }
+	{ print ("\tstoring file at: $temp_path$rule_file\n\n"); }
 	if (!$Verbose) { "\tDone!\n"; }
 }
 
@@ -217,7 +217,7 @@ sub rulefetch
 sub md5sum
 {
     my ($rule_file,$temp_path) = @_;
-    my $local_md5 = open (MD5FILE,"$temp_path/$rule_file")
+    my $local_md5 = open (MD5FILE,"$temp_path$rule_file")
         or die $!;
     binmode(MD5FILE);
     $rule_digest = Digest::MD5->new->addfile(*MD5FILE)->hexdigest;
@@ -237,11 +237,11 @@ sub md5file
 	print "Checking latest MD5....\n";
     if ($Verbose)
 	{ print "\tFetching md5sum for comparing from: http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file.".md5\n"; }
-	my $getrules_md5 = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file.".md5",$temp_path."/".$rule_file.".md5");
-    if ($getrules_md5=~"403"){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
+	my $getrules_md5 = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file.".md5",$temp_path.$rule_file.".md5");
+    if ($getrules_md5==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
     die "\tError $getrules_md5 when fetching http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file.".md5" unless is_success($getrules_md5);
     #print ("storing file at: $path\n");
-    my $rule_open = open (FILE,"$temp_path/$rule_file.md5")
+    my $rule_open = open (FILE,"$temp_path$rule_file.md5")
           or die $!;
     $md5 = <FILE>;
     chomp ($md5);
@@ -314,19 +314,19 @@ sub copy_rules
     my ($temp_path,$Output) = @_;
 	print "Copying rules files....\n";
     if ($Verbose) {
-        compare_dirs("$temp_path/tha_rules/rules/",$Output);
+        compare_dirs("$temp_path"."tha_rules/rules/",$Output);
     }
-    if ( -d "$temp_path/tha_rules/rules/") {
-	opendir (DIR,"$temp_path/tha_rules/rules/");
+    if ( -d "$temp_path"."tha_rules/rules/") {
+	opendir (DIR,"$temp_path"."tha_rules/rules/");
 	my @files = readdir(DIR);
 	closedir(DIR);
     
 	foreach my $file (@files) {
-            if ($Verbose && !$SID_conf) { diff_files("$temp_path/tha_rules/rules/$file","$Output$file"); }
-	    if ( -f "$temp_path/tha_rules/rules/$file") {
-	        copy("$temp_path/tha_rules/rules/$file","$Output$file") || print "\tCopy failed with error: $!\n";
+            if ($Verbose && !$SID_conf) { diff_files("$temp_path"."tha_rules/rules/$file","$Output$file"); }
+	    if ( -f "$temp_path"."tha_rules/rules/$file") {
+	        copy("$temp_path"."tha_rules/rules/$file","$Output$file") || print "\tCopy failed with error: $!\n";
 	        if ($Verbose == 2) {
-	          print ("\tCopied $temp_path/tha_rules/rules/$file to $Output$file\n");
+	          print ("\tCopied $temp_path"."tha_rules/rules/$file to $Output$file\n");
 	        }
 	    }
 	}
@@ -341,16 +341,16 @@ sub copy_sorules
 	my $arch = "i386";
 	if ($Distro =~ "RHEL-5.0" || $Distro =~ "Ubuntu-8.04") { $arch = "x86-64"; } 
 	print "Copying Shared Object Rules....\n";
-    if ( -d "$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/") {
-	opendir (SODIR,"$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/");
+    if ( -d "$temp_path"."tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/") {
+	opendir (SODIR,"$temp_path"."tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/");
 	my @sofiles = readdir(SODIR);
 	closedir(SODIR);
     
 	foreach my $sofile (@sofiles) {
-	    if ( -f "$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile") {
-	        copy("$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile","$Sorules$sofile") || print "\tCopy failed with error: $!\n";
+	    if ( -f "$temp_path"."tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile") {
+	        copy("$temp_path"."tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile","$Sorules$sofile") || print "\tCopy failed with error: $!\n";
 	        if ($Verbose == 2) {
-	          print ("\tCopying $temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile to $Sorules$sofile\n");
+	          print ("\tCopying $temp_path"."tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile to $Sorules$sofile\n");
 	    } #elsif ($Verbose && ($sofile ne ".") || ($sofile ne "..")) { print ("\tERROR! DOES NOT EXIST:$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile");}
 	        }
 	}
@@ -550,7 +550,7 @@ sub sid_msg
 	}
 }	
 
-sub trim
+sub trim  #sub to remove whitespace before and after a string
 {
 	my ($trimmer)=@_;
 	if ($trimmer){
@@ -559,6 +559,18 @@ sub trim
 		return $trimmer;
 	}
 }
+
+sub slash #test for trailing slash and add or remove if needed 1 for add 0 for remove
+{
+	my ($operation,$string)=@_;
+	if ($operation==0 && $string=~/\/$/ && $string ne ""){
+		$string=~s/\/$//;
+	}elsif (($operation==1) && ($string!~/\/$/) && ($string ne "")){
+		$string="$string/";
+	}
+	return $string;	
+}
+
 
 sub Version
 {
@@ -642,12 +654,18 @@ if (!$Output) {
     $Output = ($Config_info{'rule_path'});
     if (!$Output) {Help();}
 }
+$Output=slash(1,$Output);
+
 if (!$Sorules) {
     $Sorules = ($Config_info{'sorule_path'});
 }
+$Sorules=slash(1,$Sorules);
+
 if (!$Sostubs) {
     $Sostubs = ($Config_info{'sostub_path'});
 }
+$Sostubs=slash(1,$Sostubs);
+
 if (!$Distro) {
     $Distro = ($Config_info{'distro'});
 }
@@ -683,6 +701,7 @@ if (!$oinkcode) {
 # of space in this path.. ~200mb is a good starting point
 $temp_path = ($Config_info{'temp_path'});
 if (!$temp_path) {Help();}
+$temp_path=slash(1,$temp_path);
 
 #let's fetch the most recent md5 file
 if ($oinkcode && $rule_file && -d $temp_path)
@@ -693,12 +712,12 @@ if ($oinkcode && $rule_file && -d $temp_path)
 			md5file($oinkcode,$rule_file,$temp_path);
 		}
 		#and now lets determine the md5 of the last saved rules file if it exists
-		if ( -f "$temp_path/$rule_file" && !$Hash){
+		if ( -f "$temp_path"."$rule_file" && !$Hash){
 			md5sum($rule_file,$temp_path);
 		}
 		else { # the file didn't exsist so lets get it
 			rulefetch($oinkcode,$rule_file,$temp_path);
-			if ( -f "$temp_path/$rule_file" && !$Hash){
+			if ( -f "$temp_path"."$rule_file" && !$Hash){
 				md5sum($rule_file,$temp_path);
 			}
 		}
