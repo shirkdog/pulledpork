@@ -565,7 +565,7 @@ sub slash #test for trailing slash and add or remove if needed 1 for add 0 for r
 	my ($operation,$string)=@_;
 	if ($operation==0 && $string=~/\/$/ && $string ne ""){
 		$string=~s/\/$//;
-	}elsif (($operation==1) && ($string!~/\/$/) && ($string ne "")){
+	}elsif ($operation==1 && $string!~/\/$/ && $string ne ""){
 		$string="$string/";
 	}
 	return $string;	
