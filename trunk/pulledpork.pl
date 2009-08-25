@@ -287,24 +287,26 @@ sub compare_dirs
 sub diff_files
 {
     my ($file_one,$file_two) = @_;
-    my %diffresults = ();
-    
-    open (FILEONE,$file_one);
-    while (my $line = <FILEONE>) {
-        $diffresults{$line}=1;
-    }
-    
-    open (FILETWO,$file_two);
-    while (my $line = <FILETWO>) {
-        $diffresults{$line}++;
-    }
-    
-    foreach my $line (keys %diffresults) {
-        if ($diffresults{$line} == 1) {
-            print "Rule change in $file_one\n";
-            print "$line\n";
-        }
-    }
+    if ((-T $file_one) && (-T $file_two)) {
+		my %diffresults = ();
+		
+		open (FILEONE,$file_one);
+		while (my $line = <FILEONE>) {
+			$diffresults{$line}=1;
+		}
+		
+		open (FILETWO,$file_two);
+		while (my $line = <FILETWO>) {
+			$diffresults{$line}++;
+		}
+		
+		foreach my $line (keys %diffresults) {
+			if ($diffresults{$line} == 1) {
+				print "Rule change in $file_one\n";
+				print "$line\n";
+			}
+		}
+	}
 }
 
 # routine to copy rules that we define to copy
