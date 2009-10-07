@@ -61,7 +61,7 @@ sub parse_config_file {
 }
 
 my ($Verbose,$Logging,$Hash,$ALogger,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs);
-my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$pid_path,$SigHup,$NoDownload,$data,$sid_msg_map);
+my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$pid_path,$SigHup,$NoDownload,$data,$sid_msg_map,$base_url);
 $Verbose = 0;
 undef($Logging);
 undef($Hash);
@@ -79,23 +79,29 @@ print<<__EOT;
    -c Where the pulledpork config file lives.
    -i Where the disablesid config file lives.
    -o Where do you want me to put generic rules files?
-   -f What snort rules tarball do you want to fetch (i.e. snortrules-snapshot-2.8_s.tar.gz)
+   -f What snort rules tarball do you want to fetch 
+      (i.e. snortrules-snapshot-2.8_s.tar.gz)
+   -u Where do you want me to pull the rules tarball from 
+      (ET, Snort.org, see pulledpork config base_url option for value ideas)
    -O What is your Oinkcode?
    -T Process text based rules files only, i.e. DO NOT process so_rules
    -m where do you want me to put the sid-msg.map file?
    -s Where do you want me to put the so_rules?
    -S Specify your Snort version
-      Valid options for this value 2.8.0.1,2.8.0.2,2.8.1,2.8.2,2.8.2.1,2.8.2.2,2.8.3,2.8.3.1,2.8.3.2,2.8.4,2.8.4.1
+      Valid options for this value 2.8.0.1,2.8.0.2,2.8.1,2.8.2,2.8.2.1,2.8.2.2,
+	  2.8.3,2.8.3.1,2.8.3.2,2.8.4,2.8.4.1,2.8.5
    -C Path to your snort.conf
    -p Path to your Snort binary
    -P Path to your tar binary
-   -t Where do you want me to put the so_rule stub files? ** Thus MUST be uniquely different from the -o option value
+   -t Where do you want me to put the so_rule stub files? ** Thus MUST be uniquely 
+      different from the -o option value
    -D What Distro are you running on, for the so_rules
-      Valid Distro Types=CentOS-4.6,CentOS-5.0,Debian-Lenny,FC-5,FC-9,FreeBSD-7.0,RHEL-5.0,Ubuntu-6.01.1,Ubuntu-8.04
+      Valid Distro Types=CentOS-4.6,CentOS-5.0,Debian-Lenny,FC-5,FC-9,FreeBSD-7.0,
+	  RHEL-5.0,Ubuntu-6.01.1,Ubuntu-8.04
    -l Log information to logger rather than stdout messages.  **not yet implemented**
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
-   -d Do not verify signature of rules tarball, why though?.
+   -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
    -H Send a SIGHUP to the pids listed in the config file
    -n Do everything other than download of new files (disablesid, etc)
    -V Print Version and exit
@@ -170,7 +176,7 @@ sub rule_extract
 # subroutine to actually check the md5 values, if they match we move onto file manipulation routines
 sub compare_md5
 {
-    my ($oinkcode,$rule_file,$temp_path,$Hash) = @_;
+    my ($oinkcode,$rule_file,$temp_path,$Hash,$base_url) = @_;
 	#print "Checking the MD5....\n";
     if ($rule_digest =~ $md5 && !$Hash){
 	if ($Verbose)
@@ -183,9 +189,9 @@ sub compare_md5
 		if ($Verbose)
 		    { print "\tThe MD5 for $rule_file did not match the latest digest... so I am gonna fetch the latest rules file!\n"; }
 		if (!$Verbose) { print "\tNo Match\n\tDone\n"; }
-			rulefetch($oinkcode,$rule_file,$temp_path);
+			rulefetch($oinkcode,$rule_file,$temp_path,$base_url);
                     md5sum($rule_file,$temp_path);
-                    compare_md5 ($oinkcode,$rule_file,$temp_path,$Hash);
+                    compare_md5 ($oinkcode,$rule_file,$temp_path,$Hash,$base_url);
 		} 
 	else {
             if ($Verbose)
@@ -199,15 +205,22 @@ sub compare_md5
 ## time to grab the real 0xb33f
 sub rulefetch
 {
-    my ($oinkcode,$rule_file,$temp_path) = @_;
+    my ($oinkcode,$rule_file,$temp_path,$base_url) = @_;
     print "Rules tarball download....\n";
+	$base_url=slash(0,$base_url);
+	my ($getrules_rule);
 	if ($Verbose)
 	{ print "\tFetching rules file: $rule_file\n";
         if ($Hash) { print "But not verifying MD5\n"; }
          }
-    my $getrules_rule = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file,$temp_path.$rule_file);
-    if ($getrules_rule==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
-    die "\tError $getrules_rule when fetching http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file unless is_success($getrules_rule);
+    if ($base_url =~ /snort\.org\/pub/i){
+		$getrules_rule = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file,$temp_path.$rule_file);
+    }
+	else {
+		$getrules_rule = getstore($base_url."/".$rule_file,$temp_path.$rule_file);
+	}
+	if ($getrules_rule==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
+    die "\tError $getrules_rule when fetching ".$rule_file unless is_success($getrules_rule);
     if ($Verbose)
 	{ print ("\tstoring file at: $temp_path$rule_file\n\n"); }
 	if (!$Verbose) { "\tDone!\n"; }
@@ -233,22 +246,30 @@ sub md5sum
 #subroutine to fetch the latest md5 digest signature file from snort.org
 sub md5file
 {
-	my ($oinkcode,$rule_file,$temp_path) = @_;
+	my ($oinkcode,$rule_file,$temp_path,$base_url) = @_;
+	my ($getrules_md5,$md5);
+	$base_url=slash(0,$base_url);
 	print "Checking latest MD5....\n";
     if ($Verbose)
-	{ print "\tFetching md5sum for comparing from: http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file.".md5\n"; }
-	my $getrules_md5 = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file.".md5",$temp_path.$rule_file.".md5");
-    if ($getrules_md5==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
-    die "\tError $getrules_md5 when fetching http://www.snort.org/pub-bin/oinkmaster.cgi/<OINKCODE>/".$rule_file.".md5" unless is_success($getrules_md5);
+	{ print "\tFetching md5sum for comparing from: ".$base_url."/".$rule_file.".md5\n"; }
+	if ($base_url =~ /snort\.org\/pub/i){
+		$getrules_md5 = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file.".md5",$temp_path.$rule_file.".md5");
+    }
+	elsif ($base_url =~ /emergingthreats\.net\/rules/i){
+		$getrules_md5 = getstore($base_url."/md5sums/".$rule_file.".md5",$temp_path.$rule_file.".md5");
+	}
+	if ($getrules_md5==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
+    die "\tError $getrules_md5 when fetching ".$base_url."/".$rule_file.".md5" unless is_success($getrules_md5);
     #print ("storing file at: $path\n");
     my $rule_open = open (FILE,"$temp_path$rule_file.md5")
           or die $!;
     $md5 = <FILE>;
     chomp ($md5);
-	$md5 =~ /[0-9a-bA-B]{32}/;  ## Lets just grab the hash out of the string.. don't care about the rest!
-    if ($Verbose)
+	close (FILE);
+	$md5 =~ m/\w{32}/;  ## Lets just grab the hash out of the string.. don't care about the rest!
+	if ($Verbose)
 	    { print "\tmost recent rules file digest: $md5\n"; }
-    close (FILE);
+    
 }
 
 ## routine to compare files in new ruleset against what we have, outputs the new ones
@@ -287,7 +308,7 @@ sub compare_dirs
 sub diff_files
 {
     my ($file_one,$file_two) = @_;
-    if ((-T $file_one) && (-T $file_two)) {
+    if ((-T $file_one) && (-T $file_two) && ($file_one !~ /local\.rules/)) {
 		my %diffresults = ();
 		
 		open (FILEONE,$file_one);
@@ -325,7 +346,7 @@ sub copy_rules
     
 	foreach my $file (@files) {
             if ($Verbose && !$SID_conf) { diff_files("$temp_path"."tha_rules/rules/$file","$Output$file"); }
-	    if ( -f "$temp_path"."tha_rules/rules/$file") {
+	    if ( -f "$temp_path"."tha_rules/rules/$file" && $file !~ "local.rules") {
 	        copy("$temp_path"."tha_rules/rules/$file","$Output$file") || print "\tCopy failed with error: $!\n";
 	        if ($Verbose == 2) {
 	          print ("\tCopied $temp_path"."tha_rules/rules/$file to $Output$file\n");
@@ -517,7 +538,7 @@ sub sid_msg
 						$sidline="$sid || ";
 					}
 					# get the msg of the rule
-					if ($msg=~/msg:"(\w| |\-|\.|\+|\/|\$|\%|\^|\&|\*|\!|\[|\]|\~|\>|\<|\/|,|\#|\?|\$|\@|\=|\')+";/i) {
+					if ($msg=~/msg:"(\w| |\-|\.|\+|\/|\$|\%|\^|\&|\*|\!|\[|\]|\~|\>|\<|\/|,|\#|\?|\$|\@|\=|\'|\(|\))+";/i) {
 						$msg=$&;
 						$msg=~s/(msg:"|";)//ig;
 						$msg=trim($msg);
@@ -568,7 +589,7 @@ sub slash #test for trailing slash and add or remove if needed 1 for add 0 for r
 	if ($operation==0 && $string=~/\/$/ && $string ne ""){
 		$string=~s/\/$//;
 	}elsif ($operation==1 && $string!~/\/$/ && $string ne ""){
-		$string="$string/";
+		$string=$string."/";
 	}
 	return $string;	
 }
@@ -605,6 +626,7 @@ GetOptions ( "v+" => \$Verbose,
         "C=s" => \$Snort_config,
 		"o=s" => \$Output,
         "f=s" => \$rule_file,
+		"u=s" => \$base_url,
 		"help|?" => sub { Help() });
 
 # Dump our variables for verbose/debug output
@@ -615,6 +637,7 @@ if ($Verbose) {
     print "Command Line Variable Debug:\n";
     if ($Config_file) {print "\tConfig Path is: $Config_file\n";}
     if ($rule_file) {print "\tRule File is: $rule_file\n";}
+	if ($base_url) {print "\tBase URL is: $base_url\n";}
     if ($Output) {print "\tOutput Path is: $Output\n";}
     if ($Sorules) {print "\tSO Output Path is: $Sorules\n";}
     if ($Sostubs) {print "\tSO Stub Output Path is: $Sostubs\n";}
@@ -651,6 +674,11 @@ if ($Verbose)
 # Check to see if we have command line inputs, if so, they superseed any config file values!
 
 $pid_path = ($Config_info{'pid_path'});
+
+if (!$base_url) {
+	$base_url = ($Config_info{'base_url'});
+	if (!$base_url) {Help();}
+}
 
 if (!$Output) {
     $Output = ($Config_info{'rule_path'});
@@ -711,21 +739,21 @@ if ($oinkcode && $rule_file && -d $temp_path)
     if (!$NoDownload) {  #only process hup and disablesid changes
 		# fetch the latest md5 file
 		if (!$Hash) {
-			md5file($oinkcode,$rule_file,$temp_path);
+			md5file($oinkcode,$rule_file,$temp_path,$base_url);
 		}
 		#and now lets determine the md5 of the last saved rules file if it exists
 		if ( -f "$temp_path"."$rule_file" && !$Hash){
 			md5sum($rule_file,$temp_path);
 		}
 		else { # the file didn't exsist so lets get it
-			rulefetch($oinkcode,$rule_file,$temp_path);
+			rulefetch($oinkcode,$rule_file,$temp_path,$base_url);
 			if ( -f "$temp_path"."$rule_file" && !$Hash){
 				md5sum($rule_file,$temp_path);
 			}
 		}
 
 		# compare the online current md5 against against the md5 of the rules file on system
-		compare_md5($oinkcode,$rule_file,$temp_path,$Hash);
+		compare_md5($oinkcode,$rule_file,$temp_path,$Hash,$base_url);
     }
 	if ($NoDownload) {
 		rule_extract($oinkcode,$rule_file,$temp_path);
