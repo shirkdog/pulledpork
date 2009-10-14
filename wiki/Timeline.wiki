@@ -21,10 +21,11 @@ Release 0.2:
   * Compares new rules files with current rule sets
   * Automated retrieval of certain variables (Distro, Snort Version.. etc)
 
-Release 0.3: (I consider this more of a wishlist from the user community at this time)
-  * Capability to compile so_rules from source
+Release 0.2.5: (I consider this more of a wishlist from the user community at this time)
   * Option to use Emerging-Threats rules or specify a custom url
   * More automation!
+  * Bugfixes
+  * Speed / code cleanup
 
 Next Release...
-  * TBD by community needs / requests
+  * TBD by community needs / requests, one example is the capability to compile SO rules
