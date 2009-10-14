@@ -61,7 +61,7 @@ sub parse_config_file {
 }
 
 my ($Verbose,$Logging,$Hash,$ALogger,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs);
-my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$pid_path,$SigHup,$NoDownload,$data,$sid_msg_map,$base_url);
+my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$DISID_conf,$pid_path,$SigHup,$NoDownload,$data,$sid_msg_map,$base_url);
 $Verbose = 0;
 undef($Logging);
 undef($Hash);
@@ -78,6 +78,7 @@ print<<__EOT;
    Options:
    -c Where the pulledpork config file lives.
    -i Where the disablesid config file lives.
+   -b Where the dropsid config file lives.
    -o Where do you want me to put generic rules files?
    -f What snort rules tarball do you want to fetch 
       (i.e. snortrules-snapshot-2.8_s.tar.gz)
@@ -494,6 +495,104 @@ sub disablesid  #routine to disable the sids.. this is a rough approximation of 
 	print "\tDone\n";
 }
 
+sub dropsid  #routine to set certain SIDS to drop
+{
+	my ($DISID_conf,$Output,$Sostubs) = @_;
+	my (@sid_drop,$sidlist,$outlist,$solist,$sid_drop,$rule_line,$so_line);
+	my $sidcount = 0;
+	my $dircount = 0;
+	my $sidlines = 0;
+	my $txtsid = "";
+	my $sosid = "";
+	print "Setting your chosen SIDs to Drop....\n";
+	if (-f $DISID_conf){
+		if ($Verbose) { print ("\tProcessing dropsid configuration from $DISID_conf\n"); }
+		my $SIDDATA = open(DATA, "$DISID_conf"); #need to add error foo here
+		while (<DATA>) {
+			$sidlist=$_;
+			chomp($sidlist);
+			$sidlist=trim($sidlist);
+			if ( ($sidlist !~ /^#/) && ($sidlist ne "") && ($sidcount < 1) ){
+				@sid_drop=split(/,/,$sidlist);  #split up the sids that we want to drop
+				$sidcount++
+			} elsif (($sidlist !~ /^#/) && ($sidlist ne "")) {
+				push(@sid_drop,split(/,/,$sidlist));
+			} else {}
+		}
+		close (DATA);
+		if (-d $Sostubs) {
+			opendir(DIR,"$Sostubs"); ## Open the stubs directory
+			while (defined($solist=readdir DIR)){
+				open(DATA,"$Sostubs$solist");  #Open the shared object stubs
+				my @so_lines = <DATA>;
+				close(DATA);
+				$sidcount = 0;
+				foreach $so_line(@so_lines) {
+					$so_line=trim($so_line);
+					if ( ($so_line !~ /^#/) && ($so_line ne"") ){  #don't want disabled lines or blank ones!
+						foreach $sid_drop(@sid_drop) {
+							if ($sid_drop=~/^3:/) {
+								$sosid=$sid_drop;
+								$sosid=~s/^3://;
+								if (($sosid ne "") && ($so_line=~/sid:$sosid;/i)) {
+									$sidcount++;
+									$so_line=~s/^alert/drop/i;
+									$so_line = "$so_line ## DROPPED by pulledpork per directive in $DISID_conf";
+									if ($Verbose) { print "\tDropped in $Sostubs$solist -> $so_line\n"; }
+								}
+							}
+						}
+						$so_line = "$so_line\n";
+					}
+				}
+				if ($sidcount > 0) {
+					open(WRITE,">$Sostubs$solist");
+					print WRITE @so_lines;
+					close(WRITE);
+					if (!$Verbose) { print "\tSet $sidcount rules to Drop in $Sostubs$solist\n"; }
+				}
+			}
+		}
+		close(DIR);
+		opendir(DIR,"$Output"); #need to add error foo here
+		while (defined($outlist=readdir DIR)){
+			open(DATA,"$Output$outlist");  #open the file that we are gonna sed to drop the sid, this is GID1's only
+			my @rule_lines = <DATA>;
+			close (DATA);
+			$dircount = 0;
+			foreach $rule_line(@rule_lines) {	
+				$rule_line=trim($rule_line);
+				if ( ($rule_line !~ /^#/) && ($rule_line ne"") ){  #don't want disabled lines or blank ones!
+					foreach $sid_drop(@sid_drop) {
+						#print "\t$sid_drop\n";
+						if ($sid_drop=~/^1:/) { 
+							$txtsid=$sid_drop;
+							$txtsid=~s/^1://;
+						#print "\tsid:$txtsid;\n";
+							if (($txtsid ne "") && ($rule_line=~/sid:$txtsid;/i)) {
+								#$sidcount++;
+								$dircount++;
+								$rule_line=~s/^alert/drop/i;
+								$rule_line =  "$rule_line ## DROPPED BY PULLEDPORK per directive in $DISID_conf";
+								if ($Verbose) { print "\Dropped in $Output$outlist -> $rule_line\n"; }
+							}
+						}
+					}
+				$rule_line = "$rule_line\n";
+				}
+			}
+			if ($dircount > 0) {
+				open(WRITE,">$Output$outlist");
+				print WRITE @rule_lines;
+				close (WRITE);
+				if (!$Verbose) { print "\tSet $dircount rules to Drop in $Output$outlist\n"; }
+			}
+		}
+		close (DIR);
+	}
+	print "\tDone\n";
+}
+
 sub sig_hup
 {
 	my ($pidlist) = @_;
@@ -623,6 +722,7 @@ GetOptions ( "v+" => \$Verbose,
 		"D=s" => \$Distro,
 		"c=s" => \$Config_file,
 		"i=s" => \$SID_conf,
+		"b=s" => \$DISID_conf,
         "C=s" => \$Snort_config,
 		"o=s" => \$Output,
         "f=s" => \$rule_file,
@@ -647,6 +747,7 @@ if ($Verbose) {
     if ($Tar_path) {print "\tTar Path is: $Tar_path\n";}
     if ($Snort_config) {print "\tSnort Config File: $Snort_config\n";}
 	if ($SID_conf) {print "\tPath to disablesid file: $SID_conf\n";}
+	if ($DISID_conf) {print "\tPath to dropsid file: $DISID_conf\n";}
     if ($Distro) {print "\tDistro Def is: $Distro\n";}
     if ($Verbose) {print "\tVerbose Flag is Set\n";}
     if ($Verbose == 2) {print "\tExtra Verbose Flag is Set\n";}
@@ -772,6 +873,9 @@ if ($temp_path) {
 }
 if ($SID_conf && -d $Output) {
 	disablesid($SID_conf,$Output,$Sostubs)
+}
+if ($DISID_conf && -d $Output) {
+	dropsid($DISID_conf,$Output,$Sostubs)
 }
 if ($sid_msg_map && -d $Output) { 
 	print "Generating sid-msg.map...\n";
