@@ -28,12 +28,12 @@ use Digest::MD5;
 use File::Path;
 use Getopt::Long qw(:config no_ignore_case bundling);
 #use Archive::Tar;  # I dont' need this just yet
-use POSIX qw(:errno_h);  ## For Addind signal handling
+use POSIX qw(:errno_h);  
 
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.2.5";
+my $VERSION = "Pulled_Pork v0.2.6";
 
 # routine grab our config from the defined config file
 
@@ -177,7 +177,7 @@ sub rule_extract
 # subroutine to actually check the md5 values, if they match we move onto file manipulation routines
 sub compare_md5
 {
-    my ($oinkcode,$rule_file,$temp_path,$Hash,$base_url) = @_;
+    my ($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest) = @_;
 	#print "Checking the MD5....\n";
     if ($rule_digest =~ $md5 && !$Hash){
 	if ($Verbose)
@@ -191,8 +191,8 @@ sub compare_md5
 		    { print "\tThe MD5 for $rule_file did not match the latest digest... so I am gonna fetch the latest rules file!\n"; }
 		if (!$Verbose) { print "\tNo Match\n\tDone\n"; }
 			rulefetch($oinkcode,$rule_file,$temp_path,$base_url);
-                    md5sum($rule_file,$temp_path);
-                    compare_md5 ($oinkcode,$rule_file,$temp_path,$Hash,$base_url);
+                    $rule_digest = md5sum($rule_file,$temp_path);
+                    compare_md5 ($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest);
 		} 
 	else {
             if ($Verbose)
@@ -242,6 +242,7 @@ sub md5sum
     }
     if ($Verbose)
 	{ print "\tcurrent local rules file  digest: $rule_digest\n"; }
+	return $rule_digest;
 }
 
 #subroutine to fetch the latest md5 digest signature file from snort.org
@@ -270,7 +271,7 @@ sub md5file
 	$md5 =~ m/\w{32}/;  ## Lets just grab the hash out of the string.. don't care about the rest!
 	if ($Verbose)
 	    { print "\tmost recent rules file digest: $md5\n"; }
-    
+    return $md5;
 }
 
 ## routine to compare files in new ruleset against what we have, outputs the new ones
@@ -843,21 +844,21 @@ if ($oinkcode && $rule_file && -d $temp_path)
     if (!$NoDownload) {  #only process hup and disablesid changes
 		# fetch the latest md5 file
 		if (!$Hash) {
-			md5file($oinkcode,$rule_file,$temp_path,$base_url);
+			$md5 = md5file($oinkcode,$rule_file,$temp_path,$base_url);
 		}
 		#and now lets determine the md5 of the last saved rules file if it exists
 		if ( -f "$temp_path"."$rule_file" && !$Hash){
-			md5sum($rule_file,$temp_path);
+			$rule_digest = md5sum($rule_file,$temp_path);
 		}
 		else { # the file didn't exsist so lets get it
 			rulefetch($oinkcode,$rule_file,$temp_path,$base_url);
 			if ( -f "$temp_path"."$rule_file" && !$Hash){
-				md5sum($rule_file,$temp_path);
+				$rule_digest = md5sum($rule_file,$temp_path);
 			}
 		}
 
 		# compare the online current md5 against against the md5 of the rules file on system
-		compare_md5($oinkcode,$rule_file,$temp_path,$Hash,$base_url);
+		compare_md5($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest);
     }
 	if ($NoDownload) {
 		rule_extract($oinkcode,$rule_file,$temp_path);
