@@ -833,6 +833,9 @@ if (!$oinkcode) {
 $temp_path = ($Config_info{'temp_path'});
 if (!$temp_path) {Help();}
 $temp_path=slash(1,$temp_path);
+if (! -d $temp_path) { print "$0: Temporary file path $temp_path does not exist.\n";
+	exit(1);
+}
 
 #let's fetch the most recent md5 file
 if ($oinkcode && $rule_file && -d $temp_path)
