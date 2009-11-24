@@ -33,7 +33,7 @@ use POSIX qw(:errno_h);
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.2.6";
+my $VERSION = "Pulled_Pork v0.3.0 RC1";
 
 # routine grab our config from the defined config file
 
@@ -60,7 +60,7 @@ sub parse_config_file {
 
 }
 
-my ($Verbose,$Logging,$Hash,$ALogger,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs);
+my ($Verbose,$Logging,$Hash,$ALogger,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs,$sid_changelog);
 my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$DISID_conf,$pid_path,$SigHup,$NoDownload,$data,$sid_msg_map,$base_url);
 $Verbose = 0;
 undef($Logging);
@@ -74,12 +74,14 @@ print<<__EOT;
   Usage: $0 [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
+   -h <changelog path>
   
    Options:
    -c Where the pulledpork config file lives.
    -i Where the disablesid config file lives.
    -b Where the dropsid config file lives.
    -o Where do you want me to put generic rules files?
+   -h path to the sid_changelog if you want to keep one?
    -f What snort rules tarball do you want to fetch 
       (i.e. snortrules-snapshot-2.8_s.tar.gz)
    -u Where do you want me to pull the rules tarball from 
@@ -575,7 +577,7 @@ sub dropsid  #routine to set certain SIDS to drop
 								$dircount++;
 								$rule_line=~s/^alert/drop/i;
 								$rule_line =  "$rule_line ## DROPPED BY PULLEDPORK per directive in $DISID_conf";
-								if ($Verbose) { print "\Dropped in $Output$outlist -> $rule_line\n"; }
+								if ($Verbose) { print "\tDropped in $Output$outlist -> $rule_line\n"; }
 							}
 						}
 					}
@@ -621,12 +623,33 @@ sub sid_msg
 		opendir (DIR,"$dir");
 		while (defined($list=readdir DIR)){
 			open (DATA,"$dir$list");
-			my @sid_lines = <DATA>;
+			my @sid_multi = <DATA>;
 			close (DATA);
-
+			my (@sid_lines,$data_ins,$trk);
+			## Here we handle multiline rules, even though there are none in any official rule releases!
+			#my @sid_multi = @sid_lines;
+			foreach $data(@sid_multi) {
+				$data=trim($data);
+				if (($data!~/^#/) && ($data ne "")){ 
+					if ($data =~ /$\\/) {
+						$data =~ s/$\\//;
+						$data_ins="$data_ins $data";
+						$trk=1
+					}
+					elsif ($data !~ /$\\/ && $trk == 1) {
+						$data_ins="$data_ins $data";
+						push(@sid_lines,$data_ins);
+						$trk=0;
+					}else {
+						push(@sid_lines,$data);
+						$trk=0;
+					}
+				}
+			}
 			foreach $data(@sid_lines){
 				$data=trim($data);
 				if (($data!~/^#/) && ($data ne "")){ #We don't want blanklines or commented lines
+					
 					$sid=$data;
 					$msg=$data;
 					$ref=$data;
@@ -671,6 +694,13 @@ sub sid_msg
 		}
 		return @sids;
 	}
+}
+
+sub sid_diff {
+	my (@sidone,@sidtwo)=@_;
+	my %sidone = map {$_,1} @sidone;
+	my @siddiff = grep {!$sidone {$_}} @sidtwo;
+	return @siddiff;	
 }	
 
 sub trim  #sub to remove whitespace before and after a string
@@ -712,7 +742,7 @@ GetOptions ( "v+" => \$Verbose,
         "T!" => \$Textonly,
 		"H!" => \$SigHup,
 		"n!" => \$NoDownload,
-		#"h!" => sub { Help() },
+		"h=s" => \$sid_changelog,
         "O=s" => \$oinkcode,
 		"s=s" => \$Sorules,
         "t=s" => \$Sostubs,
@@ -817,6 +847,9 @@ if (!$Tar_path) {
 if (!$sid_msg_map){
 	$sid_msg_map = ($Config_info{'sid_msg'});
 }
+if (!$sid_changelog){
+	$sid_changelog = ($Config_info{'sid_changelog'});
+}
 # Define the snort rule file that we want
 if (!$rule_file) {
     $rule_file = $Config_info{'rule_file'};
@@ -886,6 +919,28 @@ if ($sid_msg_map && -d $Output) {
 	my @sidlist=sid_msg($Output);
 	if (-d $Sostubs && !$Textonly) {
 		push (@sidlist,sid_msg($Sostubs));
+	}
+	if (-f $sid_msg_map && $sid_changelog) {
+		print "\tGenerating SID changelog at $sid_changelog\n";
+		my $time = gmtime(time);
+		open(READ,"$sid_msg_map");
+		my @oldsids=<READ>;
+		close(READ);
+		my @sidchange=sid_diff(@oldsids,@sidlist);
+		if ($Verbose) {
+			foreach $data(@sidchange){
+				print "\t$data\n";
+			}
+		}
+		if (-f $sid_changelog) {open(WRITE,">>$sid_changelog");}
+		else {
+			open(WRITE,">$sid_changelog");
+			print WRITE "-=BEGIN PULLEDPORK SID CHANGELOG Generated $time GMT=-\n\n\n";
+		}
+		print WRITE "\n-=Begin Changes Logged for $time GMT=-\n";
+		print WRITE @sidchange;
+		print WRITE "\n-=End Changes Logged for $time GMT=-\n";
+		close(WRITE);
 	}
 	open(WRITE,">$sid_msg_map");
 	print WRITE @sidlist;
