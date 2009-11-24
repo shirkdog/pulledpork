@@ -932,14 +932,18 @@ if ($sid_msg_map && -d $Output) {
 				print "\t$data\n";
 			}
 		}
+		my $newsid=0;
 		if (-f $sid_changelog) {open(WRITE,">>$sid_changelog");}
 		else {
 			open(WRITE,">$sid_changelog");
-			print WRITE "-=BEGIN PULLEDPORK SID CHANGELOG Generated $time GMT=-\n\n\n";
+			print WRITE "-=BEGIN PULLEDPORK SID CHANGELOG, Tracking started on $time GMT=-\n\n\n";
+			$newsid=1;
 		}
-		print WRITE "\n-=Begin Changes Logged for $time GMT=-\n";
-		print WRITE @sidchange;
-		print WRITE "\n-=End Changes Logged for $time GMT=-\n";
+		if ($newsid=0) {
+			print WRITE "\n-=Begin Changes Logged for $time GMT=-\n";
+			print WRITE @sidchange;
+			print WRITE "\n-=End Changes Logged for $time GMT=-\n";
+		}
 		close(WRITE);
 	}
 	open(WRITE,">$sid_msg_map");
