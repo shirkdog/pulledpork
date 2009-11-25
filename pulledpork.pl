@@ -939,7 +939,7 @@ if ($sid_msg_map && -d $Output) {
 			print WRITE "-=BEGIN PULLEDPORK SID CHANGELOG, Tracking started on $time GMT=-\n\n\n";
 			$newsid=1;
 		}
-		if ($newsid=0) {
+		if ($newsid==0) {
 			print WRITE "\n-=Begin Changes Logged for $time GMT=-\n";
 			print WRITE @sidchange;
 			print WRITE "\n-=End Changes Logged for $time GMT=-\n";
