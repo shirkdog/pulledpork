@@ -626,18 +626,19 @@ sub sid_msg
 			my @sid_multi = <DATA>;
 			close (DATA);
 			my (@sid_lines,$data_ins,$trk);
+			$trk=0;
 			## Here we handle multiline rules, even though there are none in any official rule releases!
 			#my @sid_multi = @sid_lines;
 			foreach $data(@sid_multi) {
 				$data=trim($data);
 				if (($data!~/^#/) && ($data ne "")){ 
-					if ($data =~ /$\\/) {
-						$data =~ s/$\\//;
-						$data_ins="$data_ins $data";
-						$trk=1
+					if ($data =~ /\\$/) {
+						$data =~ s/\\$//;
+						$data_ins=$data_ins . $data;
+						$trk=1;
 					}
-					elsif ($data !~ /$\\/ && $trk == 1) {
-						$data_ins="$data_ins $data";
+					elsif ($data !~ /\\$/ && $trk == 1) {
+						$data_ins=$data_ins . $data;
 						push(@sid_lines,$data_ins);
 						$trk=0;
 					}else {
@@ -697,9 +698,9 @@ sub sid_msg
 }
 
 sub sid_diff {
-	my (@sidone,@sidtwo)=@_;
-	my %sidone = map {$_,1} @sidone;
-	my @siddiff = grep {!$sidone {$_}} @sidtwo;
+	my ($sidone,$sidtwo)=@_;
+	my %sidkey = map {$_,1} @{$sidone};
+	my @siddiff = grep {!$sidkey {$_}} @{$sidtwo};
 	return @siddiff;	
 }	
 
@@ -926,10 +927,10 @@ if ($sid_msg_map && -d $Output) {
 		open(READ,"$sid_msg_map");
 		my @oldsids=<READ>;
 		close(READ);
-		my @sidchange=sid_diff(@oldsids,@sidlist);
+		my @sidchange=sid_diff(\@oldsids,\@sidlist);
 		if ($Verbose) {
 			foreach $data(@sidchange){
-				print "\t$data\n";
+				print "\tSID CHANGE $data\n";
 			}
 		}
 		my $newsid=0;
