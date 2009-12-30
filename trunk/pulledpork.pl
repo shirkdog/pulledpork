@@ -62,6 +62,8 @@ sub parse_config_file {
 
 my ($Verbose,$Logging,$Hash,$ALogger,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs,$sid_changelog);
 my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$DISID_conf,$pid_path,$SigHup,$NoDownload,$data,$sid_msg_map,$base_url);
+my ($ips_policy);
+
 $Verbose = 0;
 undef($Logging);
 undef($Hash);
@@ -87,6 +89,7 @@ print<<__EOT;
    -u Where do you want me to pull the rules tarball from 
       (ET, Snort.org, see pulledpork config base_url option for value ideas)
    -O What is your Oinkcode?
+   -I Specify the base policy ( -I security,connectivity,or balanced, see README.POLICY)
    -T Process text based rules files only, i.e. DO NOT process so_rules
    -m where do you want me to put the sid-msg.map file?
    -s Where do you want me to put the so_rules?
@@ -400,18 +403,28 @@ sub gen_stubs
             unless (-f $Snort_config) { print ("The file that you specified: $Snort_config does not exist! Please verify your configuration.\n"); }
         }
     }
-}   
+}  
 
-sub disablesid  #routine to disable the sids.. this is a rough approximation of what it will be, still needs some work, multilin handling etc
+sub vrt_policy {
+	my ($ids_policy,$rule) = @_;
+	if ($rule=~/policy\s$ids_policy/i || $rule=~/flowbits:set,/i){
+		$rule=~s/^#\s//;
+	}else {
+		$rule="# $rule ## Disabled by PulledPork per VRT metadata for $ids_policy policy";
+	}
+	return $rule;
+} 
+
+sub disablesid  #routine to disable the user specified SIDS, we are also accounting for policy manipulation here
 {
-	my ($SID_conf,$Output,$Sostubs) = @_;
+	my ($SID_conf,$Output,$Sostubs,$ids_policy) = @_;
 	my (@sid_disable,$sidlist,$outlist,$solist,$sid_disable,$rule_line,$so_line);
 	my $sidcount = 0;
 	my $dircount = 0;
 	my $sidlines = 0;
 	my $txtsid = "";
 	my $sosid = "";
-	print "Disabling your chosen SID's....\n";
+	print "Modifying specified SID's....\n";
 	if (-f $SID_conf){
 		if ($Verbose) { print ("\tProcessing disablesid configuration from $SID_conf\n"); }
 		my $SIDDATA = open(DATA, "$SID_conf"); #need to add error foo here
@@ -436,6 +449,9 @@ sub disablesid  #routine to disable the sids.. this is a rough approximation of 
 				$sidcount = 0;
 				foreach $so_line(@so_lines) {
 					$so_line=trim($so_line);
+					if ($ips_policy ne "Disabled") { 
+						$so_line = vrt_policy($ids_policy,$so_line);
+					}
 					if ( ($so_line !~ /^#/) && ($so_line ne"") ){  #don't want already disabled lines or blank ones!
 						foreach $sid_disable(@sid_disable) {
 							if ($sid_disable=~/^3:/) {
@@ -468,6 +484,9 @@ sub disablesid  #routine to disable the sids.. this is a rough approximation of 
 			$dircount = 0;
 			foreach $rule_line(@rule_lines) {	
 				$rule_line=trim($rule_line);
+				if ($ips_policy ne "Disabled") { 
+					$rule_line = vrt_policy($ids_policy,$rule_line);
+				}
 				if ( ($rule_line !~ /^#/) && ($rule_line ne"") ){  #don't want already disabled lines or blank ones!
 					foreach $sid_disable(@sid_disable) {
 						#print "\t$sid_disable\n";
@@ -754,6 +773,7 @@ GetOptions ( "v+" => \$Verbose,
 		"D=s" => \$Distro,
 		"c=s" => \$Config_file,
 		"i=s" => \$SID_conf,
+		"I=s" => \$ips_policy,
 		"b=s" => \$DISID_conf,
         "C=s" => \$Snort_config,
 		"o=s" => \$Output,
@@ -774,6 +794,8 @@ if ($Verbose) {
     if ($Sorules) {print "\tSO Output Path is: $Sorules\n";}
     if ($Sostubs) {print "\tSO Stub Output Path is: $Sostubs\n";}
 	if ($sid_msg_map) {print "\tsid-msg.map Output Path is: $sid_msg_map\n";}
+	if ($sid_changelog) {print "\tsid changes will be logged to: $sid_changelog\n";}
+	if ($ips_policy) {print "\t$ips_policy policy specified\n";}
     if ($Snort) {print "\tSnort Version is: $Snort\n";}
     if ($Snort_path) {print "\tSnort Path is: $Snort_path\n";}
     if ($Tar_path) {print "\tTar Path is: $Tar_path\n";}
@@ -862,6 +884,9 @@ if (!$oinkcode) {
     $oinkcode = $Config_info{'oinkcode'};
     if (!$oinkcode) {Help();}
 }
+if (!$ips_policy){
+	$ips_policy="Disabled";
+}
 
 # We need a temp path to work with the files while we do magics on them.. make sure you have plenty 
 # of space in this path.. ~200mb is a good starting point
@@ -910,7 +935,7 @@ if ($temp_path) {
     temp_cleanup();
 }
 if ($SID_conf && -d $Output) {
-	disablesid($SID_conf,$Output,$Sostubs)
+	disablesid($SID_conf,$Output,$Sostubs,$ips_policy)
 }
 if ($DISID_conf && -d $Output) {
 	dropsid($DISID_conf,$Output,$Sostubs)
