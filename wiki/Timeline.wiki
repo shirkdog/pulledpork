@@ -28,6 +28,7 @@ Release 0.2.5: (I consider this more of a wishlist from the user community at th
   * Speed / code cleanup
 
 Release 0.3.0:
+  * Support metadata based VRT recommended rulesets
   * Maintain an optional rule changelog
   * Support for setting rules to Drop
   * Bugfix for certain MD5 related issues
