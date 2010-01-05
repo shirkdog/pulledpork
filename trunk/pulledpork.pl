@@ -3,7 +3,7 @@
 ## pulledpork v(whatever it says below!)
 ## cummingsj@gmail.com
 
-# Copyright (C) 2009 JJ Cummings
+# Copyright (C) 2009-2010 JJ Cummings
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -129,7 +129,7 @@ print<<__EOT;
      `----,\\    )
       `--==\\\\  /    $VERSION
        `--==\\\\/
-     .-~~~~-.Y|\\\\_  Copyright (C) 2009 JJ Cummings
+     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2010 JJ Cummings
   \@_/        /  66\\_  cummingsj\@gmail.com
     |    \\   \\   _(\")
      \\   /-| ||'--'  Rules give me wings!
@@ -414,6 +414,29 @@ sub vrt_policy {
 	}
 	return $rule;
 } 
+
+sub rule_mod {
+	my ($Output,$ids_policy) = @_;
+	
+	if (-d $Output) {
+		opendir (DIR,"$Output");
+		while (defined(my $data = readdir DIR)) {
+			open (DATA, "$Output$data");
+			my @rules = <DATA>;
+			close (DATA);
+			foreach my $rule(@rules){
+				if ($ips_policy ne "Disabled") {
+					$rule = trim($rule);
+					$rule = vrt_policy($ids_policy,$rule);
+				}
+			}
+		}
+		open(WRITE,">$Output$data");
+		print WRITE @rules;
+		close(WRITE);
+	}
+		
+}
 
 sub disablesid  #routine to disable the user specified SIDS, we are also accounting for policy manipulation here
 {
@@ -936,6 +959,11 @@ if ($temp_path) {
 }
 if ($SID_conf && -d $Output) {
 	disablesid($SID_conf,$Output,$Sostubs,$ips_policy)
+}elsif (-d $Output && $ips_policy) {
+	rule_mod($Output,$ips_policy);
+	if (-d $Sostubs) {
+		rule_mod($Sostubs, $ips_policy);
+	}
 }
 if ($DISID_conf && -d $Output) {
 	dropsid($DISID_conf,$Output,$Sostubs)
