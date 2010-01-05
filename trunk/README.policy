@@ -1,0 +1,30 @@
+README.policy
+
+This file is a work in progress, and since it's late at night I'm not 
+going to fill in a TON of information just yet.  Please submit feedback 
+to the mailing list if you have additions or suggestions for this section.
+
+Mailing list is HERE: 
+
+The quick and dirty of it is that there are three basic pre-defined rule-
+sets or "policies" if you will. 
+
+* Security - This ruleset was developed erring on the side of security, 
+specifically more rules that may produce false positives are enabled but
+it is also more likely that you will detect events or incidents using this
+ruleset.
+
+* Balanced - This ruleset was developed to have a good balance between 
+false positive and detection capabilities / rate.
+
+* Connectivity - This ruleset was developed as the opposite of the Security
+specific policy, as such it will have a lower detection rate but also a 
+lower false positive rate.
+
+To tell pulledpork that you want to use one of the aforementioned base VRT
+recommended rulesets, simply specify -I <policy> at runtime.
+
+i.e. ./pulledpork.pl -c /path/to/pulledpork.conf -I security
+
+The above will automatically enable all rules that the VRT has deemed 
+should fit into a more security based ruleset.
