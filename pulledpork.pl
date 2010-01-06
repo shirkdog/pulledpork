@@ -429,6 +429,7 @@ sub rule_mod {
 					if ($ips_policy ne "Disabled") {
 						$rule = trim($rule);
 						$rule = vrt_policy($ids_policy,$rule);
+						$rule = "$rule\n";
 					}
 				}
 				open(WRITE,">$Path$file");
