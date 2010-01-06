@@ -430,8 +430,6 @@ sub rule_mod {
 					$rule = vrt_policy($ids_policy,$rule);
 				}
 			}
-		}
-		if (-f $Path$file){
 			open(WRITE,">$Path$file");
 			print WRITE @rulefiles;
 			close(WRITE);
