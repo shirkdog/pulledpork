@@ -417,10 +417,10 @@ sub vrt_policy {
 
 sub rule_mod {
 	my ($Path,$ids_policy) = @_;
-	my (@rulefiles);
+	my (@rulefiles,$file);
 	if (-d $Path) {
 		opendir (DIR,"$Path");
-		while (defined(my $file = readdir DIR)) {
+		while (defined($file = readdir DIR)) {
 			open (DATA, "$Path$file");
 			my @rulefiles = <DATA>;
 			close (DATA);

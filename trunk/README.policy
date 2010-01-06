@@ -1,25 +1,28 @@
-README.policy
-
-This file is a work in progress, and since it's late at night I'm not 
-going to fill in a TON of information just yet.  Please submit feedback 
-to the mailing list if you have additions or suggestions for this section.
+README.policy v 1.0 JJC
 
 Mailing list is HERE: http://groups.google.com/group/pulledpork-users
 
 The quick and dirty of it is that there are three basic pre-defined rule-
-sets or "policies" if you will. 
+sets. 
 
-* Security - This ruleset was developed erring on the side of security, 
-specifically more rules that may produce false positives are enabled but
-it is also more likely that you will detect events or incidents using this
-ruleset.
+1.Connectivity - You run a lot of real time applications (VOIP, financial
+transactions, etc), and don't want to run any rules that could affect
+the current performance of your sensor.  The rules in this category
+make snort happy, additionally this category focuses on the high
+profile most likely to affect the largest number of people type of
+vulnerabilities.
 
-* Balanced - This ruleset was developed to have a good balance between 
-false positive and detection capabilities / rate.
+2. Balanced - You are normal, you run normal stuff and you want normal
+security protections.  This is the best policy to start from if you are 
+new, old, or just plain average.  If you don't have any special
+requirements for super high speeds or super secure networks start here.
 
-* Connectivity - This ruleset was developed as the opposite of the Security
-specific policy, as such it will have a lower detection rate but also a 
-lower false positive rate.
+3. Security - You don't care about dropping your bosses email, everything
+in your environment is tightly regulated and you don't tolerate people 
+stepping outside of your security policy.  This policy hates on IM, P2P,
+vulnerabilities, malware, web apps that cause productivity loss, remote
+access, and just about anything not related to getting work done.  
+If you run your network with an iron fist start here.
 
 To tell pulledpork that you want to use one of the aforementioned base VRT
 recommended rulesets, simply specify -I <policy> at runtime.
@@ -28,3 +31,5 @@ i.e. ./pulledpork.pl -c /path/to/pulledpork.conf -I security
 
 The above will automatically enable all rules that the VRT has deemed 
 should fit into a more security based ruleset.
+
+Shout to Xram for his spectacular writing skills ;-)
