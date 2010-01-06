@@ -431,9 +431,11 @@ sub rule_mod {
 				}
 			}
 		}
-		open(WRITE,">$Path$file");
-		print WRITE @rulefiles;
-		close(WRITE);
+		if (-f $Path$file){
+			open(WRITE,">$Path$file");
+			print WRITE @rulefiles;
+			close(WRITE);
+		}
 	}
 	close(DIR);
 		
