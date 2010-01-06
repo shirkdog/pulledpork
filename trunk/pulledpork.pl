@@ -417,22 +417,24 @@ sub vrt_policy {
 
 sub rule_mod {
 	my ($Path,$ids_policy) = @_;
-	my (@rulefiles,$file);
+	my (@rulefiles,$file,$rule);
 	if (-d $Path) {
 		opendir (DIR,"$Path");
 		while (defined($file = readdir DIR)) {
-			open (DATA, "$Path$file");
-			my @rulefiles = <DATA>;
-			close (DATA);
-			foreach my $rule(@rulefiles){
-				if ($ips_policy ne "Disabled") {
-					$rule = trim($rule);
-					$rule = vrt_policy($ids_policy,$rule);
+			if (-f "$Path$file") {
+				open (DATA, "$Path$file");
+				my @rulefiles = <DATA>;
+				close (DATA);
+				foreach $rule(@rulefiles){
+					if ($ips_policy ne "Disabled") {
+						$rule = trim($rule);
+						$rule = vrt_policy($ids_policy,$rule);
+					}
 				}
+				open(WRITE,">$Path$file");
+				print WRITE @rulefiles;
+				close(WRITE);
 			}
-			open(WRITE,">$Path$file");
-			print WRITE @rulefiles;
-			close(WRITE);
 		}
 	}
 	close(DIR);
