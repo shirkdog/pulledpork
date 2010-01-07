@@ -33,7 +33,7 @@ use POSIX qw(:errno_h);
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.3.0 RC1";
+my $VERSION = "Pulled_Pork v0.3.1 RC1";
 
 # routine grab our config from the defined config file
 
@@ -422,7 +422,7 @@ sub rule_mod {
 		opendir (DIR,"$Path");
 		while (defined($file = readdir DIR)) {
 			if (-f "$Path$file") {
-				open (DATA, "$Path$file");
+				open (DATA, "$Path$file") || print "\tWARN, unable to open $Path$file\n";
 				my @rulefiles = <DATA>;
 				close (DATA);
 				foreach $rule(@rulefiles){
@@ -432,7 +432,7 @@ sub rule_mod {
 						$rule = "$rule\n";
 					}
 				}
-				open(WRITE,">$Path$file");
+				open(WRITE,">$Path$file" || print "\tWARN, unable to open $Path$file for writing\n");
 				print WRITE @rulefiles;
 				close(WRITE);
 			}
