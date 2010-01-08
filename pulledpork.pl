@@ -409,7 +409,7 @@ sub vrt_policy {
 	my ($ids_policy,$rule) = @_;
 	if ($rule=~/policy\s$ids_policy/i || $rule=~/flowbits:set,/i){
 		$rule=~s/^#\s//;
-	}else {
+	}elsif ($rule!~/^#/ {
 		$rule="# $rule ## Disabled by PulledPork per VRT metadata for $ids_policy policy";
 	}
 	return $rule;
