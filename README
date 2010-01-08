@@ -2,10 +2,10 @@ Thank you for choosing to use pulled_pork!  This file provides some basic guidan
 
 -=Command Usage Reference=-
 
-  Usage: ./pulledpork.pl [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
+  Usage: pulledpork [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
-   -h <changelog path>
+   -h <changelog path> -I (security|connectivity|balanced)
   
    Options:
    -c Where the pulledpork config file lives.
@@ -18,6 +18,7 @@ Thank you for choosing to use pulled_pork!  This file provides some basic guidan
    -u Where do you want me to pull the rules tarball from 
       (ET, Snort.org, see pulledpork config base_url option for value ideas)
    -O What is your Oinkcode?
+   -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
    -T Process text based rules files only, i.e. DO NOT process so_rules
    -m where do you want me to put the sid-msg.map file?
    -s Where do you want me to put the so_rules?
@@ -73,6 +74,11 @@ and writing change info to sid_changes.log!
 
 ./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -m /usr/local/etc/snort/sid-msg.map \
 -h /var/log/sid_changes.log -H
+
+Next example, same as the previous but specifying that we want to run the default "security" based ruleset.
+
+./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -m /usr/local/etc/snort/sid-msg.map \
+-h /var/log/sid_changes.log -I security -H
 
 I'll probably add more info later, the --help or --? will display all runtime options and the pulledpork.conf is
 pretty well annotated... so if you can't figure it out... try harder!  And once you figure it out, please feel 
