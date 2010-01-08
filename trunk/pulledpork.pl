@@ -76,7 +76,7 @@ print<<__EOT;
   Usage: $0 [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
-   -h <changelog path>
+   -h <changelog path> -I (security|connectivity|balanced)
   
    Options:
    -c Where the pulledpork config file lives.
