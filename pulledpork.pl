@@ -501,11 +501,12 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 					print WRITE @so_lines;
 					close(WRITE);
 					if (!$Verbose) { print "\tDisabled $sidcount rules in $Output$solist\n"; }
+					print "\tDone\n";
 				}
 			}
 		}
 		close(DIR);
-		if (-f $Output && $opts == 1)
+		if (-f $Output && $opts == 1){
 		print "Modifying specified SIDs....\n";
 		if ($Verbose) { print ("\tProcessing disablesid configuration from $SID_conf\n"); }
 		opendir(DIR,"$Output"); #need to add error foo here
@@ -542,11 +543,13 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 				print WRITE @rule_lines;
 				close (WRITE);
 				if (!$Verbose) { print "\tDisabled $dircount rules in $Output$outlist\n"; }
+				print "\tDone\n";
 			}
 		}
+	}
 		close (DIR);
 	}
-	print "\tDone\n";
+	#print "\tDone\n";
 }
 
 sub dropsid  #routine to set certain SIDS to drop
@@ -968,7 +971,7 @@ if ($temp_path) {
 }
 if ($SID_conf && -d $Output) {
 	disablesid($SID_conf,$Output,1,$ips_policy);
-}elsif (-d $Output && $ips_policy) {
+}elsif (-d $Output && $ips_policy ne "Disabled") {
 	rule_mod($Output,$ips_policy);
 }
 if ($SID_conf && -d $Sostubs) {
