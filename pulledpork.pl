@@ -33,7 +33,7 @@ use POSIX qw(:errno_h);
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.3.1 RC1";
+my $VERSION = "Pulled_Pork v0.3.4 RC1";
 
 # routine grab our config from the defined config file
 
@@ -89,7 +89,7 @@ print<<__EOT;
    -u Where do you want me to pull the rules tarball from 
       (ET, Snort.org, see pulledpork config base_url option for value ideas)
    -O What is your Oinkcode?
-   -I Specify the base policy ( -I security,connectivity,or balanced, see README.POLICY)
+   -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
    -T Process text based rules files only, i.e. DO NOT process so_rules
    -m where do you want me to put the sid-msg.map file?
    -s Where do you want me to put the so_rules?
