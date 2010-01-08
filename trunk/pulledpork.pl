@@ -409,7 +409,7 @@ sub vrt_policy {
 	my ($ids_policy,$rule) = @_;
 	if ($rule=~/policy\s$ids_policy/i || $rule=~/flowbits:set,/i){
 		$rule=~s/^#\s//;
-	}else {
+	}elsif ( $rule!~/^#/) {
 		$rule="# $rule ## Disabled by PulledPork per VRT metadata for $ids_policy policy";
 	}
 	return $rule;
@@ -444,16 +444,16 @@ sub rule_mod {
 
 sub disablesid  #routine to disable the user specified SIDS, we are also accounting for policy manipulation here
 {
-	my ($SID_conf,$Output,$Sostubs,$ids_policy) = @_;
+	my ($SID_conf,$Output,$opts,$ids_policy) = @_;
 	my (@sid_disable,$sidlist,$outlist,$solist,$sid_disable,$rule_line,$so_line);
 	my $sidcount = 0;
 	my $dircount = 0;
 	my $sidlines = 0;
 	my $txtsid = "";
 	my $sosid = "";
-	print "Modifying specified SID's....\n";
+	#print "Modifying specified SID's....\n";
 	if (-f $SID_conf){
-		if ($Verbose) { print ("\tProcessing disablesid configuration from $SID_conf\n"); }
+		#if ($Verbose) { print ("\tProcessing disablesid configuration from $SID_conf\n"); }
 		my $SIDDATA = open(DATA, "$SID_conf"); #need to add error foo here
 		while (<DATA>) {
 			$sidlist=$_;
@@ -467,10 +467,12 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 			} else {}
 		}
 		close (DATA);
-		if (-d $Sostubs) {
-			opendir(DIR,"$Sostubs"); ## Open the stubs directory
+		if (-d $Output && $opts == 2) {
+			print "Modifying specified SO SIDs....\n";
+			if ($Verbose) { print ("\tProcessing disablesid configuration from $SID_conf\n"); }
+			opendir(DIR,"$Output"); ## Open the stubs directory
 			while (defined($solist=readdir DIR)){
-				open(DATA,"$Sostubs$solist");  #Open the shared object stubs
+				open(DATA,"$Output$solist");  #Open the shared object stubs
 				my @so_lines = <DATA>;
 				close(DATA);
 				$sidcount = 0;
@@ -487,7 +489,7 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 								if (($sosid ne "") && ($so_line=~/sid:$sosid;/i)) {
 									$sidcount++;
 									$so_line = "# $so_line ## DISABLED Shared Object BY PULLEDPORK per directive in $SID_conf";
-									if ($Verbose) { print "\tDisabled in $Sostubs$solist -> $so_line\n"; }
+									if ($Verbose) { print "\tDisabled in $Output$solist -> $so_line\n"; }
 								}
 							}
 						}
@@ -495,14 +497,17 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 					}
 				}
 				if ($sidcount > 0) {
-					open(WRITE,">$Sostubs$solist");
+					open(WRITE,">$Output$solist");
 					print WRITE @so_lines;
 					close(WRITE);
-					if (!$Verbose) { print "\tDisabled $sidcount rules in $Sostubs$solist\n"; }
+					if (!$Verbose) { print "\tDisabled $sidcount rules in $Output$solist\n"; }
 				}
 			}
 		}
 		close(DIR);
+		if (-f $Output && $opts == 1)
+		print "Modifying specified SIDs....\n";
+		if ($Verbose) { print ("\tProcessing disablesid configuration from $SID_conf\n"); }
 		opendir(DIR,"$Output"); #need to add error foo here
 		while (defined($outlist=readdir DIR)){
 			open(DATA,"$Output$outlist");  #open the file that we are gonna sed to disable the sid, this is GID1's only
@@ -962,12 +967,14 @@ if ($temp_path) {
     temp_cleanup();
 }
 if ($SID_conf && -d $Output) {
-	disablesid($SID_conf,$Output,$Sostubs,$ips_policy)
+	disablesid($SID_conf,$Output,1,$ips_policy);
 }elsif (-d $Output && $ips_policy) {
 	rule_mod($Output,$ips_policy);
-	if (-d $Sostubs) {
-		rule_mod($Sostubs, $ips_policy);
-	}
+}
+if ($SID_conf && -d $Sostubs) {
+	disablesid($SID_conf,$Sostubs,2,$ips_policy);
+}elsif (-d $Sostubs && $ips_policy ne "Disabled") {
+	rule_mod($Sostubs,$ips_policy);
 }
 if ($DISID_conf && -d $Output) {
 	dropsid($DISID_conf,$Output,$Sostubs)
