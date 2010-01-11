@@ -488,8 +488,8 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 								}
 							}
 						}
-						$so_line = "$so_line\n";
 					}
+					$so_line = "$so_line\n";
 				}
 				if ($sidcount > 0) {
 					open(WRITE,">$Sostubs$solist");
@@ -523,8 +523,8 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 							}
 						}
 					}
-				$rule_line = "$rule_line\n";
 				}
+				$rule_line = "$rule_line\n";
 			}
 			if ($dircount > 0) {
 				open(WRITE,">$Output$outlist");
