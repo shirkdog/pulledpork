@@ -8,13 +8,13 @@ Below you will find answers to the most commonly asked questions.
 = FAQs =
 
 *When I run pulledpork, it keeps displaying the help but not parsing my rules?*
-  * Insure LWP::Simple is installed properly (perl -MCPAN -e shell 'install LWP::Simple')
+  * Ensure LWP::Simple is installed properly (perl -MCPAN -e shell 'install LWP::Simple')
   * Verify that your output paths all exist and are writable by the calling user
   * Verify that you are using the latest version of the config file that came with the  version of pulledpork that you are running!
 
 
 *When I run pulledpork, I get an error about LWP::Simple?*
-  * Insure LWP::Simple is installed properly (perl -MCPAN -e shell 'install LWP::Simple')
+  * Ensure LWP::Simple is installed properly (perl -MCPAN -e shell 'install LWP::Simple')
 
 *I run Emerging Threats rulesets or custom rulesets and not all messages are in sid-msg.map*
   * Download the <a href="http://pulledpork.googlecode.com/files/pp_304_whitespace.patch">pp_304_whitespace.patch</a> file and apply to your pulledpork.pl code
