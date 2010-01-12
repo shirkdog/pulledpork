@@ -10,8 +10,7 @@ Below you will find answers to the most commonly asked questions.
 *When I run pulledpork, it keeps displaying the help but not parsing my rules?*
   * Insure LWP::Simple is installed properly (perl -MCPAN -e shell 'install LWP::Simple')
   * Verify that your output paths all exist and are writable by the calling user
-  * Verify that you are using the latest version of the config file that goes with your 
-    version of pulledpork!
+  * Verify that you are using the latest version of the config file that came with the latest version of pulledpork!
 
 
 *When I run pulledpork, I get an error about LWP::Simple?*
