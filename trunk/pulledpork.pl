@@ -407,7 +407,7 @@ sub gen_stubs
 
 sub vrt_policy {
 	my ($ids_policy,$rule) = @_;
-	if ($rule=~/policy\s$ids_policy/i || $rule=~/flowbits:set,/i){
+	if ($rule=~/policy\s$ids_policy/i || $rule=~/flowbits:\s?set,/i){
 		$rule=~s/^#\s//;
 	}elsif ($rule!~/^#/) {
 		$rule="# $rule ## Disabled by PulledPork per VRT metadata for $ids_policy policy";
@@ -695,25 +695,25 @@ sub sid_msg
 					$msg=$data;
 					$ref=$data;
 					#get the sid of the rule
-					if ($sid=~/sid:\d+;/i) {
+					if ($sid=~/sid:\s?\d+;/i) {
 						$sid=$&;
 						$sid=~s/(sid:|;)//ig;
 						$sid=trim($sid);
 						$sidline="$sid || ";
 					}
 					# get the msg of the rule
-					if ($msg=~/msg:"(\w| |\-|\.|\+|\/|\$|\%|\^|\&|\*|\!|\[|\]|\~|\>|\<|\/|,|\#|\?|\$|\@|\=|\'|\(|\))+";/i) {
+					if ($msg=~/msg:\s?"(\w| |\-|\.|\+|\/|\$|\%|\^|\&|\*|\!|\[|\]|\~|\>|\<|\/|,|\#|\?|\$|\@|\=|\'|\(|\))+";/i) {
 						$msg=$&;
 						$msg=~s/(msg:"|";)//ig;
 						$msg=trim($msg);
 						$sidline="$sidline$msg";
 					}
 					# get the reference(s) out of the rule (everything but arachnids anyway)
-					if ($ref=~/reference:(\/|\w|\.|,| |:|\-|\$|\@|\?|\=|\|\%')+;/i) {
+					if ($ref=~/reference:\s?(\/|\w|\.|,|:|\-|\$|\@|\?|\=|\|\%')+;/i) {
 						my @refs = split (/;/,$ref);
 						foreach $ref(@refs){
 							#$ref=$&;
-							if (($ref=~/reference:(\/|\w|\.|,| |:|\-|\$|\@|\?|\=|\|\%')+/i) && ($ref!~/arachnids/i)) {
+							if (($ref=~/reference:\s?(\/|\w|\.|,|:|\-|\$|\@|\?|\=|\|\%')+/i) && ($ref!~/arachnids/i)) {
 								$ref=~s/reference://ig;
 								$ref=trim($ref);
 								$sidline="$sidline || $ref";
