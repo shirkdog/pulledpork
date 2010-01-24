@@ -33,7 +33,7 @@ use POSIX qw(:errno_h);
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.3.4 RC1";
+my $VERSION = "Pulled_Pork v0.3.5";
 
 # routine grab our config from the defined config file
 
