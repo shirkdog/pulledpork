@@ -1,4 +1,6 @@
-Thank you for choosing to use pulled_pork!  This file provides some basic guidance on usage of pulled_pork.
+Thank you for choosing to use pulled_pork!  This file provides some basic
+guidance on the usage of pulled_pork.  Please be sure to read this file
+thoroughly so that you don't overlook something!
 
 -=Command Usage Reference=-
 
@@ -11,6 +13,7 @@ Thank you for choosing to use pulled_pork!  This file provides some basic guidan
    -c Where the pulledpork config file lives.
    -i Where the disablesid config file lives.
    -b Where the dropsid config file lives.
+   -e Where the enablesid config file lives.  **See special Notes**
    -o Where do you want me to put generic rules files?
    -h path to the sid_changelog if you want to keep one?
    -f What snort rules tarball do you want to fetch 
@@ -75,10 +78,17 @@ and writing change info to sid_changes.log!
 ./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -m /usr/local/etc/snort/sid-msg.map \
 -h /var/log/sid_changes.log -H
 
-Next example, same as the previous but specifying that we want to run the default "security" based ruleset.
+Next example, same as the previous but specifying that we want to run the default "security" based ruleset
+and that we want to enable rules specified in enablesid.conf.
 
-./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -m /usr/local/etc/snort/sid-msg.map \
+./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -e enablesid.conf -m /usr/local/etc/snort/sid-msg.map \
 -h /var/log/sid_changes.log -I security -H
+
+** Special Notes Section**
+Please note that the LAST operation performed is the operation to enable
+the sids that you specify in the enablesid.conf with the -e runtime option.
+This means that if you have the same sid(s) in disablesid, or if they are disabled 
+by running a default ruleset such as security, they will be re-enabled!
 
 I'll probably add more info later, the --help or --? will display all runtime options and the pulledpork.conf is
 pretty well annotated... so if you can't figure it out... try harder!  And once you figure it out, please feel 

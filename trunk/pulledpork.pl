@@ -62,7 +62,7 @@ sub parse_config_file {
 
 my ($Verbose,$Logging,$Hash,$ALogger,$i,$Dir,$arg,$Config_file,$Sorules,$Auto,$Output,$opt_help,$Distro,$Snort,$Sostubs,$sid_changelog);
 my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$DISID_conf,$pid_path,$SigHup,$NoDownload,$data,$sid_msg_map,$base_url);
-my ($ips_policy);
+my ($ips_policy,$enable_conf);
 
 $Verbose = 0;
 undef($Logging);
@@ -82,6 +82,7 @@ print<<__EOT;
    -c Where the pulledpork config file lives.
    -i Where the disablesid config file lives.
    -b Where the dropsid config file lives.
+   -e Where the enablesid config file lives.
    -o Where do you want me to put generic rules files?
    -h path to the sid_changelog if you want to keep one?
    -f What snort rules tarball do you want to fetch 
@@ -442,6 +443,106 @@ sub rule_mod {
 		
 }
 
+# Here we enable any user specified SIDs
+sub enablesid {
+	my ($SID_conf,$Output,$Sostubs) = @_;
+	my (@sid_enable,$sidlist,$outlist,$solist,$sid_enable,$rule_line,$so_line);
+	my $sidcount = 0;
+	my $dircount = 0;
+	my $sidlines = 0;
+	my $txtsid = "";
+	my $sosid = "";
+	print "Enabling specified SID's....\n";
+	if (-f $SID_conf){
+		if ($Verbose) { print ("\tProcessing enablesid configuration from $SID_conf\n"); }
+		my $SIDDATA = open(DATA, "$SID_conf"); #need to add error foo here
+		while (<DATA>) {
+			$sidlist=$_;
+			chomp($sidlist);
+			$sidlist=trim($sidlist);
+			if ( ($sidlist !~ /^#/) && ($sidlist ne "") && ($sidcount < 1) ){
+				@sid_enable=split(/,/,$sidlist);  #split up the sids that we want to disable
+				$sidcount++
+			} elsif (($sidlist !~ /^#/) && ($sidlist ne "")) {
+				push(@sid_enable,split(/,/,$sidlist));
+			} else {}
+		}
+		close (DATA);
+		if (-d $Sostubs) {
+			opendir(DIR,"$Sostubs"); ## Open the stubs directory
+			while (defined($solist=readdir DIR)){
+				open(DATA,"$Sostubs$solist");  #Open the shared object stubs
+				my @so_lines = <DATA>;
+				close(DATA);
+				$sidcount = 0;
+				foreach $so_line(@so_lines) {
+					$so_line=trim($so_line);
+					if ( ($so_line !~ /^alert/i) && ($so_line !~ /^drop/i) && ($so_line ne"") ){  #don't want already enabled lines or blank ones!
+						foreach $sid_enable(@sid_enable) {
+							if ($sid_enable=~/^3:/) {
+								$sosid=$sid_enable;
+								$sosid=~s/^3://;
+								if (($sosid ne "") && ($so_line=~/sid:$sosid;/i)) {
+									$sidcount++;
+									$so_line=~s/^#//;
+									chomp($so_line);
+									$so_line = "$so_line ## ENABLED Shared Object BY PULLEDPORK per directive in $SID_conf";
+									if ($Verbose) { print "\tENABLED in $Sostubs$solist -> $so_line\n"; }
+								}
+							}
+						}
+					}
+					$so_line = "$so_line\n";
+				}
+				if ($sidcount > 0) {
+					open(WRITE,">$Sostubs$solist");
+					print WRITE @so_lines;
+					close(WRITE);
+					if (!$Verbose) { print "\tEnabled $sidcount rules in $Sostubs$solist\n"; }
+				}
+			}
+		}
+		close(DIR);
+		opendir(DIR,"$Output"); #need to add error foo here
+		while (defined($outlist=readdir DIR)){
+			open(DATA,"$Output$outlist");  #open the file that we are gonna sed to disable the sid, this is GID1's only
+			my @rule_lines = <DATA>;
+			close (DATA);
+			$dircount = 0;
+			foreach $rule_line(@rule_lines) {	
+				$rule_line=trim($rule_line);
+				if ( ($rule_line !~ /^alert/i) && ($rule_line !~ /^drop/i) && ($rule_line ne"") ){  #don't want already enabled rules or blank ones!
+					foreach $sid_enable(@sid_enable) {
+						#print "\t$sid_enable\n";
+						if ($sid_enable=~/^1:/) { 
+							$txtsid=$sid_enable;
+							$txtsid=~s/^1://;
+						#print "\tsid:$txtsid;\n";
+							if (($txtsid ne "") && ($rule_line=~/sid:$txtsid;/i)) {
+								#$sidcount++;
+								$dircount++;
+								$rule_line =~ s/^#//;
+								chomp($rule_line)
+								$rule_line =  "$rule_line ## ENABLED BY PULLEDPORK per directive in $SID_conf";
+								if ($Verbose) { print "\tEnabled in $Output$outlist -> $rule_line\n"; }
+							}
+						}
+					}
+				}
+				$rule_line = "$rule_line\n";
+			}
+			if ($dircount > 0) {
+				open(WRITE,">$Output$outlist");
+				print WRITE @rule_lines;
+				close (WRITE);
+				if (!$Verbose) { print "\tEnabled $dircount rules in $Output$outlist\n"; }
+			}
+		}
+		close (DIR);
+	}
+	print "\tDone\n";	
+}
+
 sub disablesid  #routine to disable the user specified SIDS, we are also accounting for policy manipulation here
 {
 	my ($SID_conf,$Output,$Sostubs) = @_;
@@ -776,7 +877,7 @@ sub Version
 
 ## Lets grab any runtime values and insert into our variables using getopt::long
 GetOptions ( "v+" => \$Verbose,
-                "V!" => sub { Version() },
+        "V!" => sub { Version() },
 		"d!" => \$Hash,
 		"l!" => \$Logging,
 		"a!" => \$Auto,
@@ -794,6 +895,7 @@ GetOptions ( "v+" => \$Verbose,
 		"D=s" => \$Distro,
 		"c=s" => \$Config_file,
 		"i=s" => \$SID_conf,
+		"e=s" => \$enable_conf,
 		"I=s" => \$ips_policy,
 		"b=s" => \$DISID_conf,
         "C=s" => \$Snort_config,
@@ -970,6 +1072,11 @@ if ($SID_conf && -d $Output) {
 if ($DISID_conf && -d $Output) {
 	dropsid($DISID_conf,$Output,$Sostubs)
 }
+
+if ($enable_conf && -d $Output) {
+	enablesid($DISID_conf,$Output,$Sostubs)
+}
+
 if ($sid_msg_map && -d $Output) { 
 	print "Generating sid-msg.map...\n";
 	my @sidlist=sid_msg($Output);
