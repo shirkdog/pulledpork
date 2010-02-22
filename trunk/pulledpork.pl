@@ -33,7 +33,7 @@ use POSIX qw(:errno_h);
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.3.5";
+my $VERSION = "Pulled_Pork v0.3.6 Dev";
 
 # routine grab our config from the defined config file
 
@@ -522,7 +522,7 @@ sub enablesid {
 								#$sidcount++;
 								$dircount++;
 								$rule_line =~ s/^#//;
-								chomp($rule_line)
+								chomp($rule_line);
 								$rule_line =  "$rule_line ## ENABLED BY PULLEDPORK per directive in $SID_conf";
 								if ($Verbose) { print "\tEnabled in $Output$outlist -> $rule_line\n"; }
 							}
