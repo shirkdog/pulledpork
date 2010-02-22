@@ -552,7 +552,7 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 	my $sidlines = 0;
 	my $txtsid = "";
 	my $sosid = "";
-	print "Modifying specified SID's....\n";
+	print "Disabling specified SID's....\n";
 	if (-f $SID_conf){
 		if ($Verbose) { print ("\tProcessing disablesid configuration from $SID_conf\n"); }
 		my $SIDDATA = open(DATA, "$SID_conf"); #need to add error foo here
@@ -1074,7 +1074,7 @@ if ($DISID_conf && -d $Output) {
 }
 
 if ($enable_conf && -d $Output) {
-	enablesid($DISID_conf,$Output,$Sostubs)
+	enablesid($enable_conf,$Output,$Sostubs)
 }
 
 if ($sid_msg_map && -d $Output) { 
