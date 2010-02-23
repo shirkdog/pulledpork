@@ -525,7 +525,7 @@ sub enablesid {
 								$rule_line =~ s/^# //;
 								$rule_line =~ s/\s##\s.+//;
 								chomp($rule_line);
-								$rule_line =  "$rule_line\n## ENABLED sid:$txtsidBY PULLEDPORK per directive in $SID_conf";
+								$rule_line =  "$rule_line\n## ENABLED sid:$txtsid BY PULLEDPORK per directive in $SID_conf";
 								if ($Verbose) { print "\tEnabled in $Output$outlist -> $rule_line\n"; }
 							}
 						}
