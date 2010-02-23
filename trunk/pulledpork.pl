@@ -484,9 +484,10 @@ sub enablesid {
 								$sosid=~s/^3://;
 								if (($sosid ne "") && ($so_line=~/sid:$sosid;/i)) {
 									$sidcount++;
-									$so_line=~s/^#//;
+									$so_line=~s/^# //;
+									$so_line =~ s/\s##\s.+//;
 									chomp($so_line);
-									$so_line = "$so_line ## ENABLED Shared Object BY PULLEDPORK per directive in $SID_conf";
+									$so_line = "$so_line\n## ENABLED Shared Object SID:$sosid BY PULLEDPORK per directive in $SID_conf";
 									if ($Verbose) { print "\tENABLED in $Sostubs$solist -> $so_line\n"; }
 								}
 							}
@@ -521,9 +522,10 @@ sub enablesid {
 							if (($txtsid ne "") && ($rule_line=~/sid:$txtsid;/i)) {
 								#$sidcount++;
 								$dircount++;
-								$rule_line =~ s/^#//;
+								$rule_line =~ s/^# //;
+								$rule_line =~ s/\s##\s.+//;
 								chomp($rule_line);
-								$rule_line =  "$rule_line ## ENABLED BY PULLEDPORK per directive in $SID_conf";
+								$rule_line =  "$rule_line\n## ENABLED sid:$txtsidBY PULLEDPORK per directive in $SID_conf";
 								if ($Verbose) { print "\tEnabled in $Output$outlist -> $rule_line\n"; }
 							}
 						}
