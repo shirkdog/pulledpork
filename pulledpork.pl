@@ -455,7 +455,7 @@ sub enablesid {
 	print "Enabling specified SID's....\n";
 	if (-f $SID_conf){
 		if ($Verbose) { print ("\tProcessing enablesid configuration from $SID_conf\n"); }
-		my $SIDDATA = open(DATA, "$SID_conf"); #need to add error foo here
+		my $SIDDATA = open(DATA, "$SID_conf") or warn "unable to open $SID_conf $!"; 
 		while (<DATA>) {
 			$sidlist=$_;
 			chomp($sidlist);
@@ -469,9 +469,9 @@ sub enablesid {
 		}
 		close (DATA);
 		if (-d $Sostubs) {
-			opendir(DIR,"$Sostubs"); ## Open the stubs directory
+			opendir(DIR,"$Sostubs") or warn "unable to open $Sostubs path $!";
 			while (defined($solist=readdir DIR)){
-				open(DATA,"$Sostubs$solist");  #Open the shared object stubs
+				open(DATA,"$Sostubs$solist") or warn "unable to open $Sostubs$solist $!";  #Open the shared object stubs
 				my @so_lines = <DATA>;
 				close(DATA);
 				$sidcount = 0;
@@ -482,7 +482,7 @@ sub enablesid {
 							if ($sid_enable=~/^3:/) {
 								$sosid=$sid_enable;
 								$sosid=~s/^3://;
-								if (($sosid ne "") && ($so_line=~/sid:$sosid;/i)) {
+								if (($sosid ne "") && ($so_line=~/sid:\s?$sosid;/i)) {
 									$sidcount++;
 									$so_line=~s/^# //;
 									$so_line =~ s/\s##\s.+//;
@@ -496,7 +496,7 @@ sub enablesid {
 					$so_line = "$so_line\n";
 				}
 				if ($sidcount > 0) {
-					open(WRITE,">$Sostubs$solist");
+					open(WRITE,">$Sostubs$solist")  or warn "unable to open $Sostubs$solist for write $!";
 					print WRITE @so_lines;
 					close(WRITE);
 					if (!$Verbose) { print "\tEnabled $sidcount rules in $Sostubs$solist\n"; }
@@ -504,9 +504,9 @@ sub enablesid {
 			}
 		}
 		close(DIR);
-		opendir(DIR,"$Output"); #need to add error foo here
+		opendir(DIR,"$Output") or warn "unable to open $Output $!"; #need to add error foo here
 		while (defined($outlist=readdir DIR)){
-			open(DATA,"$Output$outlist");  #open the file that we are gonna sed to disable the sid, this is GID1's only
+			open(DATA,"$Output$outlist") or warn "unable to open $Output$outlist $!";  #open the file that we are gonna sed to disable the sid, this is GID1's only
 			my @rule_lines = <DATA>;
 			close (DATA);
 			$dircount = 0;
@@ -519,7 +519,7 @@ sub enablesid {
 							$txtsid=$sid_enable;
 							$txtsid=~s/^1://;
 						#print "\tsid:$txtsid;\n";
-							if (($txtsid ne "") && ($rule_line=~/sid:$txtsid;/i)) {
+							if (($txtsid ne "") && ($rule_line=~/sid:\s?$txtsid;/i)) {
 								#$sidcount++;
 								$dircount++;
 								$rule_line =~ s/^# //;
@@ -534,7 +534,7 @@ sub enablesid {
 				$rule_line = "$rule_line\n";
 			}
 			if ($dircount > 0) {
-				open(WRITE,">$Output$outlist");
+				open(WRITE,">$Output$outlist") or warn "unable to open $Output$outlist for write $!";
 				print WRITE @rule_lines;
 				close (WRITE);
 				if (!$Verbose) { print "\tEnabled $dircount rules in $Output$outlist\n"; }
@@ -584,7 +584,7 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 							if ($sid_disable=~/^3:/) {
 								$sosid=$sid_disable;
 								$sosid=~s/^3://;
-								if (($sosid ne "") && ($so_line=~/sid:$sosid;/i)) {
+								if (($sosid ne "") && ($so_line=~/sid:\s?$sosid;/i)) {
 									$sidcount++;
 									$so_line = "# $so_line ## DISABLED Shared Object BY PULLEDPORK per directive in $SID_conf";
 									if ($Verbose) { print "\tDisabled in $Sostubs$solist -> $so_line\n"; }
@@ -618,7 +618,7 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 							$txtsid=$sid_disable;
 							$txtsid=~s/^1://;
 						#print "\tsid:$txtsid;\n";
-							if (($txtsid ne "") && ($rule_line=~/sid:$txtsid;/i)) {
+							if (($txtsid ne "") && ($rule_line=~/sid:\s?$txtsid;/i)) {
 								#$sidcount++;
 								$dircount++;
 								$rule_line =  "# $rule_line ## DISABLED BY PULLEDPORK per directive in $SID_conf";
@@ -680,7 +680,7 @@ sub dropsid  #routine to set certain SIDS to drop
 							if ($sid_drop=~/^3:/) {
 								$sosid=$sid_drop;
 								$sosid=~s/^3://;
-								if (($sosid ne "") && ($so_line=~/sid:$sosid;/i)) {
+								if (($sosid ne "") && ($so_line=~/sid:\s?$sosid;/i)) {
 									$sidcount++;
 									$so_line=~s/^alert/drop/i;
 									$so_line = "$so_line ## DROPPED by pulledpork per directive in $DISID_conf";
@@ -715,7 +715,7 @@ sub dropsid  #routine to set certain SIDS to drop
 							$txtsid=$sid_drop;
 							$txtsid=~s/^1://;
 						#print "\tsid:$txtsid;\n";
-							if (($txtsid ne "") && ($rule_line=~/sid:$txtsid;/i)) {
+							if (($txtsid ne "") && ($rule_line=~/sid:\s?$txtsid;/i)) {
 								#$sidcount++;
 								$dircount++;
 								$rule_line=~s/^alert/drop/i;
@@ -927,6 +927,7 @@ if ($Verbose) {
     if ($Snort_config) {print "\tSnort Config File: $Snort_config\n";}
 	if ($SID_conf) {print "\tPath to disablesid file: $SID_conf\n";}
 	if ($DISID_conf) {print "\tPath to dropsid file: $DISID_conf\n";}
+	if ($enable_conf) {print "\tPath to enablesid file: $enable_conf\n";}
     if ($Distro) {print "\tDistro Def is: $Distro\n";}
     if ($Verbose) {print "\tVerbose Flag is Set\n";}
     if ($Verbose == 2) {print "\tExtra Verbose Flag is Set\n";}
