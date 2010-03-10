@@ -411,7 +411,7 @@ sub vrt_policy {
 	if ($rule=~/policy\s$ids_policy/i || $rule=~/flowbits:\s?set,/i){
 		$rule=~s/^#\s//;
 	}elsif ($rule!~/^#/) {
-		$rule="# $rule ## Disabled by PulledPork per VRT metadata for $ids_policy policy";
+		$rule="# $rule";
 	}
 	return $rule;
 } 
@@ -422,7 +422,7 @@ sub rule_mod {
 	if (-d $Path) {
 		opendir (DIR,"$Path");
 		while (defined($file = readdir DIR)) {
-			if (-f "$Path$file") {
+			if (-f "$Path$file" && $file !~ "local.rules") {
 				open (DATA, "$Path$file") || print "\tWARN, unable to open $Path$file\n";
 				my @rulefiles = <DATA>;
 				close (DATA);
@@ -586,7 +586,7 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 								$sosid=~s/^3://;
 								if (($sosid ne "") && ($so_line=~/sid:\s?$sosid;/i)) {
 									$sidcount++;
-									$so_line = "# $so_line ## DISABLED Shared Object BY PULLEDPORK per directive in $SID_conf";
+									$so_line = "# $so_line";
 									if ($Verbose) { print "\tDisabled in $Sostubs$solist -> $so_line\n"; }
 								}
 							}
@@ -621,7 +621,7 @@ sub disablesid  #routine to disable the user specified SIDS, we are also account
 							if (($txtsid ne "") && ($rule_line=~/sid:\s?$txtsid;/i)) {
 								#$sidcount++;
 								$dircount++;
-								$rule_line =  "# $rule_line ## DISABLED BY PULLEDPORK per directive in $SID_conf";
+								$rule_line =  "# $rule_line";
 								if ($Verbose) { print "\tDisabled in $Output$outlist -> $rule_line\n"; }
 							}
 						}
@@ -683,7 +683,7 @@ sub dropsid  #routine to set certain SIDS to drop
 								if (($sosid ne "") && ($so_line=~/sid:\s?$sosid;/i)) {
 									$sidcount++;
 									$so_line=~s/^alert/drop/i;
-									$so_line = "$so_line ## DROPPED by pulledpork per directive in $DISID_conf";
+									$so_line = "$so_line";
 									if ($Verbose) { print "\tDropped in $Sostubs$solist -> $so_line\n"; }
 								}
 							}
