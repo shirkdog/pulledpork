@@ -4,7 +4,7 @@ thoroughly so that you don't overlook something!
 
 -=Command Usage Reference=-
 
-  Usage: pulledpork [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
+  Usage: ./pulledpork.pl [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced)
@@ -13,8 +13,9 @@ thoroughly so that you don't overlook something!
    -c Where the pulledpork config file lives.
    -i Where the disablesid config file lives.
    -b Where the dropsid config file lives.
-   -e Where the enablesid config file lives.  **See special Notes**
-   -o Where do you want me to put generic rules files?
+   -e Where the enablesid config file lives.
+   -o Where do you want me to put generic rules file?
+   -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -h path to the sid_changelog if you want to keep one?
    -f What snort rules tarball do you want to fetch 
       (i.e. snortrules-snapshot-2.8_s.tar.gz)
@@ -44,6 +45,7 @@ thoroughly so that you don't overlook something!
    -n Do everything other than download of new files (disablesid, etc)
    -V Print Version and exit
    -help/? Print this help info.
+
 
 
 
@@ -85,10 +87,13 @@ and that we want to enable rules specified in enablesid.conf.
 -h /var/log/sid_changes.log -I security -H
 
 ** Special Notes Section**
-Please note that the LAST operation performed is the operation to enable
-the sids that you specify in the enablesid.conf with the -e runtime option.
-This means that if you have the same sid(s) in disablesid, or if they are disabled 
-by running a default ruleset such as security, they will be re-enabled!
+Please note that pulledpork runs rule modification (enable, drop, and disable) in that order..
+1: enable
+2: drop
+3: disable
+This means that disable rules will always take precedence.. thusly if you specify the same gid:sid 
+in enable and disable configuration files, then that sid will be disabled.. keep this in mind 
+for ranges also!
 
 I'll probably add more info later, the --help or --? will display all runtime options and the pulledpork.conf is
 pretty well annotated... so if you can't figure it out... try harder!  And once you figure it out, please feel 
