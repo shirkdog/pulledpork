@@ -73,6 +73,7 @@ undef($Hash);
 undef($ALogger);
 
 my %rules_hash = ();
+my %oldrules_hash = ();
 my %sid_msg_map = ();
 
 ## Help routine.. display help to stdout then exit
@@ -328,9 +329,29 @@ sub read_rules {
 			}
 		} undef @extra_raw;
 	}
-	opendir (DIR,"$path");
-	while (defined($file = readdir DIR)) {
-		open (DATA,"$path$file") || die "Couldn't read $file - $!\n";
+	if (-d $path) {
+		opendir (DIR,"$path");
+		while (defined($file = readdir DIR)) {
+			open (DATA,"$path$file") || die "Couldn't read $file - $!\n";
+			@elements=<DATA>;
+			close(DATA);
+			
+			foreach my $rule(@elements) {
+				if ($rule=~/sid:\s*\d+/) {
+				$sid=$&;
+				$sid=~s/sid:\s*//;
+				if ($rule=~/gid:\s*\d/) {
+						$gid=$&;
+						$gid=~s/gid:\s*//;
+				}else{ $gid=1; }
+				$$hashref{$gid}{$sid} = $rule;
+				}
+			}
+		} 
+		close(DIR);
+	}
+	elsif (-f $path) {
+		open (DATA,"$path") || die "Couldn't read $path - $!";
 		@elements=<DATA>;
 		close(DATA);
 		
@@ -345,7 +366,8 @@ sub read_rules {
 			$$hashref{$gid}{$sid} = $rule;
 			}
 		}
-	} undef @elements;
+	}
+	undef @elements;
 }
 
 # Copy the binary rules to their required location
@@ -587,16 +609,38 @@ sub sid_write
 }
 
 sub changelog {
-	my ($changelog,$hashref,$hashref2)=@_;
-	print "Generating changelog $changelog....\n";
-	if (-f $changelog) { open(WRITE,'>>$changelog'); }
-	else { open(WRITE,'>$changelog');
+	my ($changelog,$hashref,$hashref2,$enabled,$dropped,$disabled)=@_;
+	print "Writing $changelog....\n";
+	my (@newsids,@delsids);
+	foreach my $k1 (sort keys %$hashref) {
+		for (sort keys %{$hashref->{$k1}}) {
+			push(@newsids,$k1.":".$_) unless exists $$hashref2{$k1}{$_};
+		}
+	}
+	foreach my $k1 (sort keys %$hashref2) {
+		for (sort keys %{$hashref2->{$k1}}) {
+			push(@delsids,$k1.":".$_) unless exists $$hashref{$k1}{$_};
+		}
+	}
+	if (-f $changelog) { open(WRITE,">>$changelog") || die "$changelog $!\n"; }
+	else { open(WRITE,">$changelog") || die "$changelog $!\n";
 		print WRITE "-=BEGIN PULLEDPORK SNORT RULES CHANGELOG, Tracking started on ".gmtime(time)." GMT=-\n\n\n";
 	}
 	print WRITE "\n-=Begin Changes Logged for ".gmtime(time)." GMT=-\n";
-	# This is where we will write our changes from our hash <=>
+	print WRITE "\nNew Rules\n" if @newsids;
+	foreach (@newsids) { print WRITE "\t".$_."\n"; }
+	print WRITE "\nDeleted Rules\n" if @delsids;
+	foreach (@delsids) { print WRITE "\t".$_."\n"; }
+	print WRITE "\nRule Totals\n";
+	print WRITE "\tEnabled:---$enabled\n";
+	print WRITE "\tDropped:---$dropped\n";
+	print WRITE "\tDisabled:--$disabled\n";
+	print WRITE "\tTotal:-----".($enabled+$disabled+$dropped)."\n";
 	print WRITE "\n-=End Changes Logged for ".gmtime(time)." GMT=-\n";
+	close (WRITE);
 	print "\tDone\n";
+	undef @newsids;
+	undef @delsids;
 }
 
 sub trim  #sub to remove whitespace before and after a string
@@ -840,6 +884,10 @@ if ($SID_conf && -f $SID_conf) {
 	modifysid('disable',$SID_conf,\%rules_hash)
 }
 
+if ($sid_changelog && -f $Output) {
+	read_rules(\%oldrules_hash,"$Output",$local_rules);
+}
+
 if ($Output) {
 	rule_write(\%rules_hash,$Output,1);
 }
@@ -851,32 +899,6 @@ if ($sid_msg_map) {
 	
 	sid_msg(\%rules_hash,\%sid_msg_map);
 	sid_write(\%sid_msg_map,$sid_msg_map);
-	#if ($sid_changelog) {
-		#print "\tGenerating SID changelog at $sid_changelog\n";
-		#my $time = gmtime(time);
-		#open(READ,"$sid_msg_map");
-		#my @oldsids=<READ>;
-		#close(READ);
-		#my @sidchange=sid_diff(\@oldsids,\@sidlist);
-		#if ($Verbose) {
-			#foreach $data(@sidchange){
-				#print "\tSID CHANGE $data\n";
-			#}
-		#}
-		#my $newsid=0;
-		#if (-f $sid_changelog) {open(WRITE,">>$sid_changelog");}
-		#else {
-			#open(WRITE,">$sid_changelog");
-			#print WRITE "-=BEGIN PULLEDPORK SID CHANGELOG, Tracking started on $time GMT=-\n\n\n";
-			#$newsid=1;
-		#}
-		#if ($newsid==0) {
-			#print WRITE "\n-=Begin Changes Logged for $time GMT=-\n";
-			#print WRITE @sidchange;
-			#print WRITE "\n-=End Changes Logged for $time GMT=-\n";
-		#}
-		#close(WRITE);
-	#}
 }
 
 if ($SigHup && $pid_path ne "") {
@@ -905,6 +927,11 @@ print "\tEnabled Rules:----$enabled\n";
 print "\tDropped Rules:----$dropped\n";
 print "\tDisabled Rules:---$disabled\n";
 print "\tTotal Rules:------".($enabled+$dropped+$disabled)."\n\tDone\n";
+
+if ($sid_changelog && -f $Output) {
+	changelog($sid_changelog,\%rules_hash,\%oldrules_hash,$enabled,$dropped,$disabled);
+}
+
 print ("Fly Piggy Fly!\n");
 
 __END__
