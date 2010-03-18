@@ -303,7 +303,7 @@ sub md5file
 sub read_rules {
 	my ($hashref,$path,$extra_rules) = @_;
 	my ($file,$sid,$gid,@elements);
-	print "\tReading rules...\n";
+	print "Reading rules...\n";
 	$extra_rules=slash(0,$extra_rules);
 	if ( $extra_rules && -f $extra_rules) {
 		open (DATA,"$extra_rules") || die "Couldn't read $extra_rules - $!\n";
@@ -377,33 +377,6 @@ sub read_rules {
 		}
 	}
 	undef @elements;
-}
-
-# Copy the binary rules to their required location
-sub copy_sorules
-{
-    #print "$temp_path/tha_rules/so_rules/precompiled/$Distro/i386/$Snort/\n";
-    my ($temp_path,$Sorules,$Distro,$Snort) = @_;
-	my $arch = "i386";
-	my @sofiles;
-	if ($Distro =~ "RHEL-5.0" || $Distro =~ "Ubuntu-8.04") { $arch = "x86-64"; } 
-	print "Copying Shared Object Rules....\n";
-    if ( -d "$temp_path"."tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/") {
-	opendir (SODIR,"$temp_path"."tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/");
-	@sofiles = readdir(SODIR);
-	closedir(SODIR);
-    
-	foreach my $sofile (@sofiles) {
-	    if ( -f "$temp_path"."tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile") {
-	        copy("$temp_path"."tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile","$Sorules$sofile") || print "\tCopy failed with error: $!\n";
-	        if ($Verbose == 2) {
-	          print ("\tCopying $temp_path"."tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile to $Sorules$sofile\n");
-	    } #elsif ($Verbose && ($sofile ne ".") || ($sofile ne "..")) { print ("\tERROR! DOES NOT EXIST:$temp_path/tha_rules/so_rules/precompiled/$Distro/$arch/$Snort/$sofile");}
-	        }
-	}
-    } else { print "\tI couldn't copy the so rules, errors are above.\n"; }
-	if (!$Verbose) { print "\tDone!\n"; }
-	undef @sofiles;
 }
 
 # sub to generate stub files using the snort --dump-dynamic-rules option
