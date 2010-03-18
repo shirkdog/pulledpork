@@ -64,7 +64,7 @@ my ($Verbose,$Logging,$Hash,$ALogger,$Config_file,$Sorules,$Auto);
 my ($Output,$Distro,$Snort,$Sostubs,$sid_changelog);
 my ($Snort_config,$Snort_path,$Textonly,$SID_conf,$DISID_conf);
 my ($pid_path,$SigHup,$NoDownload,$sid_msg_map,$base_url);
-my ($ips_policy,$enable_conf,$local_rules,$arch);
+my ($ips_policy,$enable_conf,$local_rules,$arch,$ignore_files);
 
 $Verbose = 0;
 undef($Logging);
@@ -169,7 +169,7 @@ sub temp_cleanup
 # subroutine to extract the files to a temp path so that we can do what we need to do.. 
 sub rule_extract
 {	
-    my ($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules) = @_;
+    my ($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules,$ignore) = @_;
 	print "Prepping rules for work....\n";
     if ( -d $temp_path."tha_rules") { 
 		print "\tdoh, we need to perform some cleanup... an unclean run last time?\n" if $Verbose;
@@ -180,6 +180,10 @@ sub rule_extract
     mkpath($temp_path."tha_rules/so_rules");
     my $tar = Archive::Tar->new();
     $tar->read($temp_path.$rule_file);
+    my @ignores=split(/,/,$ignore);
+    foreach (@ignores) {
+		$tar->remove("rules/$_\.rules");
+	}
     my @files=$tar->get_files();
     foreach (@files) {
 		my $filename = $_->name;
@@ -201,13 +205,13 @@ sub rule_extract
 # subroutine to actually check the md5 values, if they match we move onto file manipulation routines
 sub compare_md5
 {
-    my ($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules) = @_;
+    my ($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules,$ignore_files) = @_;
 	#print "Checking the MD5....\n";
     if ($rule_digest =~ $md5 && !$Hash){
 	if ($Verbose)
 	    { print "\tThe MD5 for $rule_file matched $md5\n\tso I'm not gonna download the rules file again suckas!\n"; }
 	    if (!$Verbose) { print "\tThey Match\n\tDone!\n"; }
-		rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules);
+		rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules,$ignore_files);
 	} 
 	elsif (!$Hash)
 	    {
@@ -216,14 +220,14 @@ sub compare_md5
 		if (!$Verbose) { print "\tNo Match\n\tDone\n"; }
 			rulefetch($oinkcode,$rule_file,$temp_path,$base_url);
                     $rule_digest = md5sum($rule_file,$temp_path);
-                    compare_md5 ($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules);
+                    compare_md5 ($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules,$ignore_files);
 		} 
 	else {
             if ($Verbose)
             { print "\tOk, not verifying the digest.. lame, but that's what you specified!\n";
 				print "\tSo if the rules tarball doesn't extract properly and this script dies.. it's your fault!\n";}
 			if (!$Verbose) { print "\tNo Verify Set\n\tDone!\n"; }
-            rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules);
+            rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules,$ignore_files);
          }
 }
 
@@ -291,7 +295,8 @@ sub md5file
     $md5 = <FILE>;
     chomp ($md5);
 	close (FILE);
-	$md5 =~ m/\w{32}/;  ## Lets just grab the hash out of the string.. don't care about the rest!
+	$md5 =~ /\w{32}/;  ## Lets just grab the hash out of the string.. don't care about the rest!
+	$md5=$&;
 	if ($Verbose)
 	    { print "\tmost recent rules file digest: $md5\n"; }
     return $md5;
@@ -303,6 +308,7 @@ sub md5file
 sub read_rules {
 	my ($hashref,$path,$extra_rules) = @_;
 	my ($file,$sid,$gid,@elements);
+	print "\t" if $Verbose;
 	print "Reading rules...\n";
 	$extra_rules=slash(0,$extra_rules);
 	if ( $extra_rules && -f $extra_rules) {
@@ -454,8 +460,17 @@ sub modifysid {
 					while ($lsid<=$usid){
 						$lsid++;
 						push(@sid_mod,$gid.':'.$lsid);
-					} $sidcount++;
+					} 
 				}
+				elsif ($_=~/[a-xA-X](\w|\W)*/){
+					my $regex = $&;
+					$regex =~ s/\|/,/;
+					foreach (keys %$hashref) {
+						for my $k2 (keys %{$hashref->{$_}}) {
+							$sid_mod[$sidcount]=$_.":".$k2 if ($$hashref{$_}{$k2}=~/($regex)/i);
+						}
+					}
+				} $sidcount++;
 			}
 			foreach (@sid_mod) {
 				if ($_=~/^1:\d+/ || $_=~/^3:\d+/) {
@@ -732,7 +747,8 @@ if ($Verbose)
 
 # Check to see if we have command line inputs, if so, they superseed any config file values!
 
-$pid_path = ($Config_info{'pid_path'});
+$pid_path = ($Config_info{'pid_path'}) if exists $Config_info{'pid_path'};
+$ignore_files = ($Config_info{'ignore'}) if exists $Config_info{'ignore'};
 
 if (!$base_url) {
 	$base_url = ($Config_info{'base_url'});
@@ -749,13 +765,13 @@ if (!$Sorules) {
     $Sorules = ($Config_info{'sorule_path'});
 }
 $Sorules=slash(1,$Sorules) if $Sorules;
-undef $Sorules if $Textonly;
+undef $Sorules if ($Textonly || ($base_url=~/emergingthreats/));
 
 if (!$Sostubs) {
     $Sostubs = ($Config_info{'sostub_path'});
 }
 $Sostubs=slash(0,$Sostubs) if $Sostubs;
-undef $Sostubs if $Textonly;
+undef $Sostubs if ($Textonly || ($base_url=~/emergingthreats/));
 
 if (!$Distro) {
     $Distro = ($Config_info{'distro'});
@@ -803,6 +819,7 @@ if (!$oinkcode) {
 if (!$ips_policy){
 	$ips_policy="Disabled";
 }
+$ips_policy="Disabled" if ($base_url=~/emergingthreats/);
 
 # We need a temp path to work with the files while we do magics on them.. make sure you have plenty 
 # of space in this path.. ~200mb is a good starting point
@@ -831,10 +848,10 @@ if ($oinkcode && $rule_file && -d $temp_path)
 		}
 
 		# compare the online current md5 against against the md5 of the rules file on system
-		compare_md5($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules);
+		compare_md5($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules,$ignore_files);
     }
 	if ($NoDownload) {
-		rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules);
+		rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules,$ignore_files);
 	}
     if ($Output){
 		read_rules(\%rules_hash,"$temp_path"."tha_rules/",$local_rules);
