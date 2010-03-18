@@ -6,9 +6,12 @@ This version constitutes a major rewrite of the rule reading, modification
 and writing system to improve speed, future module addition, supportability, 
 and of course reliability.
 
-New Features:
+New Features/changes:
 - Enablesid
+- Moved all .conf files under etc/
 - Ability to define sid ranges in any of the sid modification .conf files
+- Ability to specify references in any of the sid modification .conf files
+- Ability to ignore entire rule categories (i.e. not include them)
 - All rulestate modifications, comparisons etc.. are now handled in-memory
 - Rewrite of sid-msg.map generation code to allow for all proper character
 	categorization and addition to sid-msg.map
@@ -23,7 +26,10 @@ Bug Fixes:
 	* This was reworked in multiple functions, including sid-msg.map
 - Cleaned up and improved the changelog to display new / deleted sids
 	and rule totals
+- Certian conditions caused the md5 check to fail even when valid
+	* This was primarily an ET issue, but did manifest on VRT rulesets also
 - Many small fixes that were not tracked well :-P
+- Do not overwrite local.rules, but still include in sid-msg.map generation
 	
 
 v0.3.4 (Ohai)
