@@ -4,7 +4,7 @@ thoroughly so that you don't overlook something!
 
 -=Command Usage Reference=-
 
-  Usage: ./pulledpork.pl [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
+   Usage: ./pulledpork.pl [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced)
@@ -31,12 +31,12 @@ thoroughly so that you don't overlook something!
 	  2.8.3,2.8.3.1,2.8.3.2,2.8.4,2.8.4.1,2.8.5
    -C Path to your snort.conf
    -p Path to your Snort binary
-   -P Path to your tar binary
    -t Where do you want me to put the so_rule stub files? ** Thus MUST be uniquely 
       different from the -o option value
    -D What Distro are you running on, for the so_rules
       Valid Distro Types=CentOS-4.6,CentOS-5.0,Debian-Lenny,FC-5,FC-9,FreeBSD-7.0,
 	  RHEL-5.0,Ubuntu-6.01.1,Ubuntu-8.04
+   -a Specify the arch that you are running valid options here are i386 or x86-64
    -l Log information to logger rather than stdout messages.  **not yet implemented**
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
@@ -45,7 +45,6 @@ thoroughly so that you don't overlook something!
    -n Do everything other than download of new files (disablesid, etc)
    -V Print Version and exit
    -help/? Print this help info.
-
 
 
 

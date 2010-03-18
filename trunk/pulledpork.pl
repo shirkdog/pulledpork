@@ -23,11 +23,10 @@ use strict;
 use warnings;
 use File::Copy;
 use LWP::Simple;
-#use Carp;
 use Digest::MD5;
 use File::Path;
 use Getopt::Long qw(:config no_ignore_case bundling);
-#use Archive::Tar;  # I dont' need this just yet
+use Archive::Tar;  # Finally, right!
 use POSIX qw(:errno_h);  
 use Switch;
 
@@ -63,9 +62,9 @@ sub parse_config_file {
 
 my ($Verbose,$Logging,$Hash,$ALogger,$Config_file,$Sorules,$Auto);
 my ($Output,$Distro,$Snort,$Sostubs,$sid_changelog);
-my ($Snort_config,$Snort_path,$Textonly,$Tar_path,$SID_conf,$DISID_conf);
+my ($Snort_config,$Snort_path,$Textonly,$SID_conf,$DISID_conf);
 my ($pid_path,$SigHup,$NoDownload,$sid_msg_map,$base_url);
-my ($ips_policy,$enable_conf,$local_rules);
+my ($ips_policy,$enable_conf,$local_rules,$arch);
 
 $Verbose = 0;
 undef($Logging);
@@ -110,12 +109,12 @@ print<<__EOT;
 	  2.8.3,2.8.3.1,2.8.3.2,2.8.4,2.8.4.1,2.8.5
    -C Path to your snort.conf
    -p Path to your Snort binary
-   -P Path to your tar binary
    -t Where do you want me to put the so_rule stub files? ** Thus MUST be uniquely 
       different from the -o option value
    -D What Distro are you running on, for the so_rules
       Valid Distro Types=CentOS-4.6,CentOS-5.0,Debian-Lenny,FC-5,FC-9,FreeBSD-7.0,
 	  RHEL-5.0,Ubuntu-6.01.1,Ubuntu-8.04
+   -a Specify the arch that you are running valid options here are i386 or x86-64
    -l Log information to logger rather than stdout messages.  **not yet implemented**
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
@@ -164,42 +163,51 @@ if($#ARGV==-1){Help("Please read the README for runtime options and configuratio
 sub temp_cleanup
 {
     my $remove = rmtree ( $temp_path."tha_rules" );
-    if ($Verbose)
-	{ print "\tremoved $remove temporary snort files or directories from $temp_path"."tha_rules!\n"; }
+	print "\tremoved $remove temporary snort files or directories from $temp_path"."tha_rules!\n" if $Verbose;
 }
 
 # subroutine to extract the files to a temp path so that we can do what we need to do.. 
 sub rule_extract
 {	
-    my ($oinkcode,$rule_file,$temp_path) = @_;
+    my ($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules) = @_;
 	print "Prepping rules for work....\n";
     if ( -d $temp_path."tha_rules") { 
-	if ($Verbose)
-	    { print "\tdoh, we need to perform some cleanup... an unclean run last time?\n"; }
+		print "\tdoh, we need to perform some cleanup... an unclean run last time?\n" if $Verbose;
 		temp_cleanup($temp_path);
     }
-    if ($Verbose)
-	{ print "\textracting contents of $temp_path$rule_file to $temp_path"."tha_rules!\n"; }
+    print "\textracting contents of $temp_path$rule_file...\n" if $Verbose;
     mkpath($temp_path."tha_rules");
     mkpath($temp_path."tha_rules/so_rules");
-    
-    system ( "$Tar_path xfz ".$temp_path.$rule_file." -C ".$temp_path."tha_rules" );
-    if ($Verbose)
-	{ print "\trules have been extracted, time to read them for parsing!\n"; }
+    my $tar = Archive::Tar->new();
+    $tar->read($temp_path.$rule_file);
+    my @files=$tar->get_files();
+    foreach (@files) {
+		my $filename = $_->name;
+		my $singlefile=$filename;
+		if($filename =~ /^rules\/.*\.rules$/) {
+			$singlefile=~s/^rules\///;
+			$tar->extract_file($filename,$temp_path."/tha_rules/".$singlefile);
+			print "\tExtracted: /tha_rules/$singlefile\n" if $Verbose;
+		}
+		elsif ($Sorules && $filename =~ /^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\/.*\.so/) {
+			$singlefile=~s/^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\///;
+			$tar->extract_file($filename,$Sorules.$singlefile);
+			print "\tExtracted: $Sorules$singlefile\n" if $Verbose;
+		}
+	}
 	if (!$Verbose) { print "\tDone!\n"; }
-    #rule_move();	
 }
 
 # subroutine to actually check the md5 values, if they match we move onto file manipulation routines
 sub compare_md5
 {
-    my ($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest) = @_;
+    my ($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules) = @_;
 	#print "Checking the MD5....\n";
     if ($rule_digest =~ $md5 && !$Hash){
 	if ($Verbose)
 	    { print "\tThe MD5 for $rule_file matched $md5\n\tso I'm not gonna download the rules file again suckas!\n"; }
 	    if (!$Verbose) { print "\tThey Match\n\tDone!\n"; }
-		rule_extract($oinkcode,$rule_file,$temp_path);
+		rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules);
 	} 
 	elsif (!$Hash)
 	    {
@@ -208,14 +216,14 @@ sub compare_md5
 		if (!$Verbose) { print "\tNo Match\n\tDone\n"; }
 			rulefetch($oinkcode,$rule_file,$temp_path,$base_url);
                     $rule_digest = md5sum($rule_file,$temp_path);
-                    compare_md5 ($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest);
+                    compare_md5 ($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules);
 		} 
 	else {
             if ($Verbose)
             { print "\tOk, not verifying the digest.. lame, but that's what you specified!\n";
 				print "\tSo if the rules tarball doesn't extract properly and this script dies.. it's your fault!\n";}
 			if (!$Verbose) { print "\tNo Verify Set\n\tDone!\n"; }
-            rule_extract($oinkcode,$rule_file,$temp_path);
+            rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules);
          }
 }
 
@@ -295,6 +303,7 @@ sub md5file
 sub read_rules {
 	my ($hashref,$path,$extra_rules) = @_;
 	my ($file,$sid,$gid,@elements);
+	print "\tReading rules...\n";
 	$extra_rules=slash(0,$extra_rules);
 	if ( $extra_rules && -f $extra_rules) {
 		open (DATA,"$extra_rules") || die "Couldn't read $extra_rules - $!\n";
@@ -445,7 +454,6 @@ sub rule_mod {
 sub modifysid {
 	my ($function,$SID_conf,$hashref) = @_;
 	my (@sid_mod,$sidlist);
-	my $sidcount = 0;
 	print "Processing $SID_conf....\n";
 	if (-f $SID_conf){
 		open(DATA, "$SID_conf") or warn "unable to open $SID_conf $!"; 
@@ -453,16 +461,15 @@ sub modifysid {
 			$sidlist=$_;
 			chomp($sidlist);
 			$sidlist=trim($sidlist);
-			if ( ($sidlist !~ /^#/) && ($sidlist ne "") && ($sidcount < 1) ){
+			if ( ($sidlist !~ /^#/) && ($sidlist ne "") && !(@sid_mod) ){
 				@sid_mod=split(/,/,$sidlist);  #split up the sids that we want to perform the operation on
-				$sidcount++
-			} elsif (($sidlist !~ /^#/) && ($sidlist ne "")) {
+			} elsif (($sidlist !~ /^#/) && ($sidlist ne "" && @sid_mod)) {
 				push(@sid_mod,split(/,/,$sidlist));
 			} else {}
 		}
 		close (DATA);
 		if ($hashref) {
-			$sidcount = 0;
+			my $sidcount = 0;
 			foreach (@sid_mod) {
 				if ($_=~/(\d):\d+-\1:\d+/){
 					my ($lsid,$usid)=split(/-/,$_);
@@ -474,7 +481,7 @@ sub modifysid {
 					while ($lsid<=$usid){
 						$lsid++;
 						push(@sid_mod,$gid.':'.$lsid);
-					}
+					} $sidcount++;
 				}
 			}
 			foreach (@sid_mod) {
@@ -688,9 +695,9 @@ GetOptions ( "v+" => \$Verbose,
 		"s=s" => \$Sorules,
         "t=s" => \$Sostubs,
 		"S=s" => \$Snort,
+		"a=s" => \$arch,
         "p=s" => \$Snort_path,
 		"m=s" => \$sid_msg_map,
-        "P=s" => \$Tar_path,
 		"D=s" => \$Distro,
 		"c=s" => \$Config_file,
 		"i=s" => \$SID_conf,
@@ -721,12 +728,12 @@ if ($Verbose) {
 	if ($ips_policy) {print "\t$ips_policy policy specified\n";}
     if ($Snort) {print "\tSnort Version is: $Snort\n";}
     if ($Snort_path) {print "\tSnort Path is: $Snort_path\n";}
-    if ($Tar_path) {print "\tTar Path is: $Tar_path\n";}
     if ($Snort_config) {print "\tSnort Config File: $Snort_config\n";}
 	if ($SID_conf) {print "\tPath to disablesid file: $SID_conf\n";}
 	if ($DISID_conf) {print "\tPath to dropsid file: $DISID_conf\n";}
 	if ($enable_conf) {print "\tPath to enablesid file: $enable_conf\n";}
     if ($Distro) {print "\tDistro Def is: $Distro\n";}
+    if ($arch) {print "\tarch Def is: $arch\n";}
     if ($Verbose) {print "\tVerbose Flag is Set\n";}
     if ($Verbose == 2) {print "\tExtra Verbose Flag is Set\n";}
     if ($Logging) {print "\tLogging Flag is Set\n";}
@@ -768,15 +775,21 @@ $Output=slash(0,$Output);
 if (!$Sorules) {
     $Sorules = ($Config_info{'sorule_path'});
 }
-$Sorules=slash(1,$Sorules);
+$Sorules=slash(1,$Sorules) if $Sorules;
+undef $Sorules if $Textonly;
 
 if (!$Sostubs) {
     $Sostubs = ($Config_info{'sostub_path'});
 }
-$Sostubs=slash(0,$Sostubs);
+$Sostubs=slash(0,$Sostubs) if $Sostubs;
+undef $Sostubs if $Textonly;
 
 if (!$Distro) {
     $Distro = ($Config_info{'distro'});
+}
+
+if (!$arch) {
+	$arch = ($Config_info{'arch'});
 }
 
 if (!$Snort) {
@@ -796,10 +809,7 @@ if (!$local_rules && ($Config_info{'local_rules'})) {
 if (!$Snort_config) {
     $Snort_config = ($Config_info{'config_path'});
 }
-if (!$Tar_path) {
-    $Tar_path = ($Config_info{'tar_path'});
-    if (!$Tar_path) {Help("You need to specify the path to your tar binary!");}
-}
+
 if (!$sid_msg_map){
 	$sid_msg_map = ($Config_info{'sid_msg'});
 }
@@ -848,17 +858,16 @@ if ($oinkcode && $rule_file && -d $temp_path)
 		}
 
 		# compare the online current md5 against against the md5 of the rules file on system
-		compare_md5($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest);
+		compare_md5($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules);
     }
 	if ($NoDownload) {
-		rule_extract($oinkcode,$rule_file,$temp_path);
+		rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules);
 	}
     if ($Output){
-		#copy_rules($temp_path,$Output);
-		read_rules(\%rules_hash,"$temp_path"."tha_rules/rules/",$local_rules);
+		read_rules(\%rules_hash,"$temp_path"."tha_rules/",$local_rules);
     }
     if ($Sorules && $Distro && $Snort && !$Textonly){
-		copy_sorules($temp_path,$Sorules,$Distro,$Snort);
+		#copy_sorules($temp_path,$Sorules,$Distro,$Snort);
 		gen_stubs($Snort_path,$Snort_config,"$temp_path"."tha_rules/so_rules/");
 		read_rules(\%rules_hash,"$temp_path"."tha_rules/so_rules/",$local_rules);
     }
