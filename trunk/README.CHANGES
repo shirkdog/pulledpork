@@ -14,7 +14,7 @@ New Features/changes:
 - Ability to ignore entire rule categories (i.e. not include them)
 - All rulestate modifications, comparisons etc.. are now handled in-memory
 - Rewrite of sid-msg.map generation code to allow for all proper character
-	categorization and addition to sid-msg.map
+	reading and addition to sid-msg.map
 - No longer reliant on tar binary, now using Archive::Tar
 - Ability to specify your arch for so_rules
 - Added significant amounts of debug output when an error is detected
