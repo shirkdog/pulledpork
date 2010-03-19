@@ -467,7 +467,8 @@ sub modifysid {
 					$regex =~ s/\|/,/;
 					foreach (keys %$hashref) {
 						for my $k2 (keys %{$hashref->{$_}}) {
-							$sid_mod[$sidcount]=$_.":".$k2 if ($$hashref{$_}{$k2}=~/($regex)/i);
+							$sid_mod[$sidcount]=$_.":".$k2 if (($$hashref{$_}{$k2}=~/($regex)/i) && ($sid_mod[$sidcount]=~/[a-xA-X](\w|\W)*/));
+							push(@sid_mod,$_.":".$k2) if (($$hashref{$_}{$k2}=~/($regex)/i) && ($sid_mod[$sidcount]=~/\d:\d+/));
 						}
 					}
 				} $sidcount++;
