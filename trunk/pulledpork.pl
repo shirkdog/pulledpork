@@ -193,7 +193,7 @@ sub rule_extract
 			$tar->extract_file($filename,$temp_path."/tha_rules/".$singlefile);
 			print "\tExtracted: /tha_rules/$singlefile\n" if $Verbose;
 		}
-		elsif ($Sorules && $filename =~ /^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\/.*\.so/) {
+		elsif ($Sorules && $filename =~ /^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\/.*\.so/ && -d $Sorules) {
 			$singlefile=~s/^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\///;
 			$tar->extract_file($filename,$Sorules.$singlefile);
 			print "\tExtracted: $Sorules$singlefile\n" if $Verbose;
