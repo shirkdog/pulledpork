@@ -430,7 +430,7 @@ sub rule_mod {
 
 # this relaces the enablesid, disablesid and dropsid functions..
 # speed ftw!
-sub modifysid {
+sudo sudo sub modifysid {
 	my ($function,$SID_conf,$hashref) = @_;
 	my (@sid_mod,$sidlist);
 	print "Processing $SID_conf....\n";
@@ -472,7 +472,7 @@ sub modifysid {
 						}
 					}
 				} $sidcount++;
-			}
+			} $sidcount = 0;
 			foreach (@sid_mod) {
 				if ($_=~/^1:\d+/ || $_=~/^3:\d+/) {
 					my $gid=$&;
