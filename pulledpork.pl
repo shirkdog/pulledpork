@@ -430,7 +430,7 @@ sub rule_mod {
 
 # this relaces the enablesid, disablesid and dropsid functions..
 # speed ftw!
-sudo sudo sub modifysid {
+sub modifysid {
 	my ($function,$SID_conf,$hashref) = @_;
 	my (@sid_mod,$sidlist);
 	print "Processing $SID_conf....\n";
