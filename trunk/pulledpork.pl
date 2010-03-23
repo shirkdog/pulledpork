@@ -319,6 +319,7 @@ sub read_rules {
 		my $record;
 		foreach my $row(@extra_raw) {
 			$row=trim($row);
+			chomp($row);
 			if (($row!~/^#/) && ($row ne "")){ 
 				if ($row =~ /\\$/) {
 					$row =~ s/\\$//;
