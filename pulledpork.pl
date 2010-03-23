@@ -249,6 +249,7 @@ sub rulefetch
 		$getrules_rule = getstore($base_url."/".$rule_file,$temp_path.$rule_file);
 	}
 	if ($getrules_rule==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
+	elsif ($getrules_rule==404){print "\tA 404 error occured, please verify your filenames and url paths\n";}
     die "\tError $getrules_rule when fetching ".$rule_file unless is_success($getrules_rule);
     if ($Verbose)
 	{ print ("\tstoring file at: $temp_path$rule_file\n\n"); }
@@ -353,6 +354,8 @@ sub read_rules {
 			close(DATA);
 			
 			foreach my $rule(@elements) {
+				chomp($rule);
+				$rule=trim($rule);
 				if ($rule=~/sid:\s*\d+/) {
 				$sid=$&;
 				$sid=~s/sid:\s*//;
@@ -582,7 +585,7 @@ sub rule_write {
 	print "Writing $file....\n";
 	open(WRITE,">$file") || die "Unable to write $file - $!\n";
 	for my $k2 (sort keys %{$hashref->{$gid}}) {
-		print WRITE $$hashref{$gid}{$k2};
+		print WRITE $$hashref{$gid}{$k2}."\n";
 	}
 	close (WRITE);
 	print "\tDone\n";
