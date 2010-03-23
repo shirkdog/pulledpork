@@ -609,6 +609,7 @@ sub changelog {
 	print "Writing $changelog....\n";
 	my (@newsids,@delsids);
 	my $rt = 0;
+	my $dt = 0;
 	foreach my $k1 (sort keys %$hashref) {
 		for (sort keys %{$hashref->{$k1}}) {
 			push(@newsids,$k1.":".$_) unless exists $$hashref2{$k1}{$_};
@@ -618,7 +619,7 @@ sub changelog {
 	foreach my $k1 (sort keys %$hashref2) {
 		for (sort keys %{$hashref2->{$k1}}) {
 			push(@delsids,$k1.":".$_) unless exists $$hashref{$k1}{$_};
-			$rt++ unless exists $$hashref2{$k1}{$_};
+			$dt++ unless exists $$hashref2{$k1}{$_};
 		}
 	}
 	if (-f $changelog) { open(WRITE,">>$changelog") || die "$changelog $!\n"; }
@@ -633,6 +634,7 @@ sub changelog {
 	print WRITE "\nSet Policy: $ips_policy\n" if $ips_policy;
 	print WRITE "\nRule Totals\n";
 	print WRITE "\tNew:-------$rt\n";
+	print WRITE "\tDeleted:---$dt\n";
 	print WRITE "\tEnabled:---$enabled\n";
 	print WRITE "\tDropped:---$dropped\n";
 	print WRITE "\tDisabled:--$disabled\n";
