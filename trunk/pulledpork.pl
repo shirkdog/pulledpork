@@ -440,9 +440,9 @@ sub modifysid {
 			$sidlist=$_;
 			chomp($sidlist);
 			$sidlist=trim($sidlist);
-			if ( ($sidlist !~ /^#/) && ($sidlist ne "") && !(@sid_mod) ){
+			if ( ($sidlist !~ /^\s*#/) && ($sidlist ne "") && !(@sid_mod) ){
 				@sid_mod=split(/,/,$sidlist);  #split up the sids that we want to perform the operation on
-			} elsif (($sidlist !~ /^#/) && ($sidlist ne "" && @sid_mod)) {
+			} elsif (($sidlist !~ /^\s*#/) && ($sidlist ne "" && @sid_mod)) {
 				push(@sid_mod,split(/,/,$sidlist));
 			} else {}
 		}
@@ -894,7 +894,7 @@ if ($SID_conf && -f $SID_conf) {
 if ($sid_changelog && -f $Output) {
 	read_rules(\%oldrules_hash,"$Output",$local_rules);
 }
-if ($sid_changelog && -f $Sostubs) {
+if ($sid_changelog && $Sostubs && -f $Sostubs) {
 	read_rules(\%oldrules_hash,"$Sostubs",$local_rules);
 }
 
