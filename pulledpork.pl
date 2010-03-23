@@ -605,7 +605,7 @@ sub sid_write
 }
 
 sub changelog {
-	my ($changelog,$hashref,$hashref2,$enabled,$dropped,$disabled)=@_;
+	my ($changelog,$hashref,$hashref2,$enabled,$dropped,$disabled,$ips_policy)=@_;
 	print "Writing $changelog....\n";
 	my (@newsids,@delsids);
 	foreach my $k1 (sort keys %$hashref) {
@@ -627,6 +627,7 @@ sub changelog {
 	foreach (@newsids) { print WRITE "\t".$_."\n"; }
 	print WRITE "\nDeleted Rules\n" if @delsids;
 	foreach (@delsids) { print WRITE "\t".$_."\n"; }
+	print WRITE "\nSet Policy: $ips_policy\n" if $ips_policy;
 	print WRITE "\nRule Totals\n";
 	print WRITE "\tEnabled:---$enabled\n";
 	print WRITE "\tDropped:---$dropped\n";
@@ -932,7 +933,7 @@ print "\tDisabled Rules:---$disabled\n";
 print "\tTotal Rules:------".($enabled+$dropped+$disabled)."\n\tDone\n";
 
 if ($sid_changelog && -f $Output) {
-	changelog($sid_changelog,\%rules_hash,\%oldrules_hash,$enabled,$dropped,$disabled);
+	changelog($sid_changelog,\%rules_hash,\%oldrules_hash,$enabled,$dropped,$disabled,$ips_policy);
 }
 
 print ("Fly Piggy Fly!\n");
