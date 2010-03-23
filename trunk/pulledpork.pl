@@ -887,6 +887,9 @@ if ($SID_conf && -f $SID_conf) {
 if ($sid_changelog && -f $Output) {
 	read_rules(\%oldrules_hash,"$Output",$local_rules);
 }
+if ($sid_changelog && -f $Sostubs) {
+	read_rules(\%oldrules_hash,"$Sostubs",$local_rules);
+}
 
 if ($Output) {
 	rule_write(\%rules_hash,$Output,1);
