@@ -3,7 +3,7 @@
 
 = Intro =
 
-Pulled_Pork started in April of 2009(and renamed from Baconator in June of '09), this page is really just to list the anticipated release features....
+Pulled_Pork started in April of 2009(and renamed from Baconator in June of '09), this page is really just to list the anticipated(or current) release features....
 
 
 = Breakin it down... =
