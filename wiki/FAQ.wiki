@@ -19,6 +19,6 @@ Below you will find answers to the most commonly asked questions.
 *When I run pulledpork, I get an error about Archive::Tar?*
   * Ensure Archive::Tar is installed properly (perl -MCPAN -e shell 'install Archive::Tar')
 
-*I run Emerging Threats rulesets or custom rulesets and not all messages are in sid-msg.map*
+*I run Emerging Threats rulesets or custom rulesets and not all messages are in sid-msg.map and my pulledpork version is 0.3.4*
   * Download the <a href="http://pulledpork.googlecode.com/files/pp_304_whitespace.patch">pp_304_whitespace.patch</a> file and apply to your pulledpork.pl code
   * More info here <a href="http://global-security.blogspot.com/2010/01/et-rules-and-s.html">global-security.blogspot.com</a>.
