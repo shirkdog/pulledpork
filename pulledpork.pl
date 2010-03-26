@@ -34,7 +34,7 @@ use Switch;
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.4.0 Dev (Drunken Leprechaun)";
+my $VERSION = "Pulled_Pork v0.4.0 (Drunken Leprechaun)";
 
 # routine to grab our config from the defined config file
 sub parse_config_file {
@@ -311,40 +311,43 @@ sub read_rules {
 	my ($file,$sid,$gid,@elements);
 	print "\t" if $Verbose;
 	print "Reading rules...\n";
-	$extra_rules=slash(0,$extra_rules);
-	if ( $extra_rules && -f $extra_rules) {
-		open (DATA,"$extra_rules") || die "Couldn't read $extra_rules - $!\n";
-		my @extra_raw=<DATA>;
-		close (DATA);
-		my $trk = 0;
-		my $record;
-		foreach my $row(@extra_raw) {
-			$row=trim($row);
-			chomp($row);
-			if (($row!~/^#/) && ($row ne "")){ 
-				if ($row =~ /\\$/) {
-					$row =~ s/\\$//;
-					$record=$record . $row;
-					$trk=1;
-				}
-				elsif ($row !~ /\\$/ && $trk == 1) {
-					$record=$record . $row;
-					if ($record=~/sid:\s*\d+/) {
-						$sid=$&;
-						$sid=~s/sid:\s*//;
-						$$hashref{0}{$sid}=$record;
+	my @local_rules=split(/,/,$extra_rules);
+	foreach (@local_rules) {
+		$extra_rules=slash(0,$_);
+		if ( $extra_rules && -f $extra_rules) {
+			open (DATA,"$extra_rules") || die "Couldn't read $extra_rules - $!\n";
+			my @extra_raw=<DATA>;
+			close (DATA);
+			my $trk = 0;
+			my $record;
+			foreach my $row(@extra_raw) {
+				$row=trim($row);
+				chomp($row);
+				if (($row!~/^#/) && ($row ne "")){ 
+					if ($row =~ /\\$/) {
+						$row =~ s/\\$//;
+						$record=$record . $row;
+						$trk=1;
 					}
-					$trk=0;
-				}else {
-					if ($row=~/sid:\s*\d+/) {
-						$sid=$&;
-						$sid=~s/sid:\s*//;
-						$$hashref{0}{$sid}=$row;
+					elsif ($row !~ /\\$/ && $trk == 1) {
+						$record=$record . $row;
+						if ($record=~/sid:\s*\d+/) {
+							$sid=$&;
+							$sid=~s/sid:\s*//;
+							$$hashref{0}{$sid}=$record;
+						}
+						$trk=0;
+					}else {
+						if ($row=~/sid:\s*\d+/) {
+							$sid=$&;
+							$sid=~s/sid:\s*//;
+							$$hashref{0}{$sid}=$row;
+						}
+						$trk=0;
 					}
-					$trk=0;
 				}
-			}
-		} undef @extra_raw;
+			} undef @extra_raw;
+		}
 	}
 	if (-d $path) {
 		opendir (DIR,"$path");
