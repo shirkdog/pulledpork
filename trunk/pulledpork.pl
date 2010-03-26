@@ -248,8 +248,9 @@ sub rulefetch
 	else {
 		$getrules_rule = getstore($base_url."/".$rule_file,$temp_path.$rule_file);
 	}
-	if ($getrules_rule==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
-	elsif ($getrules_rule==404){print "\tA 404 error occured, please verify your filenames and url paths\n";}
+	if ($getrules_rule==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
+									"\tYou may also wish to verfiy your oinkcode!\n";}
+	elsif ($getrules_rule==404){print "\tA 404 error occured, please verify your filenames and urls for your tarball!\n";}
     die "\tError $getrules_rule when fetching ".$rule_file unless is_success($getrules_rule);
     if ($Verbose)
 	{ print ("\tstoring file at: $temp_path$rule_file\n\n"); }
@@ -289,7 +290,9 @@ sub md5file
 	elsif ($base_url =~ /emergingthreats\.net\/rules/i){
 		$getrules_md5 = getstore($base_url."/md5sums/".$rule_file.".md5",$temp_path.$rule_file.".md5");
 	}
-	if ($getrules_md5==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n";}
+	if ($getrules_md5==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
+									"\tYou may also wish to verfiy your oinkcode!\n";}
+	elsif ($getrules_md5==404){print "\tA 404 error occured, please verify your filenames and urls for your tarball!\n";}
     die "\tError $getrules_md5 when fetching ".$base_url."/".$rule_file.".md5" unless is_success($getrules_md5);
     open (FILE,"$temp_path$rule_file.md5")
           or die $!;
@@ -760,6 +763,11 @@ if ($Verbose)
 
 }
 
+if (exists $Config_info{'version'}){
+	die "You are not using the current version of pulledpork.conf!\n",
+		"Please use the version that shipped with $VERSION!\n\n" if $Config_info{'version'} ne "0.4.0";
+} else { die "You are not using the current version of pulledpork.conf!\nPlease use the version that shipped with $VERSION!\n\n"; }
+
 # Check to see if we have command line inputs, if so, they superseed any config file values!
 
 $pid_path = ($Config_info{'pid_path'}) if exists $Config_info{'pid_path'};
@@ -944,6 +952,7 @@ print "\tEnabled Rules:----$enabled\n";
 print "\tDropped Rules:----$dropped\n";
 print "\tDisabled Rules:---$disabled\n";
 print "\tTotal Rules:------".($enabled+$dropped+$disabled)."\n\tDone\n";
+print "\tPlease review the Changelog for additional detais\n";
 
 if ($sid_changelog && -f $Output) {
 	changelog($sid_changelog,\%rules_hash,\%oldrules_hash,$enabled,$dropped,$disabled,$ips_policy);
