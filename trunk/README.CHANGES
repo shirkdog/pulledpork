@@ -12,6 +12,7 @@ New Features/changes:
 - Ability to define sid ranges in any of the sid modification .conf files
 - Ability to specify references in any of the sid modification .conf files
 - Ability to ignore entire rule categories (i.e. not include them)
+- Specify locally stored rules files that need their meta data included in sid-msg.map
 - All rulestate modifications, comparisons etc.. are now handled in-memory
 - Rewrite of sid-msg.map generation code to allow for all proper character
 	reading and addition to sid-msg.map
