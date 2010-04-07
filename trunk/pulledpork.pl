@@ -34,7 +34,7 @@ use Switch;
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.4.0 (Drunken Leprechaun)";
+my $VERSION = "Pulled_Pork v0.4.1 Dev (Drunken Leprechaun)";
 
 # routine to grab our config from the defined config file
 sub parse_config_file {
@@ -326,27 +326,29 @@ sub read_rules {
 			foreach my $row(@extra_raw) {
 				$row=trim($row);
 				chomp($row);
-				if (($row!~/^#/) && ($row ne "")){ 
-					if ($row =~ /\\$/) {
-						$row =~ s/\\$//;
-						$record=$record . $row;
-						$trk=1;
-					}
-					elsif ($row !~ /\\$/ && $trk == 1) {
-						$record=$record . $row;
-						if ($record=~/sid:\s*\d+/) {
-							$sid=$&;
-							$sid=~s/sid:\s*//;
-							$$hashref{0}{$sid}=$record;
+				if ($row=~/^\s*#*\s*(alert|drop|pass)/i) {
+					if (($row!~/^#/) && ($row ne "")){ 
+						if ($row =~ /\\$/) {
+							$row =~ s/\\$//;
+							$record=$record . $row;
+							$trk=1;
 						}
-						$trk=0;
-					}else {
-						if ($row=~/sid:\s*\d+/) {
-							$sid=$&;
-							$sid=~s/sid:\s*//;
-							$$hashref{0}{$sid}=$row;
+						elsif ($row !~ /\\$/ && $trk == 1) {
+							$record=$record . $row;
+							if ($record=~/sid:\s*\d+/) {
+								$sid=$&;
+								$sid=~s/sid:\s*//;
+								$$hashref{0}{$sid}=$record;
+							}
+							$trk=0;
+						}else {
+							if ($row=~/sid:\s*\d+/) {
+								$sid=$&;
+								$sid=~s/sid:\s*//;
+								$$hashref{0}{$sid}=$row;
+							}
+							$trk=0;
 						}
-						$trk=0;
 					}
 				}
 			} undef @extra_raw;
@@ -362,14 +364,16 @@ sub read_rules {
 			foreach my $rule(@elements) {
 				chomp($rule);
 				$rule=trim($rule);
-				if ($rule=~/sid:\s*\d+/) {
-				$sid=$&;
-				$sid=~s/sid:\s*//;
-				if ($rule=~/gid:\s*\d/) {
+				if ($rule=~/^\s*#*\s*(alert|drop|pass)/i) {
+					if ($rule=~/sid:\s*\d+/) {
+					$sid=$&;
+					$sid=~s/sid:\s*//;
+					if ($rule=~/gid:\s*\d/) {
 						$gid=$&;
 						$gid=~s/gid:\s*//;
-				}else{ $gid=1; }
-				$$hashref{$gid}{$sid} = $rule;
+					}else{ $gid=1; }
+					$$hashref{$gid}{$sid} = $rule;
+					}
 				}
 			}
 		} 
@@ -381,14 +385,16 @@ sub read_rules {
 		close(DATA);
 		
 		foreach my $rule(@elements) {
-			if ($rule=~/sid:\s*\d+/) {
-			$sid=$&;
-			$sid=~s/sid:\s*//;
-			if ($rule=~/gid:\s*\d/) {
+			if ($rule=~/^\s*#*\s*(alert|drop|pass)/i) {
+				if ($rule=~/sid:\s*\d+/) {
+				$sid=$&;
+				$sid=~s/sid:\s*//;
+				if ($rule=~/gid:\s*\d/) {
 					$gid=$&;
 					$gid=~s/gid:\s*//;
-			}else{ $gid=1; }
-			$$hashref{$gid}{$sid} = $rule;
+				}else{ $gid=1; }
+				$$hashref{$gid}{$sid} = $rule;
+				}
 			}
 		}
 	}
