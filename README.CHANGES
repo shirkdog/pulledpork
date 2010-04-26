@@ -1,5 +1,29 @@
 PulledPork Changelog
 
+v0.4.1
+
+New Features/changes:
+- Flowbit tracking! - This means that all flowbits are not enabled when
+	a specific base ruleset is specified (security etc...) but rather all
+	flowbits are now tracked, allowing for only those that are required 
+	to be enabled.
+- Adjusted pulledpork.conf to account for new snort rules tarball naming 
+	and packing scheme, post Snort 2.8.6 release.
+- Added option to specify all rule modification files in the master 
+	pulledpork.conf file - feature request 19.
+- Added capability to specify base ruleset (see README.RULESETS) in master
+	pulledpork.conf file.
+- Handle preprocessor and sensitive-information rulesets
+
+Bug Fixes:
+- 18 - non-rule lines containing the string sid:xxxx were being populated
+	into the rule data structure, added an extra check to ensure that this
+	does not occur
+- Cleaned up href pointers, syntatical purposes only...
+- Modified master config to allow for better readability on smaller console
+	based systems
+- Error output was not always returning full error, fixed this
+
 v0.4.0 (Drunken Leprechaun)
 
 This version constitutes a major rewrite of the rule reading, modification

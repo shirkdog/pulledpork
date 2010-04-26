@@ -74,11 +74,14 @@ undef($ALogger);
 my %rules_hash = ();
 my %oldrules_hash = ();
 my %sid_msg_map = ();
+undef %rules_hash;
+undef %oldrules_hash;
+undef %sid_msg_map;
 
 ## Help routine.. display help to stdout then exit
 sub Help
 {
-my $msg=@_;
+my $msg=shift;
 if ($msg) { print "\nERROR: $msg\n"; }
 
 print<<__EOT;
@@ -182,7 +185,8 @@ sub rule_extract
     $tar->read($temp_path.$rule_file);
     my @ignores=split(/,/,$ignore);
     foreach (@ignores) {
-		$tar->remove("rules/$_\.rules");
+		print "\tIgnoring: rules/$_.rules from the tarball\n" if $Verbose;
+		$tar->remove("rules/$_.rules");
 	}
     my @files=$tar->get_files();
     foreach (@files) {
@@ -190,6 +194,11 @@ sub rule_extract
 		my $singlefile=$filename;
 		if($filename =~ /^rules\/.*\.rules$/) {
 			$singlefile=~s/^rules\///;
+			$tar->extract_file($filename,$temp_path."/tha_rules/".$singlefile);
+			print "\tExtracted: /tha_rules/$singlefile\n" if $Verbose;
+		}
+		elsif($filename =~ /^preproc_rules\/.*\.rules$/) {
+			$singlefile=~s/^preproc_rules\///;
 			$tar->extract_file($filename,$temp_path."/tha_rules/".$singlefile);
 			print "\tExtracted: /tha_rules/$singlefile\n" if $Verbose;
 		}
@@ -338,14 +347,14 @@ sub read_rules {
 							if ($record=~/sid:\s*\d+/) {
 								$sid=$&;
 								$sid=~s/sid:\s*//;
-								$$hashref{0}{$sid}{'rule'}=$record;
+								$$hashref{0}{trim($sid)}{'rule'}=$record;
 							}
 							$trk=0;
 						}else {
 							if ($row=~/sid:\s*\d+/) {
 								$sid=$&;
 								$sid=~s/sid:\s*//;
-								$$hashref{0}{$sid}{'rule'}=$row;
+								$$hashref{0}{trim($sid)}{'rule'}=$row;
 							}
 							$trk=0;
 						}
@@ -374,9 +383,9 @@ sub read_rules {
 					}else{ $gid=1; }
 					if ($rule=~/flowbits:\s*set\s*,\s*(\w|\.)+/) {
 						my ($flowbits,$flowbit)=split(/,/,$&);
-						$$hashref{$gid}{$sid}{trim($flowbit)} = "set";
+						$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = "set";
 					}
-					$$hashref{$gid}{$sid}{'rule'} = $rule;
+					$$hashref{trim($gid)}{trim($sid)}{'rule'} = $rule;
 					}
 				}
 			}
@@ -399,9 +408,9 @@ sub read_rules {
 				}else{ $gid=1; }
 				if ($rule=~/flowbits:\s*set\s*,\s*(\w|\.)+/) {
 					my ($flowbits,$flowbit)=split(/,/,$&);
-					$$hashref{$gid}{$sid}{trim($flowbit)} = "set";
+					$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = "set";
 				}
-				$$hashref{$gid}{$sid}{'rule'} = $rule;
+				$$hashref{trim($gid)}{trim($sid)}{'rule'} = $rule;
 				}
 			}
 		}
@@ -428,15 +437,11 @@ sub gen_stubs
 }  
 
 sub vrt_policy {
-	my ($ids_policy,$rule,$hashref) = @_;
+	my ($ids_policy,$rule) = @_;
 	my ($gid,$sid);
 	if ($rule=~/policy\s$ids_policy/i){
-		$rule=~s/^#\s*//;
-		if ($rule=~/flowbits:\s*isset\s*,\s*(\w|\.)+/i){
-			my ($flowbits,$flowbit)=split(/,/,$&);
-			$$hashref{trim($flowbit)}="isset";
-		}
-	}elsif ($rule!~/^#/) {
+		$rule=~s/^#*\s*//;
+	}elsif ($rule!~/^\s*#/) {
 		$rule="# $rule";
 	}
 	return $rule;
@@ -444,24 +449,18 @@ sub vrt_policy {
 
 sub rule_mod {
 	my ($ids_policy,$hashref) = @_;
-	my %flowbits=();
 	if ($hashref) {
 		if ($ids_policy ne "Disabled" && $ids_policy ne "") {
 			print "Activating $ids_policy rulesets....\n";
 			foreach my $k(sort keys %$hashref) {
-				for my $k2 (keys %{$hashref->{$k}}) {
-					$$hashref{$k}{$k2}{'rule'} = vrt_policy($ids_policy,$$hashref{$k}{$k2}{'rule'},\%flowbits);
-					foreach (keys %flowbits) { #handling flowbit tracking here.. 
-						next unless defined $$hashref{$k}{$k2}{$_};
-						$$hashref{$k}{$k2}{'rule'}=~s/^#\s*//;
-					}
+				foreach my $k2 (keys %{$$hashref{$k}}) {
+					$$hashref{$k}{$k2}{'rule'} = vrt_policy($ids_policy,$$hashref{$k}{$k2}{'rule'});
 				}
 			}
 
 			print "\tDone\n";
 		}
 	}
-	undef %flowbits;	
 }
 
 # this relaces the enablesid, disablesid and dropsid functions..
@@ -480,14 +479,14 @@ sub modifysid {
 				@sid_mod=split(/,/,$sidlist);  #split up the sids that we want to perform the operation on
 			} elsif (($sidlist !~ /^\s*#/) && ($sidlist ne "" && @sid_mod)) {
 				push(@sid_mod,split(/,/,$sidlist));
-			} else {}
+			}
 		}
 		close (DATA);
 		if ($hashref) {
 			my $sidcount = 0;
 			foreach (@sid_mod) {
-				if ($_=~/(\d):\d+-\1:\d+/){
-					my ($lsid,$usid)=split(/-/,$_);
+				if ($_=~/(\d+):\d+-\1:\d+/){
+					my ($lsid,$usid)=split(/-/,$&);
 					my $gid=$lsid;
 					$sid_mod[$sidcount]=$lsid;
 					$gid=~s/:\d+//;
@@ -501,17 +500,17 @@ sub modifysid {
 				elsif ($_=~/[a-xA-X](\w|\W)*/){
 					my $regex = $&;
 					$regex =~ s/\|/,/;
-					foreach (keys %$hashref) {
-						for my $k2 (keys %{$hashref->{$_}}) {
-							next unless defined $$hashref{$_}{$k2}{'rule'};
-							$sid_mod[$sidcount]=$_.":".$k2 if (($$hashref{$_}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/[a-xA-X](\w|\W)*/));
-							push(@sid_mod,$_.":".$k2) if (($$hashref{$_}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/\d:\d+/));
+					foreach my $k1 (keys %$hashref) {
+						foreach my $k2 (keys %{$$hashref{$k1}}) {
+							next unless defined $$hashref{$k1}{$k2}{'rule'};
+							$sid_mod[$sidcount]=$k1.":".$k2 if (($$hashref{$k1}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/[a-xA-X](\w|\W)*/));
+							push(@sid_mod,$k1.":".$k2) if (($$hashref{$k1}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/\d:\d+/));
 						}
 					}
 				} $sidcount++;
 			} $sidcount = 0;
 			foreach (@sid_mod) {
-				if ($_=~/^1:\d+/ || $_=~/^3:\d+/) {
+				if ($_=~/^\d+:\d+/) {
 					my $gid=$&;
 					my $sid=$gid;
 					if ($gid && $sid) {
@@ -519,27 +518,27 @@ sub modifysid {
 						$sid=~s/\d://;
 						switch ($function) {
 							case "enable" {
-								unless (!(defined $$hashref{$gid}{$sid}{'rule'}) || $$hashref{$gid}{$sid}{'rule'}=~/^\s*alert/i || $$hashref{$gid}{$sid}{'rule'}=~/^\s*drop/i) {
-									$$hashref{$gid}{$sid}{'rule'}=~s/^\s*#\s*//;
+								if (exists $$hashref{$gid}{$sid} && $$hashref{$gid}{$sid}{'rule'}=~/^\s*#\s*(alert|drop|pass)/i) {
+									$$hashref{$gid}{$sid}{'rule'}=~s/^\s*#+\s*//;
 									if ($Verbose) { print "\tEnabled $gid:$sid\n"; }
 									$sidcount++;
 								}
 							}
 							case "drop" {
-								unless (!(defined $$hashref{$gid}{$sid}{'rule'}) || $$hashref{$gid}{$sid}{'rule'}=~/^\s*drop/i) {
-									$$hashref{$gid}{$sid}{'rule'}=~s/^\s*#\s*//;
+								if (exists $$hashref{$gid}{$sid} && $$hashref{$gid}{$sid}{'rule'}=~/^\s*#*\s*alert/i) {
+									$$hashref{$gid}{$sid}{'rule'}=~s/^\s*#*\s*//;
 									$$hashref{$gid}{$sid}{'rule'}=~s/^alert/drop/;
 									if ($Verbose) { print "\tWill drop $gid:$sid\n"; }
 									$sidcount++;
 								}
 							}
 							case "disable" {
-								unless ( !(defined $$hashref{$gid}{$sid}{'rule'}) || $$hashref{$gid}{$sid}{'rule'}=~/^\s*#/) {
+								if ( exists $$hashref{$gid}{$sid} && $$hashref{$gid}{$sid}{'rule'}=~/^\s*(alert|drop|pass)/i) {
 									$$hashref{$gid}{$sid}{'rule'}="# ".$$hashref{$gid}{$sid}{'rule'};
 									if ($Verbose) { print "\tDisabled $gid:$sid\n"; }
 									$sidcount++;
 								}
-							} 
+							}
 						}
 					}
 				}
@@ -576,7 +575,7 @@ sub sid_msg
 	my ($gid,$arg,$msg);
 	print "Generating sid-msg.map....\n";
 	foreach my $k (sort keys %$ruleshash) {
-		for my $k2 (sort keys %{$ruleshash->{$k}}) {
+		foreach my $k2 (sort keys %{$$ruleshash{$k}}) {
 			(my $header, my $options) = split(/^.* \(/, $$ruleshash{$k}{$k2}{'rule'}) if defined $$ruleshash{$k}{$k2}{'rule'};
 			my @optarray = split(/;(\t|\s)?/,$options) if $options;
 			foreach my $option (reverse(@optarray))
@@ -617,9 +616,19 @@ sub rule_write {
 	my ($hashref,$file,$gid)=@_;
 	print "Writing $file....\n";
 	open(WRITE,">$file") || die "Unable to write $file - $!\n";
-	for my $k2 (sort keys %{$hashref->{$gid}}) {
-		next unless defined $$hashref{$gid}{$k2}{'rule'};
-		print WRITE $$hashref{$gid}{$k2}{'rule'}."\n";
+	if ($gid==1){
+		foreach my $k (sort keys %$hashref) {
+			foreach my $k2 (sort keys %{$$hashref{$k}}) {
+				next unless defined $$hashref{$k}{$k2}{'rule'};
+				print WRITE $$hashref{$k}{$k2}{'rule'}."\n" if $k!~/(0|3)/;
+			}
+		}
+	}
+	elsif ($gid==3) {
+		foreach my $k2 (sort keys %{$$hashref{$gid}}) {
+			next unless defined $$hashref{$gid}{$k2}{'rule'};
+			print WRITE $$hashref{$gid}{$k2}{'rule'}."\n";
+		}
 	}
 	close (WRITE);
 	print "\tDone\n";
@@ -642,22 +651,65 @@ sub sid_write
 	print "\tDone\n";
 }
 
+sub flowbit_set {
+	my $href=shift;
+	my $counter=0;
+	my @flowbits;
+	print "Setting Flowbit state....\n";
+	foreach my $k1 (keys %$href){
+		foreach my $k2 (keys %{$$href{$k1}}){
+			if ($$href{$k1}{$k2}{'rule'}=~/^\s*(alert|drop|pass)/ && $$href{$k1}{$k2}{'rule'}=~/flowbits:\s*isset\s*,\s*(\w|\.)+/i){
+				my ($flowbithead,$flowbit)=split(/,/,$&);
+				@flowbits=trim($flowbit) unless @flowbits;
+				push(@flowbits,trim($flowbit)) if @flowbits;
+			}	
+		}
+		foreach my $k2 (keys %{$$href{$k1}}){
+			foreach my $flowbit(@flowbits) {
+				if (defined $$href{$k1}{$k2}{$flowbit}) {
+					$$href{$k1}{$k2}{'rule'}=~s/^#\s*//;
+					$counter++;
+				}
+			}
+		}
+	}
+	print "\tEnabled $counter flowbits\n";
+	print "\tDone\n";
+}
+
 sub changelog {
-	my ($changelog,$hashref,$hashref2,$enabled,$dropped,$disabled,$ips_policy)=@_;
+	my ($changelog,$hashref,$hashref2,$ips_policy)=@_;
+	
 	print "Writing $changelog....\n";
 	my (@newsids,@delsids);
+	undef @newsids;
+	undef @delsids;
 	my $rt = 0;
 	my $dt = 0;
-	foreach my $k1 (sort keys %$hashref) {
-		for (sort keys %{$hashref->{$k1}}) {
-			push(@newsids,$k1.":".$_) unless exists $$hashref2{$k1}{$_}{'rule'};
-			$rt++ unless exists $$hashref2{$k1}{$_}{'rule'};
+	my $dropped = 0;
+	my $enabled = 0;
+	my $disabled = 0;
+	foreach my $k1 (keys %rules_hash) {
+		foreach my $k2 (keys %{$$hashref{$k1}}) {
+			push(@newsids,$k1.":".$k2) unless defined $$hashref2{$k1}{$k2}{'rule'};
+			$rt++ unless defined $$hashref2{$k1}{$k2}{'rule'};
+			next unless defined $$hashref{$k1}{$k2}{'rule'};
+			if ($$hashref{$k1}{$k2}{'rule'}=~/^\s*(alert|pass)/) {
+				$enabled++;
+			}
+			elsif ($$hashref{$k1}{$k2}{'rule'}=~/^\s*drop/) {
+				$dropped++;
+			}
+			elsif ($$hashref{$k1}{$k2}{'rule'}=~/^\s*#*\s*(alert|drop|pass)/) {
+				$disabled++;
+			}
 		}
 	}
 	foreach my $k1 (sort keys %$hashref2) {
-		for (sort keys %{$hashref2->{$k1}}) {
-			push(@delsids,$k1.":".$_) unless exists $$hashref{$k1}{$_}{'rule'};
-			$dt++ unless exists $$hashref2{$k1}{$_}{'rule'};
+		for my $k2 (sort keys %{$$hashref2{$k1}}) {
+			next if defined $$hashref{$k1}{$k2}{'rule'};
+			push(@delsids,$k1.":".$k2);
+			$dt++;
 		}
 	}
 	if (-f $changelog) { open(WRITE,">>$changelog") || die "$changelog $!\n"; }
@@ -680,8 +732,18 @@ sub changelog {
 	print WRITE "\n-=End Changes Logged for ".gmtime(time)." GMT=-\n";
 	close (WRITE);
 	print "\tDone\n";
+	
+	print "Rule Stats....\n";
+	print "\tNew:-------$rt\n";
+	print "\tDeleted:---$dt\n";
+	print "\tEnabled Rules:----$enabled\n";
+	print "\tDropped Rules:----$dropped\n";
+	print "\tDisabled Rules:---$disabled\n";
+	print "\tTotal Rules:------".($enabled+$dropped+$disabled)."\n\tDone\n";
+	print "Please review the Changelog for additional detais\n";
 	undef @newsids;
 	undef @delsids;
+	
 }
 
 sub trim  #sub to remove whitespace before and after a string
@@ -705,14 +767,11 @@ sub slash #test for trailing slash and add or remove if needed 1 for add 0 for r
 	return $string;	
 }
 
-
 sub Version
 {
     print ("$VERSION\n\n");
     exit(0);    
 }
-
-## Ok, let's do the magic and actually execute everything in good turn~!
 
 ## Lets grab any runtime values and insert into our variables using getopt::long
 GetOptions ( "v+" => \$Verbose,
@@ -793,13 +852,30 @@ if ($Verbose)
 
 if (exists $Config_info{'version'}){
 	die "You are not using the current version of pulledpork.conf!\n",
-		"Please use the version that shipped with $VERSION!\n\n" if $Config_info{'version'} ne "0.4.0";
+		"Please use the version that shipped with $VERSION!\n\n" if $Config_info{'version'} ne "0.4.1";
 } else { die "You are not using the current version of pulledpork.conf!\nPlease use the version that shipped with $VERSION!\n\n"; }
 
 # Check to see if we have command line inputs, if so, they superseed any config file values!
+# We also begin sub execution here
 
 $pid_path = ($Config_info{'pid_path'}) if exists $Config_info{'pid_path'};
 $ignore_files = ($Config_info{'ignore'}) if exists $Config_info{'ignore'};
+
+if (!$ips_policy && defined $Config_info{'ips_policy'}) {
+	$ips_policy = $Config_info{'ips_policy'};
+}
+
+if (!$enable_conf && defined $Config_info{'enablesid'}) {
+	$enable_conf = $Config_info{'enablesid'};
+}
+
+if (!$DISID_conf && defined $Config_info{'dropsid'}) {
+	$DISID_conf = $Config_info{'dropsid'};
+}
+
+if (!$SID_conf && defined $Config_info{'disablesid'}) {
+	$SID_conf = $Config_info{'disablesid'};
+}
 
 if (!$base_url) {
 	$base_url = ($Config_info{'base_url'});
@@ -908,13 +984,19 @@ if ($oinkcode && $rule_file && -d $temp_path)
 		read_rules(\%rules_hash,"$temp_path"."tha_rules/",$local_rules);
     }
     if ($Sorules && $Distro && $Snort && !$Textonly){
-		#copy_sorules($temp_path,$Sorules,$Distro,$Snort);
 		gen_stubs($Snort_path,$Snort_config,"$temp_path"."tha_rules/so_rules/");
 		read_rules(\%rules_hash,"$temp_path"."tha_rules/so_rules/",$local_rules);
     }
 } else { Help("Check your oinkcode, temp path and freespace!"); }
 
-if ($temp_path) {
+if ($sid_changelog && -f $Output) {
+	read_rules(\%oldrules_hash,"$Output",$local_rules);
+}
+if ($sid_changelog && $Sostubs && -f $Sostubs) {
+	read_rules(\%oldrules_hash,"$Sostubs",$local_rules);
+}
+
+if (-d $temp_path) {
     temp_cleanup();
 }
 
@@ -934,12 +1016,7 @@ if ($SID_conf && -f $SID_conf) {
 	modifysid('disable',$SID_conf,\%rules_hash)
 }
 
-if ($sid_changelog && -f $Output) {
-	read_rules(\%oldrules_hash,"$Output",$local_rules);
-}
-if ($sid_changelog && $Sostubs && -f $Sostubs) {
-	read_rules(\%oldrules_hash,"$Sostubs",$local_rules);
-}
+flowbit_set (\%rules_hash);
 
 if ($Output) {
 	rule_write(\%rules_hash,$Output,1);
@@ -958,33 +1035,8 @@ if ($SigHup && $pid_path ne "") {
 	sig_hup($pid_path);
 }
 
-my $enabled=0;
-my $dropped=0;
-my $disabled=0;
-
-print "Generating Rule Stats....\n";
-foreach my $k1 (keys %rules_hash) {
-	foreach my $k2 (keys %{$rules_hash{$k1}}) {
-		next unless defined $rules_hash{$k1}{$k2}{'rule'};
-		if ($rules_hash{$k1}{$k2}{'rule'}=~/^\s*(alert|pass)/) {
-			$enabled++;
-		}
-		elsif ($rules_hash{$k1}{$k2}{'rule'}=~/^\s*drop/) {
-			$dropped++;
-		}
-		elsif ($rules_hash{$k1}{$k2}{'rule'}=~/^\s*#/) {
-			$disabled++;
-		}
-	}
-}
-print "\tEnabled Rules:----$enabled\n";
-print "\tDropped Rules:----$dropped\n";
-print "\tDisabled Rules:---$disabled\n";
-print "\tTotal Rules:------".($enabled+$dropped+$disabled)."\n\tDone\n";
-print "\tPlease review the Changelog for additional detais\n";
-
 if ($sid_changelog && -f $Output) {
-	changelog($sid_changelog,\%rules_hash,\%oldrules_hash,$enabled,$dropped,$disabled,$ips_policy);
+	changelog($sid_changelog,\%rules_hash,\%oldrules_hash,$ips_policy);
 }
 
 print ("Fly Piggy Fly!\n");
