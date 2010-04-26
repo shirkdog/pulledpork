@@ -1,6 +1,6 @@
 PulledPork Changelog
 
-v0.4.1
+v0.4.1 (Stumbling Leprechaun)
 
 New Features/changes:
 - Flowbit tracking! - This means that all flowbits are not enabled when
@@ -23,6 +23,10 @@ Bug Fixes:
 - Modified master config to allow for better readability on smaller console
 	based systems
 - Error output was not always returning full error, fixed this
+
+BE SURE to read through the master pulledpork.conf file thoroughly, as 
+there are many changes as of snort 2.8.6.0 that WILL affect you, even 
+if you are NOT yet running 2.8.6.0!
 
 v0.4.0 (Drunken Leprechaun)
 

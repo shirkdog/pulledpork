@@ -26,7 +26,7 @@ use LWP::Simple;
 use Digest::MD5;
 use File::Path;
 use Getopt::Long qw(:config no_ignore_case bundling);
-use Archive::Tar;  # Finally, right!
+use Archive::Tar;
 use POSIX qw(:errno_h);  
 use Switch;
 
@@ -34,7 +34,7 @@ use Switch;
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.4.1 Dev (Drunken Leprechaun)";
+my $VERSION = "Pulled_Pork v0.4.1 (Stumbling Leprechaun)";
 
 # routine to grab our config from the defined config file
 sub parse_config_file {
