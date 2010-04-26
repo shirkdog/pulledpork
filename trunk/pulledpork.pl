@@ -185,8 +185,9 @@ sub rule_extract
     $tar->read($temp_path.$rule_file);
     my @ignores=split(/,/,$ignore);
     foreach (@ignores) {
-		print "\tIgnoring: rules/$_.rules from the tarball\n" if $Verbose;
+		print "\tIgnoring: $_.rules from the tarball\n" if $Verbose;
 		$tar->remove("rules/$_.rules");
+		$tar->remove("preproc_rules/$_.rules");
 	}
     my @files=$tar->get_files();
     foreach (@files) {
