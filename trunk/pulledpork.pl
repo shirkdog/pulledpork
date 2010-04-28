@@ -741,7 +741,7 @@ sub changelog {
 	print "\tDropped Rules:----$dropped\n";
 	print "\tDisabled Rules:---$disabled\n";
 	print "\tTotal Rules:------".($enabled+$dropped+$disabled)."\n\tDone\n";
-	print "Please review the Changelog for additional detais\n";
+	print "Please review the Changelog for additional details\n";
 	undef @newsids;
 	undef @delsids;
 	
