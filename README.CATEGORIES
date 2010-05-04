@@ -2,11 +2,12 @@ Readme (dot) Categories May 4, 2010 - JJC
 
 Each respective ruleset from VRT or Emerging Threats (ET) contains categories 
 that their rules belong to.  This file lists (it may not be complete)
-each these categories.  These specifications may be used in the sid modification
-configuration files (enablesid, dropsid and disablesid).  Each category is
-fairly self explanatory, i.e. voip contains rules pertaining to voip applications 
-and exploits, whereas mysql contains rules targeted at detecting attacks
-against mysql etc....
+each of these categories.  These specifications may be used in the sid
+modification configuration files (enablesid, dropsid and disablesid).  
+Each category is fairly self explanatory, i.e. voip contains rules pertaining 
+to voip applications and exploits, whereas mysql contains rules targeted 
+at detecting attacks against mysql etc....
+
 
 -= VRT Categories =-
 decoder
@@ -22,9 +23,7 @@ pop3
 bad-traffic       
 info        
 rpc               
-web-activex
-cgi-bin.list            
-local       
+web-activex     
 rservices         
 web-attacks
 chat              
@@ -37,8 +36,7 @@ web-client
 ddos              
 multimedia  
 shellcode         
-web-coldfusion
-deleted           
+web-coldfusion          
 mysql       
 smtp              
 web-frontpage

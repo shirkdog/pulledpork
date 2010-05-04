@@ -511,7 +511,7 @@ sub modifysid {
 						}
 					}
 				}
-				elsif ($_=~/MS(\w|-)*/){
+				elsif ($_=~/MS(\w|-)*/i){
 					my $regex = $&;
 					foreach my $k1 (keys %$hashref) {
 						foreach my $k2 (keys %{$$hashref{$k1}}) {
