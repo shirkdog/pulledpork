@@ -34,7 +34,7 @@ use Switch;
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.4.1 (Stumbling Leprechaun)";
+my $VERSION = "Pulled_Pork v0.4.2";
 
 # routine to grab our config from the defined config file
 sub parse_config_file {
@@ -375,18 +375,20 @@ sub read_rules {
 				chomp($rule);
 				$rule=trim($rule);
 				if ($rule=~/^\s*#*\s*(alert|drop|pass)/i) {
-					if ($rule=~/sid:\s*\d+/) {
+					if ($rule=~/sid:\s*\d+/i) {
 					$sid=$&;
 					$sid=~s/sid:\s*//;
-					if ($rule=~/gid:\s*\d/) {
+					if ($rule=~/gid:\s*\d+/i) {
 						$gid=$&;
 						$gid=~s/gid:\s*//;
 					}else{ $gid=1; }
-					if ($rule=~/flowbits:\s*set\s*,\s*(\w|\.)+/) {
+					if ($rule=~/flowbits:\s*set\s*,\s*(\w|\.)+/i) {
 						my ($flowbits,$flowbit)=split(/,/,$&);
 						$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = "set";
 					}
 					$$hashref{trim($gid)}{trim($sid)}{'rule'} = $rule;
+					$file=~s/\.rules//;
+					$$hashref{trim($gid)}{trim($sid)}{$file} = "set";
 					}
 				}
 			}
@@ -403,7 +405,7 @@ sub read_rules {
 				if ($rule=~/sid:\s*\d+/) {
 				$sid=$&;
 				$sid=~s/sid:\s*//;
-				if ($rule=~/gid:\s*\d/) {
+				if ($rule=~/gid:\s*\d+/i) {
 					$gid=$&;
 					$gid=~s/gid:\s*//;
 				}else{ $gid=1; }
@@ -491,24 +493,44 @@ sub modifysid {
 					my $gid=$lsid;
 					$sid_mod[$sidcount]=$lsid;
 					$gid=~s/:\d+//;
-					$lsid=~s/\d://;
-					$usid=~s/\d://;
-					while ($lsid<=$usid){
+					$lsid=~s/\d+://;
+					$usid=~s/\d+://;
+					while ($lsid<$usid){
 						$lsid++;
 						push(@sid_mod,$gid.':'.$lsid);
 					} 
 				}
-				elsif ($_=~/[a-xA-X](\w|\W)*/){
+				elsif ($_=~/[a-xA-X]+\|(\w|\W)*/){
 					my $regex = $&;
 					$regex =~ s/\|/,/;
 					foreach my $k1 (keys %$hashref) {
 						foreach my $k2 (keys %{$$hashref{$k1}}) {
 							next unless defined $$hashref{$k1}{$k2}{'rule'};
 							$sid_mod[$sidcount]=$k1.":".$k2 if (($$hashref{$k1}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/[a-xA-X](\w|\W)*/));
-							push(@sid_mod,$k1.":".$k2) if (($$hashref{$k1}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/\d:\d+/));
+							push(@sid_mod,$k1.":".$k2) if (($$hashref{$k1}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/\d+:\d+/));
 						}
 					}
-				} $sidcount++;
+				}
+				elsif ($_=~/MS(\w|-)*/){
+					my $regex = $&;
+					foreach my $k1 (keys %$hashref) {
+						foreach my $k2 (keys %{$$hashref{$k1}}) {
+							next unless defined $$hashref{$k1}{$k2}{'rule'};
+							$sid_mod[$sidcount]=$k1.":".$k2 if (($$hashref{$k1}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/[a-xA-X](\w|\W)*/));
+							push(@sid_mod,$k1.":".$k2) if (($$hashref{$k1}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/\d+:\d+/));
+						}
+					}
+				}
+				elsif ($_=~/[a-xA-X]+(-|\w)*/){
+					my $category = $&;
+					foreach my $k1 (keys %$hashref) {
+						foreach my $k2 (keys %{$$hashref{$k1}}) {
+							next unless defined $$hashref{$k1}{$k2}{$category};
+							$sid_mod[$sidcount]=$k1.":".$k2;
+							push(@sid_mod,$k1.":".$k2) if $sid_mod[$sidcount]=~/\d+:\d+/;
+						}
+					}
+				}$sidcount++;
 			} $sidcount = 0;
 			foreach (@sid_mod) {
 				if ($_=~/^\d+:\d+/) {
@@ -516,7 +538,7 @@ sub modifysid {
 					my $sid=$gid;
 					if ($gid && $sid) {
 						$gid=~s/:\d+//;
-						$sid=~s/\d://;
+						$sid=~s/\d+://;
 						switch ($function) {
 							case "enable" {
 								if (exists $$hashref{$gid}{$sid} && $$hashref{$gid}{$sid}{'rule'}=~/^\s*#\s*(alert|drop|pass)/i) {
@@ -621,7 +643,7 @@ sub rule_write {
 		foreach my $k (sort keys %$hashref) {
 			foreach my $k2 (sort keys %{$$hashref{$k}}) {
 				next unless defined $$hashref{$k}{$k2}{'rule'};
-				print WRITE $$hashref{$k}{$k2}{'rule'}."\n" if $k!~/(0|3)/;
+				print WRITE $$hashref{$k}{$k2}{'rule'}."\n" if ($k ne 0) && ($k ne 3);
 			}
 		}
 	}
@@ -853,7 +875,7 @@ if ($Verbose)
 
 if (exists $Config_info{'version'}){
 	die "You are not using the current version of pulledpork.conf!\n",
-		"Please use the version that shipped with $VERSION!\n\n" if $Config_info{'version'} ne "0.4.1";
+		"Please use the version that shipped with $VERSION!\n\n" if $Config_info{'version'} ne "0.4.2";
 } else { die "You are not using the current version of pulledpork.conf!\nPlease use the version that shipped with $VERSION!\n\n"; }
 
 # Check to see if we have command line inputs, if so, they superseed any config file values!

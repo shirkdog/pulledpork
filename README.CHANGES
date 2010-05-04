@@ -1,5 +1,18 @@
 PulledPork Changelog
 
+v0.4.2
+
+New Features / changes:
+- Capability to enable rules by category (See README.CATEGORIES)
+
+Bug Fixes:
+- Certain rules specific GID values were not being properly parsed
+	by the modifysid sub.
+- Bug #20 fixed, ranges are no longer off by +1 additional rule being enabled
+- Enhancement request #21, added more descript information to dropsid.conf
+	and to README
+
+
 v0.4.1 (Stumbling Leprechaun)
 
 New Features/changes:
