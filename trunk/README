@@ -73,7 +73,7 @@ The above will simply read the disablesid and disable as defined, then send a Ha
 at the specified location without downloading anything.
 Highly useful when tuning / making changes etc..
 
-Next example, inline with rules that we want to drop and disable, then HUP our daemons after creating a sid-msg.map
+Next example, snort inline with rules that we want to drop and disable, then HUP our daemons after creating a sid-msg.map
 and writing change info to sid_changes.log!
 
 ./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -m /usr/local/etc/snort/sid-msg.map \
