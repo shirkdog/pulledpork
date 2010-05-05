@@ -4,6 +4,8 @@ v0.4.2
 
 New Features / changes:
 - Capability to enable rules by category (See README.CATEGORIES)
+- Added README.CATEGORIES
+- Follow flowbit chains
 
 Bug Fixes:
 - Certain rules specific GID values were not being properly parsed
@@ -11,6 +13,10 @@ Bug Fixes:
 - Bug #20 fixed, ranges are no longer off by +1 additional rule being enabled
 - Enhancement request #21, added more descript information to dropsid.conf
 	and to README
+- Fixed flaw that caused certain flowbits to not be set (when GID boundaries
+	were crossed and multiple keys were checked)
+- Enhancement request #22 updated the master config file to contain all of the currently available
+	precompiled SO rules
 
 
 v0.4.1 (Stumbling Leprechaun)

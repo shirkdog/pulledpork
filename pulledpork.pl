@@ -384,11 +384,11 @@ sub read_rules {
 					}else{ $gid=1; }
 					if ($rule=~/flowbits:\s*set\s*,\s*(\w|\.)+/i) {
 						my ($flowbits,$flowbit)=split(/,/,$&);
-						$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = "set";
+						$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = 1;
 					}
 					$$hashref{trim($gid)}{trim($sid)}{'rule'} = $rule;
 					$file=~s/\.rules//;
-					$$hashref{trim($gid)}{trim($sid)}{$file} = "set";
+					$$hashref{trim($gid)}{trim($sid)}{$file} = 1;
 					}
 				}
 			}
@@ -411,7 +411,7 @@ sub read_rules {
 				}else{ $gid=1; }
 				if ($rule=~/flowbits:\s*set\s*,\s*(\w|\.)+/) {
 					my ($flowbits,$flowbit)=split(/,/,$&);
-					$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = "set";
+					$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = 1;
 				}
 				$$hashref{trim($gid)}{trim($sid)}{'rule'} = $rule;
 				}
@@ -674,28 +674,44 @@ sub sid_write
 	print "\tDone\n";
 }
 
+sub flowbit_check {
+	my ($rule,$aref)=@_;
+	my ($header, $options) = split(/^.* \(/, $rule);
+	my @optarray = split(/;(\t|\s)?/,$options) if $options;
+	foreach my $option (reverse(@optarray)){
+		my ($kw,$arg) = split(/:/, $option) if $option;
+		next unless ($kw && $arg && $kw eq "flowbits");
+		my ($flowact,$flowbit) = split(/,/,$arg);
+		next unless $flowact=~/is(not)?set/i;
+		push(@$aref,$flowbit);
+	}
+}
+
 sub flowbit_set {
 	my $href=shift;
 	my $counter=0;
 	my @flowbits;
-	print "Setting Flowbit state....\n";
 	foreach my $k1 (keys %$href){
 		foreach my $k2 (keys %{$$href{$k1}}){
-			if ($$href{$k1}{$k2}{'rule'}=~/^\s*(alert|drop|pass)/ && $$href{$k1}{$k2}{'rule'}=~/flowbits:\s*isset\s*,\s*(\w|\.)+/i){
-				my ($flowbithead,$flowbit)=split(/,/,$&);
-				@flowbits=trim($flowbit) unless @flowbits;
-				push(@flowbits,trim($flowbit)) if @flowbits;
-			}	
+			next unless $$href{$k1}{$k2}{'rule'}=~/^\s*(alert|drop|pass)/;
+			next unless $$href{$k1}{$k2}{'rule'}=~/flowbits:\s*is(not)?set\s*,\s*(\w|\.)+/i;
+			flowbit_check($$href{$k1}{$k2}{'rule'},\@flowbits);
 		}
+	}
+	my %dups;
+	map {$dups{$_} = 1} @flowbits;
+	@flowbits = keys %dups;
+	undef %dups;
+	foreach my $k1 (keys %$href) {
 		foreach my $k2 (keys %{$$href{$k1}}){
 			foreach my $flowbit(@flowbits) {
-				if (defined $$href{$k1}{$k2}{$flowbit}) {
-					$$href{$k1}{$k2}{'rule'}=~s/^#\s*//;
-					$counter++;
-				}
+				next unless defined $$href{$k1}{$k2}{$flowbit} && $$href{$k1}{$k2}{'rule'}=~/^\s*#\s*(alert|drop|pass)/i;
+				$$href{$k1}{$k2}{'rule'}=~s/^\s*#\s*//;
+				$counter++;
 			}
 		}
 	}
+	undef @flowbits;
 	print "\tEnabled $counter flowbits\n";
 	print "\tDone\n";
 }
@@ -1039,6 +1055,9 @@ if ($SID_conf && -f $SID_conf) {
 	modifysid('disable',$SID_conf,\%rules_hash)
 }
 
+print "Setting Flowbit State....\n";
+flowbit_set (\%rules_hash);
+print "Setting Chained Flowbit State....\n";
 flowbit_set (\%rules_hash);
 
 if ($Output) {
