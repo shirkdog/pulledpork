@@ -7,6 +7,11 @@ Below you will find answers to the most commonly asked questions.
 
 = FAQs =
 
+*I have a proxy, how I can make pulledpork use my proxy?*
+  * You need to set the appropriate environment variable (perl has this built in)
+  * HTTP_PROXY=http://foo:bar@192.0.2.0:3128
+  * Run pulledpork (this can be done via cron also!
+
 *When I run pulledpork, it keeps displaying the help but not parsing my rules?*
   * Ensure LWP::Simple is installed properly (perl -MCPAN -e shell 'install LWP::Simple')
   * Verify that your output paths all exist and are writable by the calling user
