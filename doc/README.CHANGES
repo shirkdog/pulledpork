@@ -5,7 +5,13 @@ v0.4.2
 New Features / changes:
 - Capability to enable rules by category (See README.CATEGORIES)
 - Added README.CATEGORIES
+- Added README.SHAREDOBJECTS
 - Follow flowbit chains
+- Moved README files to doc
+- Automatically determine arch
+- Automatically determine Snort Version
+- Remove risky system calls, use handles instead
+- Added some verbiage surrounding HUP vs Restart vs When/where/who and how
 
 Bug Fixes:
 - Certain rules specific GID values were not being properly parsed
