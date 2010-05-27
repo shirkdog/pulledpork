@@ -1102,7 +1102,10 @@ if ($sid_msg_map) {
 }
 
 if ($SigHup && $pid_path ne "") {
-	sig_hup($pid_path);
+	sig_hup($pid_path) unless $Sostubs;
+	print "WARNING, cannot send sighup if also processing SO rules",
+	 "\n\tsee README.SHAREDOBJECTS\n",
+	 "\tor use -T flag!\n" if $Sostubs;
 }
 
 if ($sid_changelog && -f $Output) {
