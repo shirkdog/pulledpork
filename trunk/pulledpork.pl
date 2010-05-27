@@ -107,9 +107,6 @@ print<<__EOT;
    -T Process text based rules files only, i.e. DO NOT process so_rules
    -m where do you want me to put the sid-msg.map file?
    -s Where do you want me to put the so_rules?
-   -S Specify your Snort version
-      Valid options for this value 2.8.0.1,2.8.0.2,2.8.1,2.8.2,2.8.2.1,2.8.2.2,
-	  2.8.3,2.8.3.1,2.8.3.2,2.8.4,2.8.4.1,2.8.5
    -C Path to your snort.conf
    -p Path to your Snort binary
    -t Where do you want me to put the so_rule stub files? ** Thus MUST be uniquely 
@@ -166,6 +163,7 @@ if($#ARGV==-1){Help("Please read the README for runtime options and configuratio
 sub temp_cleanup
 {
     my $remove = rmtree ( $temp_path."tha_rules" );
+    print "Cleanup....\n" if $Verbose;
 	print "\tremoved $remove temporary snort files or directories from $temp_path"."tha_rules!\n" if $Verbose;
 }
 
@@ -425,10 +423,17 @@ sub read_rules {
 sub gen_stubs
 {
     my ($Snort_path,$Snort_config,$Sostubs) = @_;
+    print "Generating Stub Rules....\n";
     unless (-B $Snort_path) { Help ("$Snort_path is not a valid binary file");}
     if (-d $Sostubs && -B $Snort_path && -f $Snort_config) {
-        if ($Verbose) { print ("Generating shared object stubs via:$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs\n");}
-        system ("$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs");
+        if ($Verbose) { print ("\tGenerating shared object stubs via:$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs\n");}
+        open (FH,"$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs 2>&1|");
+        while (<FH>) {
+			print "\t$_" if $_ =~/Dumping/i && $Verbose;
+			next unless $_ =~ /(err|warn|fail)/i;
+			print "\tAn error occured: $_\n";
+		}
+		close (FH);
     } else {
         print ("Something failed in the gen_stubs sub, please verify your shared object config!\n");
         if ($Verbose) {
@@ -437,6 +442,7 @@ sub gen_stubs
             unless (-f $Snort_config) { Help ("The file that you specified: $Snort_config does not exist! Please verify your configuration.\n"); }
         }
     }
+    print "\tDone\n";
 }  
 
 sub vrt_policy {
@@ -812,6 +818,36 @@ sub Version
     exit(0);    
 }
 
+sub snort_version {
+	my $cmd = shift;
+	$cmd .= " -V";
+	my $version;
+	open(FH, "$cmd 2>&1 |");
+	while (<FH>) {
+		next unless $_ =~/Version/;
+		if ($_ =~/\d\.\d\.\d\.\d/){	
+			$version = $&;
+		}elsif ($_ =~/\d\.\d\.\d/){
+			$version = $&.".0";
+		}
+	}
+	close (FH);
+	return $version;
+}
+
+sub get_arch {
+	my $cmd = "uname -a";
+	open(FH, "$cmd |");
+	my $arch;
+	while (<FH>) {
+		next unless $_ =~/(i386|x86-64|x86_64)/i;
+		$arch = $&;
+		$arch =~ s/_/-/;
+	}
+	close (FH);
+	return $arch;
+}
+
 ## Lets grab any runtime values and insert into our variables using getopt::long
 GetOptions ( "v+" => \$Verbose,
         "V!" => sub { Version() },
@@ -826,8 +862,6 @@ GetOptions ( "v+" => \$Verbose,
         "O=s" => \$oinkcode,
 		"s=s" => \$Sorules,
         "t=s" => \$Sostubs,
-		"S=s" => \$Snort,
-		"a=s" => \$arch,
         "p=s" => \$Snort_path,
 		"m=s" => \$sid_msg_map,
 		"D=s" => \$Distro,
@@ -943,16 +977,10 @@ if (!$Distro) {
     $Distro = ($Config_info{'distro'});
 }
 
-if (!$arch) {
-	$arch = ($Config_info{'arch'});
-}
-
-if (!$Snort) {
-    $Snort = ($Config_info{'snort'});
-}
-
 if (!$Snort_path) {
     $Snort_path =($Config_info{'snort_path'});
+    $Snort = snort_version($Snort_path);
+    $arch = get_arch();
 }
 
 if (!$local_rules && ($Config_info{'local_rules'})) {
