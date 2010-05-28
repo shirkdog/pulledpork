@@ -114,7 +114,6 @@ print<<__EOT;
    -D What Distro are you running on, for the so_rules
       Valid Distro Types=CentOS-4.6,CentOS-5.0,Debian-Lenny,FC-5,FC-9,FreeBSD-7.0,
 	  RHEL-5.0,Ubuntu-6.01.1,Ubuntu-8.04
-   -a Specify the arch that you are running valid options here are i386 or x86-64
    -l Log information to logger rather than stdout messages.  **not yet implemented**
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
