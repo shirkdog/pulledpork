@@ -493,7 +493,7 @@ sub modifysid {
 		if ($hashref) {
 			my $sidcount = 0;
 			foreach (@sid_mod) {
-				if ($_=~/(\d+):\d+-\1:\d+/){
+				if ($_=~/^(\d+):\d+-\1:\d+/){
 					my ($lsid,$usid)=split(/-/,$&);
 					my $gid=$lsid;
 					$sid_mod[$sidcount]=$lsid;
@@ -505,7 +505,17 @@ sub modifysid {
 						push(@sid_mod,$gid.':'.$lsid);
 					} 
 				}
-				elsif ($_=~/[a-xA-X]+\|(\w|\W)*/){
+				elsif ($_=~/^pcre\:.+/i){
+					my ($pcre,$regex) = split(/\:/,$&);
+					foreach my $k1 (keys %$hashref) {
+						foreach my $k2 (keys %{$$hashref{$k1}}) {
+							next unless defined $$hashref{$k1}{$k2}{'rule'};
+							$sid_mod[$sidcount]=$k1.":".$k2 if (($$hashref{$k1}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/[a-xA-X](\w|\W)*/));
+							push(@sid_mod,$k1.":".$k2) if (($$hashref{$k1}{$k2}{'rule'}=~/($regex)/i) && ($sid_mod[$sidcount]=~/\d+:\d+/));
+						}
+					}
+				}
+				elsif ($_=~/^[a-xA-X]+\|.+/){
 					my $regex = $&;
 					$regex =~ s/\|/,/;
 					foreach my $k1 (keys %$hashref) {
@@ -516,7 +526,7 @@ sub modifysid {
 						}
 					}
 				}
-				elsif ($_=~/MS(\w|-)*/i){
+				elsif ($_=~/^MS\d+-\d+/i){
 					my $regex = $&;
 					foreach my $k1 (keys %$hashref) {
 						foreach my $k2 (keys %{$$hashref{$k1}}) {
