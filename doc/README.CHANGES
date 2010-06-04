@@ -8,6 +8,7 @@ New Features / changes:
 	See sid modification configs
 - Capability to use regular expressions in specific rule modifications
 	See sid modification configs
+- Changed the | delimiter for cve,bugtraq etc to :
 - Added README.CATEGORIES
 - Added README.SHAREDOBJECTS
 - Follow flowbit chains
