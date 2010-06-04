@@ -3,7 +3,11 @@ PulledPork Changelog
 v0.4.2
 
 New Features / changes:
-- Capability to enable rules by category (See README.CATEGORIES)
+- Capability to modify rules by category (See README.CATEGORIES)
+- Capability to modify rules using regular expressions (pcre:)
+	See sid modification configs
+- Capability to use regular expressions in specific rule modifications
+	See sid modification configs
 - Added README.CATEGORIES
 - Added README.SHAREDOBJECTS
 - Follow flowbit chains
