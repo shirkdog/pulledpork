@@ -515,9 +515,9 @@ sub modifysid {
 						}
 					}
 				}
-				elsif ($_=~/^[a-xA-X]+\|.+/){
+				elsif ($_=~/^[a-xA-X]+\:.+/){
 					my $regex = $&;
-					$regex =~ s/\|/,/;
+					$regex =~ s/\:/,/;
 					foreach my $k1 (keys %$hashref) {
 						foreach my $k2 (keys %{$$hashref{$k1}}) {
 							next unless defined $$hashref{$k1}{$k2}{'rule'};
@@ -526,7 +526,7 @@ sub modifysid {
 						}
 					}
 				}
-				elsif ($_=~/^MS\d+-\d+/i){
+				elsif ($_=~/^MS\d+-.+/i){
 					my $regex = $&;
 					foreach my $k1 (keys %$hashref) {
 						foreach my $k2 (keys %{$$hashref{$k1}}) {

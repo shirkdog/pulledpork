@@ -14,7 +14,6 @@ New Features / changes:
 - Moved README files to doc
 - Automatically determine arch
 - Automatically determine Snort Version
-- Remove risky system calls, use handles instead
 - Added some verbiage surrounding HUP vs Restart vs When/where/who and how
 
 Bug Fixes:
@@ -27,7 +26,7 @@ Bug Fixes:
 	were crossed and multiple keys were checked)
 - Enhancement request #22 updated the master config file to contain all of the currently available
 	precompiled SO rules
-
+- Remove risky system calls, use handles instead
 
 v0.4.1 (Stumbling Leprechaun)
 
