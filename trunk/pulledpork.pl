@@ -849,9 +849,10 @@ sub get_arch {
 	open(FH, "$cmd |");
 	my $arch;
 	while (<FH>) {
-		next unless $_ =~/(i386|x86-64|x86_64)/i;
+		next unless $_ =~/(i386|x86-64|x86_64|i686)/i;
 		$arch = $&;
 		$arch =~ s/_/-/;
+		$arch =~ s/i686/i386/;
 	}
 	close (FH);
 	return $arch;
