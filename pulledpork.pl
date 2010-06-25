@@ -728,7 +728,7 @@ sub flowbit_set {
 	}
 	undef @flowbits;
 	print "\tEnabled $counter flowbits\n";
-	print "\tDone\n";
+	return $counter;
 }
 
 sub changelog {
@@ -1094,9 +1094,10 @@ if ($SID_conf && -f $SID_conf) {
 }
 
 print "Setting Flowbit State....\n";
-flowbit_set (\%rules_hash);
-print "Setting Chained Flowbit State....\n";
-flowbit_set (\%rules_hash);
+while ($fbits<0){
+	flowbit_set (\%rules_hash);
+}
+print "\tDone\n";
 
 if ($Output) {
 	rule_write(\%rules_hash,$Output,1);
