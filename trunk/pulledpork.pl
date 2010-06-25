@@ -1094,8 +1094,9 @@ if ($SID_conf && -f $SID_conf) {
 }
 
 print "Setting Flowbit State....\n";
+my $fbits=1;
 while ($fbits<0){
-	flowbit_set (\%rules_hash);
+	$fbits=flowbit_set (\%rules_hash);
 }
 print "\tDone\n";
 
