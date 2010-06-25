@@ -447,7 +447,7 @@ sub gen_stubs
 sub vrt_policy {
 	my ($ids_policy,$rule) = @_;
 	my ($gid,$sid);
-	if ($rule=~/policy\s$ids_policy/i){
+	if ($rule=~/policy\s$ids_policy/i && $rule !~ /flowbits:noalert/i){
 		$rule=~s/^#*\s*//;
 	}elsif ($rule!~/^\s*#/) {
 		$rule="# $rule";
