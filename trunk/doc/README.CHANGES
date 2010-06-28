@@ -16,6 +16,7 @@ New Features / changes:
 - Automatically determine arch
 - Automatically determine Snort Version
 - Added some verbiage surrounding HUP vs Restart vs When/where/who and how
+- Added support for new snort.org download scheme of http://snort.org/reg-rules...
 
 Bug Fixes:
 - Certain rules specific GID values were not being properly parsed
