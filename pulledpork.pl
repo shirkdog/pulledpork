@@ -99,7 +99,7 @@ print<<__EOT;
    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -h path to the sid_changelog if you want to keep one?
    -f What snort rules tarball do you want to fetch 
-      (i.e. snortrules-snapshot-2.8_s.tar.gz)
+      (i.e. snortrules-snapshot-2860.tar.gz)
    -u Where do you want me to pull the rules tarball from 
       (ET, Snort.org, see pulledpork config base_url option for value ideas)
    -O What is your Oinkcode?
