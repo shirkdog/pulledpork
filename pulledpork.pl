@@ -249,8 +249,8 @@ sub rulefetch
 	{ print "\tFetching rules file: $rule_file\n";
         if ($Hash) { print "But not verifying MD5\n"; }
          }
-    if ($base_url =~ /snort\.org\/pub/i){
-		$getrules_rule = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file,$temp_path.$rule_file);
+    if ($base_url =~ /snort\.org/i){
+		$getrules_rule = getstore("http://www.snort.org/reg-rules/$rule_file/$oinkcode",$temp_path.$rule_file);
     }
 	else {
 		$getrules_rule = getstore($base_url."/".$rule_file,$temp_path.$rule_file);
@@ -291,8 +291,8 @@ sub md5file
 	print "Checking latest MD5....\n";
     if ($Verbose)
 	{ print "\tFetching md5sum for: ".$rule_file.".md5\n"; }
-	if ($base_url =~ /snort\.org\/pub/i){
-		$getrules_md5 = getstore("http://www.snort.org/pub-bin/oinkmaster.cgi/".$oinkcode."/".$rule_file.".md5",$temp_path.$rule_file.".md5");
+	if ($base_url =~ /snort\.org/i){
+		$getrules_md5 = getstore("http://www.snort.org/reg-rules/$rule_file.md5/$oinkcode",$temp_path.$rule_file.".md5");
     }
 	elsif ($base_url =~ /emergingthreats\.net\/rules/i){
 		$getrules_md5 = getstore($base_url."/md5sums/".$rule_file.".md5",$temp_path.$rule_file.".md5");
@@ -1095,7 +1095,7 @@ if ($SID_conf && -f $SID_conf) {
 
 print "Setting Flowbit State....\n";
 my $fbits=1;
-while ($fbits<0){
+while ($fbits>0){
 	$fbits=flowbit_set (\%rules_hash);
 }
 print "\tDone\n";
