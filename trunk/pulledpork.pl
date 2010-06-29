@@ -727,7 +727,7 @@ sub flowbit_set {
 		}
 	}
 	undef @flowbits;
-	print "\tEnabled $counter flowbits\n";
+	print "\tEnabled $counter flowbits\n" if $counter > 0;
 	return $counter;
 }
 
