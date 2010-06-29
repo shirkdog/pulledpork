@@ -5,8 +5,37 @@
 
 Pulled_Pork started in April of 2009(and renamed from Baconator in June of '09), this page is really just to list the anticipated(or current) release features....
 
-
 = Breakin it down... =
+
+v0.4.2
+
+New Features / changes:
+- Capability to modify rules by category (See README.CATEGORIES)
+- Capability to modify rules using regular expressions (pcre:)
+	See sid modification configs
+- Capability to use regular expressions in specific rule modifications
+	See sid modification configs
+- Changed the | delimiter for cve,bugtraq etc to :
+- Added README.CATEGORIES
+- Added README.SHAREDOBJECTS
+- Follow flowbit chains
+- Moved README files to doc
+- Automatically determine arch
+- Automatically determine Snort Version
+- Added some verbiage surrounding HUP vs Restart vs When/where/who and how
+- Added support for new snort.org download scheme of http://snort.org/reg-rules...
+
+Bug Fixes:
+- Certain rules specific GID values were not being properly parsed
+	by the modifysid sub.
+- Bug #20 fixed, ranges are no longer off by +1 additional rule being enabled
+- Enhancement request #21, added more descript information to dropsid.conf
+	and to README
+- Fixed flaw that caused certain flowbits to not be set (when GID boundaries
+	were crossed and multiple keys were checked)
+- Enhancement request #22 updated the master config file to contain all of the currently available
+	precompiled SO rules
+- Remove risky system calls, use handles instead
 
 v0.4.1 (Stumbling Leprechaun)
 
