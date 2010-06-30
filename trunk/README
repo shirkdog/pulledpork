@@ -17,10 +17,8 @@ thoroughly so that you don't overlook something!
    -o Where do you want me to put generic rules file?
    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -h path to the sid_changelog if you want to keep one?
-   -f What snort rules tarball do you want to fetch 
-      (i.e. snortrules-snapshot-2860.tar.gz)
    -u Where do you want me to pull the rules tarball from 
-      (ET, Snort.org, see pulledpork config base_url option for value ideas)
+      (ET, Snort.org, see pulledpork config rule_url option for value ideas)
    -O What is your Oinkcode?
    -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
    -T Process text based rules files only, i.e. DO NOT process so_rules
@@ -51,9 +49,9 @@ pulled_pork.conf file.  Specifically for minimal function, i.e. NO Shared Object
 at a minimum the rule_file, oinkcode, temp_path, tar_path, and rule_path values.  Below are some examples of this. 
 
 ./pulledpork.pl -o /usr/local/etc/snort/rules/ -O 12345667778523452344234234  \
--f snortrules-snapshot-2.8_s.tar.gz -i disablesid.conf -T -H
+-f http://www.snort.org/reg-rules/snortrules-snapshot-2860.tar.gz -i disablesid.conf -T -H
 
-The above will fetch the snortrules-snapshot-2.8_s.tar.gz tarball from snort.org using the specified oinkcode of 
+The above will fetch the snortrules-snapshot-2860.tar.gz tarball from snort.org using the specified oinkcode of 
 12345667778523452344234234 and put the rules files from that tarball into the output path of 
 /usr/local/etc/snort/rules/ while the -i option tells pulledpork where the
 disablesid.conf lives, and the -T option tells pulledpork to not process for any shared object rules and the final

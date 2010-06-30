@@ -34,7 +34,7 @@ use Switch;
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.4.2";
+my $VERSION = "Pulled_Pork v0.4.3";
 
 # routine to grab our config from the defined config file
 sub parse_config_file {
@@ -52,7 +52,13 @@ sub parse_config_file {
         $config_line=trim($config_line);
         if ( ($config_line !~ /^#/) && ($config_line ne "") ){    # Ignore lines starting with # and blank lines
             ($Name, $Value) = split (/=/, $config_line);          # Split each line into name value pairs
-            $$Config_val{$Name} = $Value;                             # Create a hash of the name value pairs
+            if ($Value=~/,/ && $Name eq "rule_url") {
+				push(@{$$Config_val{$Name}},split(/,/,$Value)); #handle multiple entries for base_url
+            } elsif ($Name eq "rule_url") {
+				push(@{$$Config_val{$Name}},split(/,/,$Value)) if $Value; #handle an additional entry line for base_url
+			} else {
+				$$Config_val{$Name} = $Value;                             # Create a hash of the name value pairs
+			}
         }
     }
 
@@ -63,7 +69,7 @@ sub parse_config_file {
 my ($Verbose,$Logging,$Hash,$ALogger,$Config_file,$Sorules,$Auto);
 my ($Output,$Distro,$Snort,$Sostubs,$sid_changelog);
 my ($Snort_config,$Snort_path,$Textonly,$SID_conf,$DISID_conf);
-my ($pid_path,$SigHup,$NoDownload,$sid_msg_map,$base_url);
+my ($pid_path,$SigHup,$NoDownload,$sid_msg_map,@base_url);
 my ($ips_policy,$enable_conf,$local_rules,$arch,$ignore_files);
 
 $Verbose = 0;
@@ -98,10 +104,8 @@ print<<__EOT;
    -o Where do you want me to put generic rules file?
    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -h path to the sid_changelog if you want to keep one?
-   -f What snort rules tarball do you want to fetch 
-      (i.e. snortrules-snapshot-2860.tar.gz)
    -u Where do you want me to pull the rules tarball from 
-      (ET, Snort.org, see pulledpork config base_url option for value ideas)
+      (ET, Snort.org, see pulledpork config rule_url option for value ideas)
    -O What is your Oinkcode?
    -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
    -T Process text based rules files only, i.e. DO NOT process so_rules
@@ -170,11 +174,7 @@ sub temp_cleanup
 sub rule_extract
 {	
     my ($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules,$ignore) = @_;
-	print "Prepping rules for work....\n";
-    if ( -d $temp_path."tha_rules") { 
-		print "\tdoh, we need to perform some cleanup... an unclean run last time?\n" if $Verbose;
-		temp_cleanup($temp_path);
-    }
+	print "Prepping rules from $rule_file for work....\n";
     print "\textracting contents of $temp_path$rule_file...\n" if $Verbose;
     mkpath($temp_path."tha_rules");
     mkpath($temp_path."tha_rules/so_rules");
@@ -242,7 +242,7 @@ sub compare_md5
 sub rulefetch
 {
     my ($oinkcode,$rule_file,$temp_path,$base_url) = @_;
-    print "Rules tarball download....\n";
+    print "Rules tarball download of $rule_file....\n";
 	$base_url=slash(0,$base_url);
 	my ($getrules_rule);
 	if ($Verbose)
@@ -288,7 +288,7 @@ sub md5file
 	my ($oinkcode,$rule_file,$temp_path,$base_url) = @_;
 	my ($getrules_md5,$md5);
 	$base_url=slash(0,$base_url);
-	print "Checking latest MD5....\n";
+	print "Checking latest MD5 for $rule_file....\n";
     if ($Verbose)
 	{ print "\tFetching md5sum for: ".$rule_file.".md5\n"; }
 	if ($base_url =~ /snort\.org/i){
@@ -882,8 +882,8 @@ GetOptions ( "v+" => \$Verbose,
 		"b=s" => \$DISID_conf,
         "C=s" => \$Snort_config,
 		"o=s" => \$Output,
-        "f=s" => \$rule_file,
-		"u=s" => \$base_url,
+        #"f=s" => \$rule_file, #removed per rule_url fooery
+		"u=s" => \@base_url,
 		"help|?" => sub { Help() });
 
 # Dump our variables for verbose/debug output
@@ -894,7 +894,7 @@ if ($Verbose) {
     print "Command Line Variable Debug:\n";
     if ($Config_file) {print "\tConfig Path is: $Config_file\n";}
     if ($rule_file) {print "\tRule File is: $rule_file\n";}
-	if ($base_url) {print "\tBase URL is: $base_url\n";}
+	if (@base_url) {print "\tBase URL is: @base_url\n";}
     if ($Output) {print "\tRules file is: $Output\n";}
     if ($local_rules) {print "\tlocal.rules path is: $local_rules\n";}
     if ($Sorules) {print "\tSO Output Path is: $Sorules\n";}
@@ -935,7 +935,7 @@ if ($Verbose)
 
 if (exists $Config_info{'version'}){
 	die "You are not using the current version of pulledpork.conf!\n",
-		"Please use the version that shipped with $VERSION!\n\n" if $Config_info{'version'} ne "0.4.2";
+		"Please use the version that shipped with $VERSION!\n\n" if $Config_info{'version'} ne "0.4.3";
 } else { die "You are not using the current version of pulledpork.conf!\nPlease use the version that shipped with $VERSION!\n\n"; }
 
 # Check to see if we have command line inputs, if so, they superseed any config file values!
@@ -960,9 +960,9 @@ if (!$SID_conf && defined $Config_info{'disablesid'}) {
 	$SID_conf = $Config_info{'disablesid'};
 }
 
-if (!$base_url) {
-	$base_url = ($Config_info{'base_url'});
-	if (!$base_url) {Help("You need to specify a base_url to pull the rules files from!");}
+if (!@base_url) {
+	@base_url = @{$Config_info{'rule_url'}};
+	if (!@base_url) {Help("You need to specify one rule_url at a minimum to fetch the rules files from!\n");}
 }
 
 if (!$Output) {
@@ -975,13 +975,11 @@ if (!$Sorules) {
     $Sorules = ($Config_info{'sorule_path'});
 }
 $Sorules=slash(1,$Sorules) if $Sorules;
-undef $Sorules if ($Textonly || ($base_url=~/emergingthreats/));
 
 if (!$Sostubs) {
     $Sostubs = ($Config_info{'sostub_path'});
 }
 $Sostubs=slash(0,$Sostubs) if $Sostubs;
-undef $Sostubs if ($Textonly || ($base_url=~/emergingthreats/));
 
 if (!$Distro) {
     $Distro = ($Config_info{'distro'});
@@ -1010,10 +1008,10 @@ if (!$sid_changelog){
 	$sid_changelog = ($Config_info{'sid_changelog'});
 }
 # Define the snort rule file that we want
-if (!$rule_file) {
-    $rule_file = $Config_info{'rule_file'};
-    if (!$rule_file) {Help("You need to specify a rules tarball!");}
-}
+#if (!$rule_file) {
+#    $rule_file = $Config_info{'rule_file'};
+#    if (!$rule_file) {Help("You need to specify a rules tarball!");}
+#}
 
 # What is our oinkcode?
 if (!$oinkcode) {
@@ -1023,7 +1021,6 @@ if (!$oinkcode) {
 if (!$ips_policy){
 	$ips_policy="Disabled";
 }
-$ips_policy="Disabled" if ($base_url=~/emergingthreats/);
 
 # We need a temp path to work with the files while we do magics on them.. make sure you have plenty 
 # of space in this path.. ~200mb is a good starting point
@@ -1032,37 +1029,59 @@ if (!$temp_path) {Help("You need to specify a valid temp path, check permissions
 $temp_path=slash(1,$temp_path);
 if (! -d $temp_path) {Help("Temporary file path $temp_path does not exist.\n");}
 
-#let's fetch the most recent md5 file
-if ($oinkcode && $rule_file && -d $temp_path)
+#let's fetch the most recent md5 file then compare and do our foo
+if ($oinkcode && @base_url && -d $temp_path)
 {
-    if (!$NoDownload) {  #only process hup and disablesid changes
-		# fetch the latest md5 file
-		if (!$Hash) {
-			$md5 = md5file($oinkcode,$rule_file,$temp_path,$base_url);
-		}
-		#and now lets determine the md5 of the last saved rules file if it exists
-		if ( -f "$temp_path"."$rule_file" && !$Hash){
-			$rule_digest = md5sum($rule_file,$temp_path);
-		}
-		else { # the file didn't exsist so lets get it
-			rulefetch($oinkcode,$rule_file,$temp_path,$base_url);
+	
+	if ( -d $temp_path."tha_rules") { 
+		print "\tdoh, we need to perform some cleanup... an unclean run last time?\n" if $Verbose;
+		temp_cleanup($temp_path);
+    }
+    
+    if (!$NoDownload) {  
+		
+		foreach (@base_url) {
+		
+			undef $Sostubs if ($Textonly || ($_=~/emergingthreats/));
+			#$ips_policy="Disabled" if ($_=~/emergingthreats/);
+			
+			my ($base_url,$rule_file) = split(/\|/,$_);
+			
+			Help("please define the rule_url correctly") unless defined $base_url;
+			Help("please define the rule_url correctly") unless defined $rule_file;
+			
+			if (!$Hash) {
+				$md5 = md5file($oinkcode,$rule_file,$temp_path,$base_url);
+			}
+			#and now lets determine the md5 of the last saved rules file if it exists
 			if ( -f "$temp_path"."$rule_file" && !$Hash){
 				$rule_digest = md5sum($rule_file,$temp_path);
 			}
+			else { # the file didn't exsist so lets get it
+				rulefetch($oinkcode,$rule_file,$temp_path,$base_url);
+				if ( -f "$temp_path"."$rule_file" && !$Hash){
+					$rule_digest = md5sum($rule_file,$temp_path);
+				}
+			}
+	
+			# compare the online current md5 against against the md5 of the rules file on system
+			compare_md5($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules,$ignore_files);
+			
+		    if ($Sorules && $Distro && $Snort && !$Textonly){
+				gen_stubs($Snort_path,$Snort_config,"$temp_path"."tha_rules/so_rules/");
+				read_rules(\%rules_hash,"$temp_path"."tha_rules/so_rules/",$local_rules);
+			}
 		}
-
-		# compare the online current md5 against against the md5 of the rules file on system
-		compare_md5($oinkcode,$rule_file,$temp_path,$Hash,$base_url,$md5,$rule_digest,$Distro,$arch,$Snort,$Sorules,$ignore_files);
     }
 	if ($NoDownload) {
-		rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules,$ignore_files);
+		foreach (@base_url) {
+			my ($base_url,$rule_file) = split(/\|/,$_);
+			die "file $temp_path/$rule_file does not exist!\n" unless -f "$temp_path/$rule_file";
+			rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules,$ignore_files);
+		}
 	}
     if ($Output){
 		read_rules(\%rules_hash,"$temp_path"."tha_rules/",$local_rules);
-    }
-    if ($Sorules && $Distro && $Snort && !$Textonly){
-		gen_stubs($Snort_path,$Snort_config,"$temp_path"."tha_rules/so_rules/");
-		read_rules(\%rules_hash,"$temp_path"."tha_rules/so_rules/",$local_rules);
     }
 } else { Help("Check your oinkcode, temp path and freespace!"); }
 
