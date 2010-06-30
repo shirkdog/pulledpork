@@ -1050,6 +1050,8 @@ if ($oinkcode && @base_url && -d $temp_path)
 			Help("please define the rule_url correctly") unless defined $base_url;
 			Help("please define the rule_url correctly") unless defined $rule_file;
 			
+			$Hash = 1 unless $base_url=~/(emergingthreats|snort.org)/;
+			
 			if (!$Hash) {
 				$md5 = md5file($oinkcode,$rule_file,$temp_path,$base_url);
 			}
