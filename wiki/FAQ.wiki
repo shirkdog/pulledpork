@@ -7,6 +7,11 @@ Below you will find answers to the most commonly asked questions.
 
 = FAQs =
 
+*When I run PP, I get a 501 error and PP ends*
+  * Install Crypt::SSLeay either from CPAN
+  * Install Crypt::SSLeay from a package (on Ubuntu libcrypt-ssleay-perl)
+  * Be sure that your root certificates are up to date (google this for your distro!)
+
 *I have a proxy, how I can make pulledpork use my proxy?*
   * You need to set the appropriate environment variable (perl has this built in)
   * HTTP_PROXY=http://foo:bar@192.0.2.0:3128
