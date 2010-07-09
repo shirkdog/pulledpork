@@ -22,7 +22,7 @@
 use strict;
 use warnings;
 use File::Copy;
-use LWP::Simple;
+use LWP::Simple qw ( $ua getstore get is_success);
 use Digest::MD5;
 use File::Path;
 use Getopt::Long qw(:config no_ignore_case bundling);
@@ -34,7 +34,7 @@ use Switch;
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
 
-my $VERSION = "Pulled_Pork v0.4.3";
+my $VERSION = "PulledPork v0.5.0 Dev";
 
 # routine to grab our config from the defined config file
 sub parse_config_file {
@@ -1007,11 +1007,6 @@ if (!$sid_msg_map){
 if (!$sid_changelog){
 	$sid_changelog = ($Config_info{'sid_changelog'});
 }
-# Define the snort rule file that we want
-#if (!$rule_file) {
-#    $rule_file = $Config_info{'rule_file'};
-#    if (!$rule_file) {Help("You need to specify a rules tarball!");}
-#}
 
 # What is our oinkcode?
 if (!$oinkcode) {
@@ -1028,6 +1023,12 @@ $temp_path = ($Config_info{'temp_path'});
 if (!$temp_path) {Help("You need to specify a valid temp path, check permissions too!");}
 $temp_path=slash(1,$temp_path);
 if (! -d $temp_path) {Help("Temporary file path $temp_path does not exist.\n");}
+
+# set some UserAgent and other connection configs
+$ua->agent("$VERSION");
+$ua->show_progress(1) if $Verbose;
+#$ua->proxy(['http', 'https'], $proxy) if $proxy;
+$ua->env_proxy; #pull in proxy env settings if they exist!
 
 #let's fetch the most recent md5 file then compare and do our foo
 if ($oinkcode && @base_url && -d $temp_path)
