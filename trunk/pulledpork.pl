@@ -935,7 +935,7 @@ if ($Verbose)
 
 if (exists $Config_info{'version'}){
 	die "You are not using the current version of pulledpork.conf!\n",
-		"Please use the version that shipped with $VERSION!\n\n" if $Config_info{'version'} ne "0.4.3";
+		"Please use the version that shipped with $VERSION!\n\n" if $Config_info{'version'} ne "0.5.0D";
 } else { die "You are not using the current version of pulledpork.conf!\nPlease use the version that shipped with $VERSION!\n\n"; }
 
 # Check to see if we have command line inputs, if so, they superseed any config file values!
