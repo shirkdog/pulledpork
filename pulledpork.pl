@@ -94,7 +94,8 @@ print<<__EOT;
   Usage: $0 [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
-   -h <changelog path> -I (security|connectivity|balanced)
+   -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
+   -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
   
    Options:
    -c Where the pulledpork config file lives.
@@ -488,7 +489,7 @@ sub modify_sid {
 				$sid = trim($sid);
 				if ($sid ne "*" && exists $$href{1}{$sid}) {
 					print "\tModifying SID:$sid from:$from to:$to\n" if $Verbose;
-					$$href{1}{$sid}{'rule'}=~s/$from/$to/;
+					$$href{1}{$sid}{'rule'}=~s/$from/$to/ if $$href{1}{$sid}{'rule'}!~/^\s*#/;
 				} elsif ($sid eq "*") {
 					print "\tModifying ALL SIDS from:$from to:$to\n" if $Verbose;
 					foreach my $k (sort keys %{$$href{1}}) {
