@@ -67,7 +67,7 @@ sub parse_config_file {
 }
 
 my ($Verbose,$Logging,$Hash,$ALogger,$Config_file,$Sorules,$Auto);
-my ($Output,$Distro,$Snort,$Sostubs,$sid_changelog);
+my ($Output,$Distro,$Snort,$Sostubs,$sid_changelog,$modifysid);
 my ($Snort_config,$Snort_path,$Textonly,$SID_conf,$DISID_conf);
 my ($pid_path,$SigHup,$NoDownload,$sid_msg_map,@base_url);
 my ($ips_policy,$enable_conf,$local_rules,$arch,$ignore_files);
@@ -101,6 +101,7 @@ print<<__EOT;
    -i Where the disablesid config file lives.
    -b Where the dropsid config file lives.
    -e Where the enablesid config file lives.
+   -M where the modifysid config file lives.
    -o Where do you want me to put generic rules file?
    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -h path to the sid_changelog if you want to keep one?
@@ -455,7 +456,7 @@ sub vrt_policy {
 	return $rule;
 } 
 
-sub rule_mod {
+sub policy_set {
 	my ($ids_policy,$hashref) = @_;
 	if ($hashref) {
 		if ($ids_policy ne "Disabled" && $ids_policy ne "") {
@@ -471,9 +472,40 @@ sub rule_mod {
 	}
 }
 
+# this allows the user to use regular expressions to modify rule contents
+sub modify_sid {
+	my ($href,$file) = @_;
+	my @arry;
+	print "Modifying Sids....\n";
+	open (FH,"<$file") || warn "Unable to open $file\n";
+	while (<FH>) {
+		next if (($_ =~ /^\s*#/) || ($_ eq " "));
+		if ($_ =~ /([\d+|,|\*]*)\s+"(.+)"\s+"(.+)"/){
+			my ($sids,$from,$to) = ($1,$2,$3);
+			@arry = split(/,/,$sids) if $sids !~ /\*/;
+			@arry = "*" if $sids =~ /\*/;
+			foreach my $sid (@arry) {
+				$sid = trim($sid);
+				if ($sid ne "*" && exists $$href{1}{$sid}) {
+					print "\tModifying SID:$sid from:$from to:$to\n" if $Verbose;
+					$$href{1}{$sid}{'rule'}=~s/$from/$to/;
+				} elsif ($sid eq "*") {
+					print "\tModifying ALL SIDS from:$from to:$to\n" if $Verbose;
+					foreach my $k (sort keys %{$$href{1}}) {
+						$$href{1}{$k}{'rule'}=~s/$from/$to/;
+					}
+				}
+			}
+			undef @arry;
+		}
+	}
+	print "\tDONE\n";
+	close (FH); 
+}
+
 # this relaces the enablesid, disablesid and dropsid functions..
 # speed ftw!
-sub modifysid {
+sub modify_state {
 	my ($function,$SID_conf,$hashref) = @_;
 	my (@sid_mod,$sidlist);
 	print "Processing $SID_conf....\n";
@@ -868,6 +900,7 @@ GetOptions ( "v+" => \$Verbose,
 		"H!" => \$SigHup,
 		"n!" => \$NoDownload,
 		"h=s" => \$sid_changelog,
+		"M=s" => \$modifysid,
 		"L=s" => \$local_rules,
         "O=s" => \$oinkcode,
 		"s=s" => \$Sorules,
@@ -908,6 +941,7 @@ if ($Verbose) {
 	if ($SID_conf) {print "\tPath to disablesid file: $SID_conf\n";}
 	if ($DISID_conf) {print "\tPath to dropsid file: $DISID_conf\n";}
 	if ($enable_conf) {print "\tPath to enablesid file: $enable_conf\n";}
+	if ($modifysid) {print "\tPath to modifysid file: $modifysid\n";}
     if ($Distro) {print "\tDistro Def is: $Distro\n";}
     if ($arch) {print "\tarch Def is: $arch\n";}
     if ($Verbose) {print "\tVerbose Flag is Set\n";}
@@ -950,6 +984,10 @@ if (!$ips_policy && defined $Config_info{'ips_policy'}) {
 
 if (!$enable_conf && defined $Config_info{'enablesid'}) {
 	$enable_conf = $Config_info{'enablesid'};
+}
+
+if (!$modifysid && defined $Config_info{'modifysid'}) {
+	$modifysid = $Config_info{'modifysid'};
 }
 
 if (!$DISID_conf && defined $Config_info{'dropsid'}) {
@@ -1100,19 +1138,23 @@ if (-d $temp_path) {
 }
 
 if ($ips_policy ne "Disabled") {
-	rule_mod($ips_policy,\%rules_hash);
+	policy_set($ips_policy,\%rules_hash);
 }
 
 if ($enable_conf && -f $enable_conf) {
-	modifysid('enable',$enable_conf,\%rules_hash)
+	modify_state('enable',$enable_conf,\%rules_hash)
 }
 
 if ($DISID_conf && -f $DISID_conf) {
-	modifysid('drop',$DISID_conf,\%rules_hash)
+	modify_state('drop',$DISID_conf,\%rules_hash)
 }
 	
 if ($SID_conf && -f $SID_conf) {
-	modifysid('disable',$SID_conf,\%rules_hash)
+	modify_state('disable',$SID_conf,\%rules_hash)
+}
+
+if ($modifysid && -f $modifysid) {
+	modify_sid(\%rules_hash,$modifysid);
 }
 
 print "Setting Flowbit State....\n";

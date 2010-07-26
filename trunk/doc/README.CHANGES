@@ -3,6 +3,7 @@ PulledPork Changelog
 v0.5.0
 
 New Features / changes:
+- Issue #27 Modifysid capability
 - Capability to retrieve multiple rulesets in a single run
 - Issue #24 - added verbose output showing all requests, results and urls
 - Verbose output now shows percentage bar for downloads
