@@ -2,18 +2,39 @@ Thank you for choosing to use pulled_pork!  This file provides some basic
 guidance on the usage of pulled_pork.  Please be sure to read this file
 thoroughly so that you don't overlook something!
 
+
+-= Features and Capabilities =-
+
+ * Automated downloading, parsing, state modification and rule modification
+   for all of your snort rulesets.
+ * Checksum verification for all major rule downloads
+ * Automatic generation of updated sid-msg.map file
+ * Cabability to include your local.rules in sid-msg.map file
+ * Cabability to pull rules tarballs from custom urls
+ * Complete Shared Object support
+ * Capability to download multiple disparate rulesets at once
+ * Maintains accurate changelog
+ * Capability to HUP processes after rules download
+ * Aids in tuning of rulesets
+ * Verbose output so that you know EXACTLY what is happening
+ * Minimal Perl Module dependancies
+ * Tastes delicious, like bacon should!
+ 
+
 -=Command Usage Reference=-
 
-   Usage: ./pulledpork.pl [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
+    Usage: ./pulledpork.pl [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
-   -h <changelog path> -I (security|connectivity|balanced)
+   -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
+   -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
   
    Options:
    -c Where the pulledpork config file lives.
    -i Where the disablesid config file lives.
    -b Where the dropsid config file lives.
    -e Where the enablesid config file lives.
+   -M where the modifysid config file lives.
    -o Where do you want me to put generic rules file?
    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -h path to the sid_changelog if you want to keep one?
@@ -39,7 +60,6 @@ thoroughly so that you don't overlook something!
    -n Do everything other than download of new files (disablesid, etc)
    -V Print Version and exit
    -help/? Print this help info.
-
 
 
 -=Basic Usage Examples=-
@@ -80,7 +100,7 @@ and that we want to enable rules specified in enablesid.conf.
 -h /var/log/sid_changes.log -I security -H
 
 ** Special Notes Section**
-Please note that pulledpork runs rule modification (enable, drop, and disable) in that order..
+Please note that pulledpork runs rule modification (enable, drop, disable, modify) in that order..
 1: enable
 2: drop
 3: disable
