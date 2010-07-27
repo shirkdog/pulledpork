@@ -258,7 +258,7 @@ sub rulefetch
 		$getrules_rule = getstore($base_url."/".$rule_file,$temp_path.$rule_file);
 	}
 	if ($getrules_rule==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
-									"\tYou may also wish to verfiy your oinkcode!\n";}
+									"\tYou may also wish to verfiy your oinkcode, tarball name, and other configuration options\n";}
 	elsif ($getrules_rule==404){print "\tA 404 error occured, please verify your filenames and urls for your tarball!\n";}
     die "\tError $getrules_rule when fetching ".$rule_file unless is_success($getrules_rule);
     if ($Verbose)
@@ -300,7 +300,7 @@ sub md5file
 		$getrules_md5 = getstore($base_url."/md5sums/".$rule_file.".md5",$temp_path.$rule_file.".md5");
 	}
 	if ($getrules_md5==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
-									"\tYou may also wish to verfiy your oinkcode!\n";}
+									"\tYou may also wish to verfiy your oinkcode, tarball name, and other configuration options\n";}
 	elsif ($getrules_md5==404){print "\tA 404 error occured, please verify your filenames and urls for your tarball!\n";}
     die "\tError $getrules_md5 when fetching ".$base_url."/".$rule_file.".md5" unless is_success($getrules_md5);
     open (FILE,"$temp_path$rule_file.md5")
@@ -1086,6 +1086,14 @@ if ($oinkcode && @base_url && -d $temp_path)
 			#$ips_policy="Disabled" if ($_=~/emergingthreats/);
 			
 			my ($base_url,$rule_file) = split(/\|/,$_);
+			
+			if ($base_url=~/snort\.org/i) {
+				unless ($rule_file=~/snortrules-snapshot-\d{4}\.tar\.gz/) {
+					my $Snortv = $Snort;
+					$Snortv =~ s/\.//g;
+					$rule_file="snortrules-snapshot-$Snortv.tar.gz";
+				}
+			}
 			
 			Help("please define the rule_url correctly") unless defined $base_url;
 			Help("please define the rule_url correctly") unless defined $rule_file;
