@@ -1026,8 +1026,9 @@ if (!$Distro) {
 
 if (!$Snort_path) {
     $Snort_path =($Config_info{'snort_path'});
-    $Snort = snort_version($Snort_path);
+    $Snort = snort_version($Snort_path) if -B $Snort_path;
     $arch = get_arch();
+    $Textonly = 1 unless $Snort;
 }
 
 if (!$local_rules && ($Config_info{'local_rules'})) {
@@ -1089,14 +1090,16 @@ if ($oinkcode && @base_url && -d $temp_path)
 			
 			if ($base_url=~/snort\.org/i) {
 				unless ($rule_file=~/snortrules-snapshot-\d{4}\.tar\.gz/) {
+					die("The specified Snort binary does not exist!\nPlease correct the value or specify the FULL",
+					" rules tarball name in the pulledpork.conf!\n") unless $Snort;
 					my $Snortv = $Snort;
 					$Snortv =~ s/\.//g;
 					$rule_file="snortrules-snapshot-$Snortv.tar.gz";
 				}
 			}
 			
-			Help("please define the rule_url correctly") unless defined $base_url;
-			Help("please define the rule_url correctly") unless defined $rule_file;
+			die("please define the rule_url correctly in the pulledpork.conf") unless defined $base_url;
+			die("please define the rule_url correctly in the pulledpork.conf") unless defined $rule_file;
 			
 			$Hash = 1 unless $base_url=~/(emergingthreats|snort.org)/;
 			
@@ -1126,6 +1129,15 @@ if ($oinkcode && @base_url && -d $temp_path)
 	if ($NoDownload) {
 		foreach (@base_url) {
 			my ($base_url,$rule_file) = split(/\|/,$_);
+			if ($base_url=~/snort\.org/i) {
+				unless ($rule_file=~/snortrules-snapshot-\d{4}\.tar\.gz/) {
+					die("The specified Snort binary does not exist!\nPlease correct the value or specify the FULL",
+					" rules tarball name in the pulledpork.conf!\n") unless $Snort;
+					my $Snortv = $Snort;
+					$Snortv =~ s/\.//g;
+					$rule_file="snortrules-snapshot-$Snortv.tar.gz";
+				}
+			}
 			die "file $temp_path/$rule_file does not exist!\n" unless -f "$temp_path/$rule_file";
 			rule_extract($rule_file,$temp_path,$Distro,$arch,$Snort,$Sorules,$ignore_files);
 		}
