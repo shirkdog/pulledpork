@@ -12,6 +12,8 @@ New Features / changes:
 
 Bug Fixes:
 - Should now correctly use environmentally set proxy settings
+- Fixed case where rules with multiple flowbit (un)?set values would not
+	properly populate all of the flowbit values into the rules hash
 
 v0.4.2
 
