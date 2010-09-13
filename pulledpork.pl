@@ -374,6 +374,7 @@ sub read_rules {
 				chomp($rule);
 				$rule=trim($rule);
 				if ($rule=~/^\s*#*\s*(alert|drop|pass)/i) {
+					
 					if ($rule=~/sid:\s*\d+/i) {
 					$sid=$&;
 					$sid=~s/sid:\s*//;
@@ -381,9 +382,18 @@ sub read_rules {
 						$gid=$&;
 						$gid=~s/gid:\s*//;
 					}else{ $gid=1; }
-					if ($rule=~/flowbits:\s*set\s*,\s*(\w|\.)+/i) {
-						my ($flowbits,$flowbit)=split(/,/,$&);
-						$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = 1;
+					if ($rule=~/flowbits:\s*(un)?set/i) {
+						# There is a much cleaner way to do this, I just don't have the time to do it right now!
+						my ($header, $options) = split(/^.* \(/, $rule);
+						my @optarray = split(/;(\t|\s)?/,$options) if $options;
+						foreach my $option (reverse(@optarray)){
+							my ($kw,$arg) = split(/:/, $option) if $option;
+							next unless ($kw && $arg && $kw eq "flowbits");
+							my ($flowact,$flowbit) = split(/,/,$arg);
+							next unless $flowact=~/(un)?set/i;
+							$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = 1;
+						}
+
 					}
 					$$hashref{trim($gid)}{trim($sid)}{'rule'} = $rule;
 					$file=~s/\.rules//;
@@ -408,9 +418,18 @@ sub read_rules {
 					$gid=$&;
 					$gid=~s/gid:\s*//;
 				}else{ $gid=1; }
-				if ($rule=~/flowbits:\s*set\s*,\s*(\w|\.)+/) {
-					my ($flowbits,$flowbit)=split(/,/,$&);
-					$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = 1;
+				if ($rule=~/flowbits:\s*(un)?set/) {
+					my ($header, $options) = split(/^.* \(/, $rule);
+						# There is a much cleaner way to do this, I just don't have the time to do it right now!
+						my @optarray = split(/;(\t|\s)?/,$options) if $options;
+						foreach my $option (reverse(@optarray)){
+							my ($kw,$arg) = split(/:/, $option) if $option;
+							next unless ($kw && $arg && $kw eq "flowbits");
+							my ($flowact,$flowbit) = split(/,/,$arg);
+							next unless $flowact=~/(un)?set/i;
+							$$hashref{trim($gid)}{trim($sid)}{trim($flowbit)} = 1;
+						}
+
 				}
 				$$hashref{trim($gid)}{trim($sid)}{'rule'} = $rule;
 				}
@@ -742,7 +761,7 @@ sub flowbit_set {
 	foreach my $k1 (keys %$href){
 		foreach my $k2 (keys %{$$href{$k1}}){
 			next unless $$href{$k1}{$k2}{'rule'}=~/^\s*(alert|drop|pass)/;
-			next unless $$href{$k1}{$k2}{'rule'}=~/flowbits:\s*is(not)?set\s*,\s*(\w|\.)+/i;
+			next unless $$href{$k1}{$k2}{'rule'}=~/flowbits:\s*is(not)?set\s*,\s*(\w|\.|\-|_)+/i;
 			flowbit_check($$href{$k1}{$k2}{'rule'},\@flowbits);
 		}
 	}
