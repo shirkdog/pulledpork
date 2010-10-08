@@ -18,6 +18,7 @@ Bug Fixes:
 - Fixed case where rules with multiple flowbit (un)?set values would not
 	properly populate all of the flowbit values into the rules hash
 - Bug #29 - fixed to allow for proper sid-msg.map generation
+- Bug #28 - fixed numerous spellification issues 
 
 
 v0.4.2

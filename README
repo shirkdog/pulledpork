@@ -9,15 +9,15 @@ thoroughly so that you don't overlook something!
    for all of your snort rulesets.
  * Checksum verification for all major rule downloads
  * Automatic generation of updated sid-msg.map file
- * Cabability to include your local.rules in sid-msg.map file
- * Cabability to pull rules tarballs from custom urls
+ * Capability to include your local.rules in sid-msg.map file
+ * Capability to pull rules tarballs from custom urls
  * Complete Shared Object support
  * Capability to download multiple disparate rulesets at once
  * Maintains accurate changelog
  * Capability to HUP processes after rules download
  * Aids in tuning of rulesets
  * Verbose output so that you know EXACTLY what is happening
- * Minimal Perl Module dependancies
+ * Minimal Perl Module dependencies
  * Tastes delicious, like bacon should!
  
 
@@ -55,7 +55,7 @@ thoroughly so that you don't overlook something!
    -l Log information to logger rather than stdout messages.  **not yet implemented**
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
-   -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
+   -d Do not verify signature of rules tarball, i.e. downloading from non VRT or ET locations.
    -H Send a SIGHUP to the pids listed in the config file
    -n Do everything other than download of new files (disablesid, etc)
    -V Print Version and exit
@@ -75,7 +75,7 @@ The above will fetch the snortrules-snapshot-2860.tar.gz tarball from snort.org 
 12345667778523452344234234 and put the rules files from that tarball into the output path of 
 /usr/local/etc/snort/rules/ while the -i option tells pulledpork where the
 disablesid.conf lives, and the -T option tells pulledpork to not process for any shared object rules and the final
--H option tells pulledpork to send a Hangup signal to the snort pid that you defned in the pulledpork.conf.
+-H option tells pulledpork to send a Hangup signal to the snort pid that you defined in the pulledpork.conf.
 
 ./pulledpork.pl -c pulledpork.conf -i disablesid.conf -T -H
 
