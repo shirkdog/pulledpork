@@ -395,7 +395,7 @@ sub read_rules {
 					}else{ $gid=1; }
 					if ($rule=~/flowbits:\s*(un)?set/i) {
 						# There is a much cleaner way to do this, I just don't have the time to do it right now!
-						my ($header, $options) = split(/^.* \(/, $rule);
+						my ($header, $options) = split(/^[^"]* \(/, $rule);
 						my @optarray = split(/;(\t|\s)?/,$options) if $options;
 						foreach my $option (reverse(@optarray)){
 							my ($kw,$arg) = split(/:/, $option) if $option;
@@ -430,7 +430,7 @@ sub read_rules {
 					$gid=~s/gid:\s*//;
 				}else{ $gid=1; }
 				if ($rule=~/flowbits:\s*(un)?set/) {
-					my ($header, $options) = split(/^.* \(/, $rule);
+					my ($header, $options) = split(/^[^"]* \(/, $rule);
 						# There is a much cleaner way to do this, I just don't have the time to do it right now!
 						my @optarray = split(/;(\t|\s)?/,$options) if $options;
 						foreach my $option (reverse(@optarray)){
@@ -677,7 +677,7 @@ sub sid_msg
 	print "Generating sid-msg.map....\n";
 	foreach my $k (sort keys %$ruleshash) {
 		foreach my $k2 (sort keys %{$$ruleshash{$k}}) {
-			(my $header, my $options) = split(/^.* \(/, $$ruleshash{$k}{$k2}{'rule'}) if defined $$ruleshash{$k}{$k2}{'rule'};
+			(my $header, my $options) = split(/^[^"]* \(/, $$ruleshash{$k}{$k2}{'rule'}) if defined $$ruleshash{$k}{$k2}{'rule'};
 			my @optarray = split(/;(\t|\s)?/,$options) if $options;
 			foreach my $option (reverse(@optarray))
 			{
@@ -754,7 +754,7 @@ sub sid_write
 
 sub flowbit_check {
 	my ($rule,$aref)=@_;
-	my ($header, $options) = split(/^.* \(/, $rule);
+	my ($header, $options) = split(/^[^"]* \(/, $rule);
 	my @optarray = split(/;(\t|\s)?/,$options) if $options;
 	foreach my $option (reverse(@optarray)){
 		my ($kw,$arg) = split(/:/, $option) if $option;
@@ -1100,7 +1100,7 @@ $ua->show_progress(1) if $Verbose;
 # New Settings to allow proxy connections to use proper SSL formating - Thx pkthound!
 $ua->timeout(15);
 $ua->cookie_jar( {} ); 	
-$ua->protocols_allowed( [ 'http','https'] );
+$ua->protocols_allowed( ['http','https'] );
 my $proxy = $ENV{http_proxy};
 if ($proxy) {
 	$ua->proxy(['http'], $proxy);
