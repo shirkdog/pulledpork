@@ -121,8 +121,10 @@ print<<__EOT;
    -t Where do you want me to put the so_rule stub files? ** Thus MUST be uniquely 
       different from the -o option value
    -D What Distro are you running on, for the so_rules
-      Valid Distro Types=CentOS-4.6,CentOS-5.0,Debian-Lenny,FC-5,FC-9,FreeBSD-7.0,
-	  RHEL-5.0,Ubuntu-6.01.1,Ubuntu-8.04
+      Valid Distro Types=Debian-Lenny, Ubuntu-6.01.1, Ubuntu-8.04
+		CentOS-4.6, Centos-4-8, CentOS-5.0, Centos-5-4
+		FC-5, FC-9, FC-11, FC-12, RHEL-5.0
+		FreeBSD-6.3, FreeBSD-7-2, FreeBSD-7-3, FreeBSD-7.0, FreeBSD-8-0, FreeBSD-8-1
    -l Log information to logger rather than stdout messages.  **not yet implemented**
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
@@ -268,9 +270,9 @@ sub rulefetch
 	else {
 		$getrules_rule = getstore($base_url."/".$rule_file,$temp_path.$rule_file);
 	}
-	if ($getrules_rule==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
+	if ($getrules_rule==403){print "\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
 									"\tYou may also wish to verfiy your oinkcode, tarball name, and other configuration options\n";}
-	elsif ($getrules_rule==404){print "\tA 404 error occured, please verify your filenames and urls for your tarball!\n";}
+	elsif ($getrules_rule==404){print "\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";}
     die "\tError $getrules_rule when fetching ".$rule_file unless is_success($getrules_rule);
     if ($Verbose)
 	{ print ("\tstoring file at: $temp_path$rule_file\n\n"); }
@@ -310,9 +312,9 @@ sub md5file
 	elsif ($base_url =~ /emergingthreats\.net\/rules/i){
 		$getrules_md5 = getstore($base_url."/md5sums/".$rule_file.".md5",$temp_path.$rule_file.".md5");
 	}
-	if ($getrules_md5==403){print "\tA 403 error occured, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
+	if ($getrules_md5==403){print "\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
 									"\tYou may also wish to verfiy your oinkcode, tarball name, and other configuration options\n";}
-	elsif ($getrules_md5==404){print "\tA 404 error occured, please verify your filenames and urls for your tarball!\n";}
+	elsif ($getrules_md5==404){print "\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";}
     die "\tError $getrules_md5 when fetching ".$base_url."/".$rule_file.".md5" unless is_success($getrules_md5);
     open (FILE,"$temp_path$rule_file.md5")
           or die $!;
@@ -462,7 +464,7 @@ sub gen_stubs
         while (<FH>) {
 			print "\t$_" if $_ =~/Dumping/i && $Verbose;
 			next unless $_ =~ /(err|warn|fail)/i;
-			print "\tAn error occured: $_\n";
+			print "\tAn error occurred: $_\n";
 		}
 		close (FH);
     } else {
@@ -857,7 +859,7 @@ sub changelog {
 	print "\tDropped Rules:----$dropped\n";
 	print "\tDisabled Rules:---$disabled\n";
 	print "\tTotal Rules:------".($enabled+$dropped+$disabled)."\n\tDone\n";
-	print "Please review the Changelog for additional details\n";
+	print "Please review $sid_changelog for additional details\n" if $sid_changelog;
 	undef @newsids;
 	undef @delsids;
 	
@@ -1003,7 +1005,7 @@ if (exists $Config_info{'version'}){
 		"Please use the version that shipped with $VERSION!\n\n" if $Config_info{'version'} ne "0.5.0D";
 } else { die "You are not using the current version of pulledpork.conf!\nPlease use the version that shipped with $VERSION!\n\n"; }
 
-# Check to see if we have command line inputs, if so, they superseed any config file values!
+# Check to see if we have command line inputs, if so, they super-seed any config file values!
 # We also begin sub execution here
 
 $pid_path = ($Config_info{'pid_path'}) if exists $Config_info{'pid_path'};
