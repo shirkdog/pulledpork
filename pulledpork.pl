@@ -22,7 +22,10 @@
 use strict;
 use warnings;
 use File::Copy;
-use LWP::Simple qw ( $ua getstore get is_success);
+use LWP::UserAgent;
+use HTTP::Request::Common;
+use HTTP::Status qw (is_success);
+use Crypt::SSLeay;
 use Digest::MD5;
 use File::Path;
 use Getopt::Long qw(:config no_ignore_case bundling);
@@ -33,8 +36,8 @@ use Switch;
 
 #we are gonna need these!
 my ($oinkcode,$temp_path,$rule_file);
-
 my $VERSION = "PulledPork v0.5.0 Dev";
+my $ua = LWP::UserAgent->new;
 
 # routine to grab our config from the defined config file
 sub parse_config_file {
@@ -240,6 +243,14 @@ sub compare_md5
          }
 }
 
+# mimic LWP::Simple getstore routine - Thx pkthound!
+sub getstore {
+    my($url, $file) = @_;
+    my $request = HTTP::Request->new(GET => $url);
+    my $response = $ua->request($request, $file);   
+    $response->code;
+}
+
 ## time to grab the real 0xb33f
 sub rulefetch
 {
@@ -252,7 +263,7 @@ sub rulefetch
         if ($Hash) { print "But not verifying MD5\n"; }
          }
     if ($base_url =~ /snort\.org/i){
-		$getrules_rule = getstore("http://www.snort.org/reg-rules/$rule_file/$oinkcode",$temp_path.$rule_file);
+		$getrules_rule = getstore("https://www.snort.org/reg-rules/$rule_file/$oinkcode",$temp_path.$rule_file);
     }
 	else {
 		$getrules_rule = getstore($base_url."/".$rule_file,$temp_path.$rule_file);
@@ -294,7 +305,7 @@ sub md5file
     if ($Verbose)
 	{ print "\tFetching md5sum for: ".$rule_file.".md5\n"; }
 	if ($base_url =~ /snort\.org/i){
-		$getrules_md5 = getstore("http://www.snort.org/reg-rules/$rule_file.md5/$oinkcode",$temp_path.$rule_file.".md5");
+		$getrules_md5 = getstore("https://www.snort.org/reg-rules/$rule_file.md5/$oinkcode",$temp_path.$rule_file.".md5");
     }
 	elsif ($base_url =~ /emergingthreats\.net\/rules/i){
 		$getrules_md5 = getstore($base_url."/md5sums/".$rule_file.".md5",$temp_path.$rule_file.".md5");
@@ -1086,8 +1097,20 @@ if (! -d $temp_path) {Help("Temporary file path $temp_path does not exist.\n");}
 # set some UserAgent and other connection configs
 $ua->agent("$VERSION");
 $ua->show_progress(1) if $Verbose;
-#$ua->proxy(['http', 'https'], $proxy) if $proxy;
-$ua->env_proxy; #pull in proxy env settings if they exist!
+# New Settings to allow proxy connections to use proper SSL formating - Thx pkthound!
+$ua->timeout(15);
+$ua->cookie_jar( {} ); 	
+$ua->protocols_allowed( [ 'http','https'] );
+my $proxy = $ENV{http_proxy};
+if ($proxy) {
+	$ua->proxy(['http'], $proxy);
+	$proxy = $ENV{https_proxy};
+	$ENV{HTTPS_PROXY} = $proxy;	
+}
+if($Verbose==2) {
+	$ENV{HTTPS_DEBUG} = 1;
+    print "\n\nMY HTTPS PROXY = " . $proxy . "\n" if $proxy; 
+}
 
 #let's fetch the most recent md5 file then compare and do our foo
 if ($oinkcode && @base_url && -d $temp_path)
@@ -1150,7 +1173,7 @@ if ($oinkcode && @base_url && -d $temp_path)
 			my ($base_url,$rule_file) = split(/\|/,$_);
 			if ($base_url=~/snort\.org/i) {
 				unless ($rule_file=~/snortrules-snapshot-\d{4}\.tar\.gz/) {
-					die("The specified Snort binary does not exist!\nPlease correct the value or specify the FULL",
+					die("The specified Snort rules tarball does not exist!\nPlease correct the value or specify the FULL",
 					" rules tarball name in the pulledpork.conf!\n") unless $Snort;
 					my $Snortv = $Snort;
 					$Snortv =~ s/\.//g;

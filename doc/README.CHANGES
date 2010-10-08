@@ -8,12 +8,16 @@ New Features / changes:
 - Capability to retrieve multiple rulesets in a single run
 - Issue #24 - added verbose output showing all requests, results and urls
 - Verbose output now shows percentage bar for downloads
+- Extra Verbose output now shows additional HTTP debug!
+- Set value in default.conf file to https for VRT downloads
 - Set UA Value to (PulledPork/X.X.X)
 
 Bug Fixes:
 - Should now correctly use environmentally set proxy settings
+	* Shout to pkthound for his work and contribution here!
 - Fixed case where rules with multiple flowbit (un)?set values would not
 	properly populate all of the flowbit values into the rules hash
+
 
 v0.4.2
 
