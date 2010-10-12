@@ -4,6 +4,8 @@ v0.5.0
 
 New Features / changes:
 - Automatic VRT tarball name determination (based on local Snort Version)
+- Full support for ET Pro rulesets
+- Full support for new ET Download scheme
 - Issue #27 Modifysid capability
 - Capability to retrieve multiple rulesets in a single run
 - Issue #24 - added verbose output showing all requests, results and urls
@@ -11,6 +13,7 @@ New Features / changes:
 - Extra Verbose output now shows additional HTTP debug!
 - Set value in default.conf file to https for VRT downloads
 - Set UA Value to (PulledPork/X.X.X)
+- Capability to log critical information to syslog
 
 Bug Fixes:
 - Should now correctly use environmentally set proxy settings
