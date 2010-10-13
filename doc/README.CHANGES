@@ -21,7 +21,16 @@ Bug Fixes:
 - Fixed case where rules with multiple flowbit (un)?set values would not
 	properly populate all of the flowbit values into the rules hash
 - Bug #29 - fixed to allow for proper sid-msg.map generation
-- Bug #28 - fixed numerous spellification issues 
+- Bug #28 - fixed numerous spellification issues
+
+Perl Module Requriement Changes:
+- LWP::Simple no longer
+- LWP::UserAgent now required
+- HTTP::Request now required
+- HTTP::Status now required
+- SYS::Syslog now required
+- Crypt::SSLeay now required
+- Carp now required
 
 
 v0.4.2

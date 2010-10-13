@@ -26,6 +26,7 @@ use LWP::UserAgent;
 use HTTP::Request::Common;
 use HTTP::Status qw (is_success);
 use Crypt::SSLeay;
+use Sys::Syslog;
 use Digest::MD5;
 use File::Path;
 use Getopt::Long qw(:config no_ignore_case bundling);
@@ -35,19 +36,18 @@ use Switch;
 use Carp;
 
 # we are gonna need these!
-my ( $oinkcode, $temp_path, $rule_file );
+my ( $oinkcode, $temp_path, $rule_file , $Syslogging);
 my $VERSION = "PulledPork v0.5.0 Dev";
 my $ua      = LWP::UserAgent->new;
 
-# routine to grab our config from the defined config file
 # routine to grab our config from the defined config file
 sub parse_config_file {
     my ( $FileConf, $Config_val ) = @_;
     my ( $config_line, $Name, $Value );
 
     if ( !open( CONFIG, "$FileConf" ) ) {
-        print "ERROR: Config file not found : $FileConf";
-        syslogit( 'err', "FATAL: Config file not found: $FileConf" );
+        print "ERROR: Config file not found : $FileConf\n";
+        syslogit( 'err|local0', "FATAL: Config file not found: $FileConf" ) if $Syslogging;
         exit(0);
     }
     open( CONFIG, "$FileConf" );
@@ -74,7 +74,7 @@ sub parse_config_file {
 
 }
 
-my ( $Verbose, $Syslogging, $Hash, $ALogger, $Config_file, $Sorules, $Auto );
+my ( $Verbose, $Hash, $ALogger, $Config_file, $Sorules, $Auto );
 my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog, $modifysid );
 my ( $Snort_config, $Snort_path,  $Textonly,    $SID_conf,    $DISID_conf );
 my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, @base_url );
@@ -129,7 +129,7 @@ sub Help {
 		CentOS-4.6, Centos-4-8, CentOS-5.0, Centos-5-4
 		FC-5, FC-9, FC-11, FC-12, RHEL-5.0
 		FreeBSD-6.3, FreeBSD-7-2, FreeBSD-7-3, FreeBSD-7.0, FreeBSD-8-0, FreeBSD-8-1
-   -l Log Important Info to Syslog (Errors, Successful run etc) 
+   -l Log Important Info to Syslog (Errors, Successful run etc, all items logged as WARN or higher) 
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
    -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
@@ -307,17 +307,17 @@ sub rulefetch {
         print
 "\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
 "\tYou may also wish to verfiy your oinkcode, tarball name, and other configuration options\n";
-        syslogit( 'err', "FATAL: 403 error occured" );
+        syslogit( 'emerg|local0', "FATAL: 403 error occured" ) if $Syslogging;
     }
     elsif ( $getrules_rule == 404 ) {
         print
 "\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";
-        syslogit( 'err', "FATAL: 404 error occured" );
+        syslogit( 'emerg|local0', "FATAL: 404 error occured" ) if $Syslogging;
     }
     unless ( is_success($getrules_rule) ) {
         croak "\tError $getrules_rule when fetching " . $rule_file;
-        syslogit( 'emerg',
-            "FATAL: Error $getrules_rule when fetching $rule_file" );
+        syslogit( 'emerg|local0',
+            "FATAL: Error $getrules_rule when fetching $rule_file" ) if $Syslogging;
     }
 
     if ($Verbose)    { print("\tstoring file at: $temp_path$rule_file\n\n"); }
@@ -542,7 +542,7 @@ sub gen_stubs {
         while (<FH>) {
             print "\t$_" if $_ =~ /Dumping/i && $Verbose;
             next unless $_ =~ /(err|warn|fail)/i;
-            syslogit( 'warning', "FATAL: An error occured: $_" );
+            syslogit( 'warning|local0', "FATAL: An error occured: $_" ) if $Syslogging;
             print "\tAn error occurred: $_\n";
         }
         close(FH);
@@ -1085,15 +1085,11 @@ sub get_arch {
 
 # log to syslog
 sub syslogit {
-
     my ( $level, $msg ) = @_;
 
-    if ($Syslogging) {
-        use Sys::Syslog;
-        openlog( 'pulledpork', '', 'user' );
-        syslog( $level, $msg );
-        closelog;
-    }
+    openlog( 'pulledpork', 'ndelay,pid', 'local0' );
+    syslog( $level, $msg );
+    closelog;
 }
 
 ## Lets grab any runtime values and insert into our variables using getopt::long
@@ -1477,6 +1473,5 @@ if ( $sid_changelog && -f $Output ) {
 }
 
 print("Fly Piggy Fly!\n");
-syslogit( 'info', "INFO:PulledPork Finished Cleanly" );
-
+syslogit( 'warning|local0', "INFO: Finished Cleanly" ) if $Syslogging;
 __END__
