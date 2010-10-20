@@ -14,6 +14,7 @@ New Features / changes:
 - Set value in default.conf file to https for VRT downloads
 - Set UA Value to (PulledPork/X.X.X)
 - Capability to log critical information to syslog
+- Grabonly option, for those that only want to download the tarball(s)
 
 Bug Fixes:
 - Should now correctly use environmentally set proxy settings
@@ -22,6 +23,8 @@ Bug Fixes:
 	properly populate all of the flowbit values into the rules hash
 - Bug #29 - fixed to allow for proper sid-msg.map generation
 - Bug #28 - fixed numerous spellification issues
+- Bug #32 - fixed to allow for so stub generation in nodownload and !nodownload case
+ 
 
 Perl Module Requriement Changes:
 - LWP::Simple no longer
