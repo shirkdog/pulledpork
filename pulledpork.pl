@@ -79,6 +79,7 @@ my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog, $modifysid );
 my ( $Snort_config, $Snort_path,  $Textonly,    $SID_conf,    $DISID_conf );
 my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, @base_url );
 my ( $ips_policy,   $enable_conf, $local_rules, $arch,        $ignore_files );
+my ( $grabonly );
 
 $Verbose = 0;
 undef($Hash);
@@ -97,7 +98,7 @@ sub Help {
     if ($msg) { print "\nERROR: $msg\n"; }
 
     print <<__EOT;
-  Usage: $0 [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
+  Usage: $0 [-lvvVdnHTng? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
@@ -135,8 +136,10 @@ sub Help {
    -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
    -H Send a SIGHUP to the pids listed in the config file
    -n Do everything other than download of new files (disablesid, etc)
+   -g grabonly (download tarball rule file(s) and do NOT process)
    -V Print Version and exit
    -help/? Print this help info.
+
 
 __EOT
 
@@ -247,7 +250,7 @@ sub compare_md5 {
         }
         if ( !$Verbose ) { print "\tThey Match\n\tDone!\n"; }
         rule_extract( $rule_file, $temp_path, $Distro, $arch, $Snort, $Sorules,
-            $ignore_files );
+            $ignore_files ) if !$grabonly;
     }
     elsif ( !$Hash ) {
         if ($Verbose) {
@@ -272,7 +275,7 @@ sub compare_md5 {
         }
         if ( !$Verbose ) { print "\tNo Verify Set\n\tDone!\n"; }
         rule_extract( $rule_file, $temp_path, $Distro, $arch, $Snort, $Sorules,
-            $ignore_files );
+            $ignore_files ) if !$grabonly;
     }
 }
 
@@ -1102,6 +1105,7 @@ GetOptions(
     "T!"     => \$Textonly,
     "H!"     => \$SigHup,
     "n!"     => \$NoDownload,
+    "g!"	 => \$grabonly,
     "h=s"    => \$sid_changelog,
     "M=s"    => \$modifysid,
     "L=s"    => \$local_rules,
@@ -1155,6 +1159,7 @@ if ($Verbose) {
     if ($Textonly)       { print "\tText Rules only Flag is Set\n"; }
     if ($SigHup)         { print "\tSIGHUP Flag is Set\n"; }
     if ($NoDownload)     { print "\tNo Download Flag is Set\n"; }
+    if ($grabonly)		 { print "\tgrabonly Flag is Set, only gonna download!"; }
 
     if ($Hash) {
         print
@@ -1375,16 +1380,9 @@ if ( @base_url && -d $temp_path ) {
                 $base_url, $md5,       $rule_digest, $Distro,
                 $arch,     $Snort,     $Sorules,     $ignore_files
             );
-
-            if ( $Sorules && $Distro && $Snort && !$Textonly ) {
-                gen_stubs( $Snort_path, $Snort_config,
-                    "$temp_path" . "tha_rules/so_rules/" );
-                read_rules( \%rules_hash, "$temp_path" . "tha_rules/so_rules/",
-                    $local_rules );
-            }
         }
     }
-    if ($NoDownload) {
+    if ($NoDownload && !$grabonly) {
         foreach (@base_url) {
             my ( $base_url, $rule_file ) = split( /\|/, $_ );
             if ( $base_url =~ /snort\.org/i ) {
@@ -1401,77 +1399,86 @@ if ( @base_url && -d $temp_path ) {
             croak "file $temp_path/$rule_file does not exist!\n"
               unless -f "$temp_path/$rule_file";
             rule_extract( $rule_file, $temp_path, $Distro, $arch, $Snort,
-                $Sorules, $ignore_files );
+                $Sorules, $ignore_files ) if !$grabonly;
         }
     }
-    if ($Output) {
+    if ($Output && !$grabonly) {
         read_rules( \%rules_hash, "$temp_path" . "tha_rules/", $local_rules );
     }
+	if ( $Sorules && $Distro && $Snort && !$Textonly && !$grabonly) {
+		gen_stubs( $Snort_path, $Snort_config,
+			"$temp_path" . "tha_rules/so_rules/" );
+		read_rules( \%rules_hash, "$temp_path" . "tha_rules/so_rules/",
+			$local_rules );
+	}
 }
 else { Help("Check your oinkcode, temp path and freespace!"); }
 
-if ( $sid_changelog && -f $Output ) {
-    read_rules( \%oldrules_hash, "$Output", $local_rules );
-}
-if ( $sid_changelog && $Sostubs && -f $Sostubs ) {
-    read_rules( \%oldrules_hash, "$Sostubs", $local_rules );
+if ( !$grabonly ) {
+	if ( $sid_changelog && -f $Output ) {
+	    read_rules( \%oldrules_hash, "$Output", $local_rules );
+	}
+	if ( $sid_changelog && $Sostubs && -f $Sostubs ) {
+	    read_rules( \%oldrules_hash, "$Sostubs", $local_rules );
+	}
 }
 
 if ( -d $temp_path ) {
     temp_cleanup();
 }
 
-if ( $ips_policy ne "Disabled" ) {
-    policy_set( $ips_policy, \%rules_hash );
+if (!$grabonly ) {
+	if ( $ips_policy ne "Disabled" ) {
+	    policy_set( $ips_policy, \%rules_hash );
+	}
+	
+	if ( $enable_conf && -f $enable_conf ) {
+	    modify_state( 'enable', $enable_conf, \%rules_hash );
+	}
+	
+	if ( $DISID_conf && -f $DISID_conf ) {
+	    modify_state( 'drop', $DISID_conf, \%rules_hash );
+	}
+	
+	if ( $SID_conf && -f $SID_conf ) {
+	    modify_state( 'disable', $SID_conf, \%rules_hash );
+	}
+	
+	if ( $modifysid && -f $modifysid ) {
+	    modify_sid( \%rules_hash, $modifysid );
+	}
+	
+	print "Setting Flowbit State....\n";
+	my $fbits = 1;
+	while ( $fbits > 0 ) {
+	    $fbits = flowbit_set( \%rules_hash );
+	}
+	print "\tDone\n";
+	
+	if ($Output) {
+	    rule_write( \%rules_hash, $Output, 1 );
+	}
+	if ( $Sostubs && !$Textonly ) {
+	    rule_write( \%rules_hash, $Sostubs, 3 );
+	}
+	
+	if ($sid_msg_map) {
+	
+	    sid_msg( \%rules_hash, \%sid_msg_map );
+	    sid_write( \%sid_msg_map, $sid_msg_map );
+	}
+	
+	if ( $SigHup && $pid_path ne "" ) {
+	    sig_hup($pid_path) unless $Sostubs;
+	    print "WARNING, cannot send sighup if also processing SO rules",
+	      "\n\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
+	      if $Sostubs;
+	}
+	
+	if ( $sid_changelog && -f $Output ) {
+	    changelog( $sid_changelog, \%rules_hash, \%oldrules_hash, $ips_policy );
+	}
 }
-
-if ( $enable_conf && -f $enable_conf ) {
-    modify_state( 'enable', $enable_conf, \%rules_hash );
-}
-
-if ( $DISID_conf && -f $DISID_conf ) {
-    modify_state( 'drop', $DISID_conf, \%rules_hash );
-}
-
-if ( $SID_conf && -f $SID_conf ) {
-    modify_state( 'disable', $SID_conf, \%rules_hash );
-}
-
-if ( $modifysid && -f $modifysid ) {
-    modify_sid( \%rules_hash, $modifysid );
-}
-
-print "Setting Flowbit State....\n";
-my $fbits = 1;
-while ( $fbits > 0 ) {
-    $fbits = flowbit_set( \%rules_hash );
-}
-print "\tDone\n";
-
-if ($Output) {
-    rule_write( \%rules_hash, $Output, 1 );
-}
-if ( $Sostubs && !$Textonly ) {
-    rule_write( \%rules_hash, $Sostubs, 3 );
-}
-
-if ($sid_msg_map) {
-
-    sid_msg( \%rules_hash, \%sid_msg_map );
-    sid_write( \%sid_msg_map, $sid_msg_map );
-}
-
-if ( $SigHup && $pid_path ne "" ) {
-    sig_hup($pid_path) unless $Sostubs;
-    print "WARNING, cannot send sighup if also processing SO rules",
-      "\n\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
-      if $Sostubs;
-}
-
-if ( $sid_changelog && -f $Output ) {
-    changelog( $sid_changelog, \%rules_hash, \%oldrules_hash, $ips_policy );
-}
-
 print("Fly Piggy Fly!\n");
 syslogit( 'warning|local0', "INFO: Finished Cleanly" ) if $Syslogging;
 __END__
