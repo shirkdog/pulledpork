@@ -20,6 +20,7 @@ New Features / changes:
 	* converts oinkmaster config files to PP config files
 	* Thx Russell Fulton!
 - Added README.CONTRIB to track contrib files (ohai manifest)
+- Perl Modue Requirement Changes (SEE SECTION BELOW)
 
 Bug Fixes:
 - Should now correctly use environmentally set proxy settings
