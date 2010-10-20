@@ -1,0 +1,4 @@
+This file is essentially a manifest of the contrib directory.
+
+oink-conv.pl - tool that converts oinkmaster config files to pulledpork config files
+ * Author: Russell Fulton
