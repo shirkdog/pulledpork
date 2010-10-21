@@ -15,6 +15,8 @@ New Features / changes:
 - Set UA Value to (PulledPork/X.X.X)
 - Capability to log critical information to syslog
 - Grabonly option, for those that only want to download the tarball(s)
+- Issue #34 Added the capability to specify the order of disable / enable / drop
+	using the state_order configuration option in the master config file
 - Added a contrib directory
 - Added oink-conv.pl to contrib directory
 	* converts oinkmaster config files to PP config files

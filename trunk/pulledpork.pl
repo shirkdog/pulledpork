@@ -75,11 +75,11 @@ sub parse_config_file {
 }
 
 my ( $Verbose, $Hash, $ALogger, $Config_file, $Sorules, $Auto );
-my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog, $modifysid );
-my ( $Snort_config, $Snort_path,  $Textonly,    $SID_conf,    $DISID_conf );
+my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog,$ignore_files );
+my ( $Snort_config, $Snort_path,  $Textonly,    $grabonly,	  $ips_policy, );
 my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, @base_url );
-my ( $ips_policy,   $enable_conf, $local_rules, $arch,        $ignore_files );
-my ( $grabonly );
+my ( $local_rules,  $arch, );
+
 
 $Verbose = 0;
 undef($Hash);
@@ -88,6 +88,7 @@ undef($ALogger);
 my %rules_hash    = ();
 my %oldrules_hash = ();
 my %sid_msg_map   = ();
+my %sidmod 		  = ();
 undef %rules_hash;
 undef %oldrules_hash;
 undef %sid_msg_map;
@@ -1109,7 +1110,7 @@ GetOptions(
     "n!"     => \$NoDownload,
     "g!"	 => \$grabonly,
     "h=s"    => \$sid_changelog,
-    "M=s"    => \$modifysid,
+    "M=s"    => \$sidmod{modify},
     "L=s"    => \$local_rules,
     "s=s"    => \$Sorules,
     "t=s"    => \$Sostubs,
@@ -1117,10 +1118,10 @@ GetOptions(
     "m=s"    => \$sid_msg_map,
     "D=s"    => \$Distro,
     "c=s"    => \$Config_file,
-    "i=s"    => \$SID_conf,
-    "e=s"    => \$enable_conf,
+    "i=s"	 => \$sidmod{disable},
+    "e=s"    => \$sidmod{enable},
     "I=s"    => \$ips_policy,
-    "b=s"    => \$DISID_conf,
+    "b=s"	 => \$sidmod{drop},
     "S=s"    => \$Snort,
     "C=s"    => \$Snort_config,
     "o=s"    => \$Output,
@@ -1149,10 +1150,10 @@ if ($Verbose) {
     if ($Snort)          { print "\tSnort Version is: $Snort\n"; }
     if ($Snort_path)     { print "\tSnort Path is: $Snort_path\n"; }
     if ($Snort_config)   { print "\tSnort Config File: $Snort_config\n"; }
-    if ($SID_conf)       { print "\tPath to disablesid file: $SID_conf\n"; }
-    if ($DISID_conf)     { print "\tPath to dropsid file: $DISID_conf\n"; }
-    if ($enable_conf)    { print "\tPath to enablesid file: $enable_conf\n"; }
-    if ($modifysid)      { print "\tPath to modifysid file: $modifysid\n"; }
+    if ($sidmod{disable}){ print "\tPath to disablesid file: $sidmod{disable}\n"; }
+    if ($sidmod{drop})   { print "\tPath to dropsid file: $sidmod{drop}\n"; }
+    if ($sidmod{enable})    { print "\tPath to enablesid file: $sidmod{enable}\n"; }
+    if ($sidmod{modify})      { print "\tPath to modifysid file: $sidmod{modify}\n"; }
     if ($Distro)         { print "\tDistro Def is: $Distro\n"; }
     if ($arch)           { print "\tarch Def is: $arch\n"; }
     if ($Verbose)        { print "\tVerbose Flag is Set\n"; }
@@ -1204,20 +1205,26 @@ if ( !$ips_policy && defined $Config_info{'ips_policy'} ) {
     $ips_policy = $Config_info{'ips_policy'};
 }
 
-if ( !$enable_conf && defined $Config_info{'enablesid'} ) {
-    $enable_conf = $Config_info{'enablesid'};
+if ( !$sidmod{enable} && defined $Config_info{'enablesid'} ) {
+    $sidmod{enable} = $Config_info{'enablesid'};
 }
 
-if ( !$modifysid && defined $Config_info{'modifysid'} ) {
-    $modifysid = $Config_info{'modifysid'};
+if ( !$sidmod{modify} && defined $Config_info{'modifysid'} ) {
+    $sidmod{modify} = $Config_info{'modifysid'};
 }
 
-if ( !$DISID_conf && defined $Config_info{'dropsid'} ) {
-    $DISID_conf = $Config_info{'dropsid'};
+if ( !$sidmod{drop} && defined $Config_info{'dropsid'} ) {
+    $sidmod{drop} = $Config_info{'dropsid'};
 }
 
-if ( !$SID_conf && defined $Config_info{'disablesid'} ) {
-    $SID_conf = $Config_info{'disablesid'};
+if ( !$sidmod{disable} && defined $Config_info{'disablesid'} ) {
+    $sidmod{disable} = $Config_info{'disablesid'};
+}
+
+my @sidact = ('enable','drop','disable');
+
+if ( defined $Config_info{'state_order'} ) {
+	(@sidact) = split(/,/,$Config_info{'state_order'});
 }
 
 if ( !@base_url ) {
@@ -1327,9 +1334,6 @@ if ( @base_url && -d $temp_path ) {
         foreach (@base_url) {
 
             undef $Sostubs if ( $Textonly || ( $_ =~ /emergingthreats/ ) );
-
-            #$ips_policy="Disabled" if ($_=~/emergingthreats/);
-
             my ( $base_url, $rule_file, $oinkcode ) = split( /\|/, $_ );
             croak
 "You need to define an oinkcode, please review the rule_url section of the pulledpork config file!\n"
@@ -1434,20 +1438,14 @@ if (!$grabonly ) {
 	    policy_set( $ips_policy, \%rules_hash );
 	}
 	
-	if ( $enable_conf && -f $enable_conf ) {
-	    modify_state( 'enable', $enable_conf, \%rules_hash );
+	foreach (@sidact) {
+		if ( $sidmod{$_} && -f $sidmod{$_} ) {
+			modify_state( $_, $sidmod{$_}, \%rules_hash );
+		}
 	}
 	
-	if ( $DISID_conf && -f $DISID_conf ) {
-	    modify_state( 'drop', $DISID_conf, \%rules_hash );
-	}
-	
-	if ( $SID_conf && -f $SID_conf ) {
-	    modify_state( 'disable', $SID_conf, \%rules_hash );
-	}
-	
-	if ( $modifysid && -f $modifysid ) {
-	    modify_sid( \%rules_hash, $modifysid );
+	if ( $sidmod{modify} && -f $sidmod{modify} ) {
+	    modify_sid( \%rules_hash, $sidmod{modify} );
 	}
 	
 	print "Setting Flowbit State....\n";
