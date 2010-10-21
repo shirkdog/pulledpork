@@ -30,9 +30,8 @@ New Features / changes:
     * Thx Russell Fulton!
   * Added README.CONTRIB to track contrib files (ohai manifest)
   * Perl Modue Requirement Changes (SEE SECTION BELOW)
-  * Issue #38 Added capability to extract reference docs from tarball and
-	store in a defined path, NOTE this dramatically increases PP runtime
-	* runtime value is -r
+  * Issue #38 Added capability to extract reference docs from tarball and store in a defined path, NOTE this dramatically increases PP runtime
+    * runtime value is -r
 
 Bug Fixes:
   * Should now correctly use environmentally set proxy settings
