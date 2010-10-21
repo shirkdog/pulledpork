@@ -104,6 +104,7 @@ sub Help {
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
    -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
+   -r <path to docs folder>
   
    Options:
    -c Where the pulledpork config file lives.
