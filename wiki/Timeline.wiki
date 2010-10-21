@@ -3,9 +3,54 @@
 
 = Intro =
 
-Pulled_Pork started in April of 2009(and renamed from Baconator in June of '09), this page is really just to list the anticipated(or current) release features....
+PulledPork started in April of 2009(and renamed from Baconator in June of '09), this page is really just to list the anticipated(or current) release features....
 
 = Breakin it down... =
+
+v0.5.0 (the Drowning Rat)
+
+New Features / changes:
+  * Automatic VRT tarball name determination (based on local Snort Version)
+  * Full support for ET Pro rulesets
+  * Full support for new ET Download scheme
+  * Issue #27 Modifysid capability
+  * Capability to retrieve multiple rulesets in a single run
+  * Issue #24 Added verbose output showing all requests, results and urls
+  * Verbose output now shows percentage bar for downloads
+  * Extra Verbose output now shows additional HTTP debug!
+  * Set value in default.conf file to https for VRT downloads
+  * Set UA Value to (PulledPork/X.X.X)
+  * Capability to log critical information to syslog
+  * Grabonly option, for those that only want to download the tarball(s)
+  * Issue #34 Added the capability to specify the order of disable / enable / drop
+    * using the state_order configuration option in the master config file
+  * Added a contrib directory
+  * Added oink-conv.pl to contrib directory
+    * converts oinkmaster config files to PP config files
+    * Thx Russell Fulton!
+  * Added README.CONTRIB to track contrib files (ohai manifest)
+  * Perl Modue Requirement Changes (SEE SECTION BELOW)
+  * Issue #38 Added capability to extract reference docs from tarball and
+	store in a defined path, NOTE this dramatically increases PP runtime
+	* runtime value is -r
+
+Bug Fixes:
+  * Should now correctly use environmentally set proxy settings
+    * Shout to pkthound for his work and contribution here!
+  * Fixed case where rules with multiple flowbit (un)?set values would not properly populate all of the flowbit values into the rules hash
+  * Bug #29 - fixed to allow for proper sid-msg.map generation
+  * Bug #28 - fixed numerous spellification issues
+  * Bug #32 - fixed to allow for so stub generation in nodownload and !nodownload case
+ 
+
+Perl Module Requriement Changes:
+  * LWP::Simple no longer
+  * LWP::UserAgent now required
+  * HTTP::Request now required
+  * HTTP::Status now required
+  * SYS::Syslog now required
+  * Crypt::SSLeay now required
+  * Carp now required
 
 v0.4.2
 
