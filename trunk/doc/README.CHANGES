@@ -8,7 +8,7 @@ New Features / changes:
 - Full support for new ET Download scheme
 - Issue #27 Modifysid capability
 - Capability to retrieve multiple rulesets in a single run
-- Issue #24 - added verbose output showing all requests, results and urls
+- Issue #24 Added verbose output showing all requests, results and urls
 - Verbose output now shows percentage bar for downloads
 - Extra Verbose output now shows additional HTTP debug!
 - Set value in default.conf file to https for VRT downloads
@@ -23,6 +23,9 @@ New Features / changes:
 	* Thx Russell Fulton!
 - Added README.CONTRIB to track contrib files (ohai manifest)
 - Perl Modue Requirement Changes (SEE SECTION BELOW)
+- Issue #38 Added capability to extract reference docs from tarball and
+	store in a defined path, NOTE this dramatically increases PP runtime
+	* runtime value is -r
 
 Bug Fixes:
 - Should now correctly use environmentally set proxy settings
