@@ -311,16 +311,18 @@ sub rulefetch {
 "\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
 "\tYou may also wish to verfiy your oinkcode, tarball name, and other configuration options\n";
         syslogit( 'emerg|local0', "FATAL: 403 error occured" ) if $Syslogging;
+        exit(1); # For you shirkdog
     }
     elsif ( $getrules_rule == 404 ) {
         print
 "\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";
         syslogit( 'emerg|local0', "FATAL: 404 error occured" ) if $Syslogging;
+        exit(1); # For you shirkdog
     }
     unless ( is_success($getrules_rule) ) {
-        croak "\tError $getrules_rule when fetching " . $rule_file;
         syslogit( 'emerg|local0',
             "FATAL: Error $getrules_rule when fetching $rule_file" ) if $Syslogging;
+		croak "\tError $getrules_rule when fetching " . $rule_file;
     }
 
     if ($Verbose)    { print("\tstoring file at: $temp_path$rule_file\n\n"); }
