@@ -37,7 +37,7 @@ use Carp;
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file , $Syslogging);
-my $VERSION = "PulledPork v0.5.0 Dev";
+my $VERSION = "PulledPork v0.5.0 The Drowning Rat";
 my $ua      = LWP::UserAgent->new;
 
 # routine to grab our config from the defined config file
@@ -78,7 +78,7 @@ my ( $Verbose, $Hash, $ALogger, $Config_file, $Sorules, $Auto );
 my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog,$ignore_files );
 my ( $Snort_config, $Snort_path,  $Textonly,    $grabonly,	  $ips_policy, );
 my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, @base_url );
-my ( $local_rules,  $arch, );
+my ( $local_rules,  $arch, 		  $docs);
 
 
 $Verbose = 0;
@@ -112,6 +112,7 @@ sub Help {
    -e Where the enablesid config file lives.
    -M where the modifysid config file lives.
    -o Where do you want me to put generic rules file?
+   -r Where do you want me to put the reference files (xxxx.txt)
    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -h path to the sid_changelog if you want to keep one?
    -u Where do you want me to pull the rules tarball from 
@@ -192,7 +193,7 @@ sub temp_cleanup {
 
 # subroutine to extract the files to a temp path so that we can do what we need to do..
 sub rule_extract {
-    my ( $rule_file, $temp_path, $Distro, $arch, $Snort, $Sorules, $ignore ) =
+    my ( $rule_file, $temp_path, $Distro, $arch, $Snort, $Sorules, $ignore, $docs ) =
       @_;
     print "Prepping rules from $rule_file for work....\n";
     print "\textracting contents of $temp_path$rule_file...\n" if $Verbose;
@@ -233,6 +234,14 @@ sub rule_extract {
             $tar->extract_file( $filename, $Sorules . $singlefile );
             print "\tExtracted: $Sorules$singlefile\n" if $Verbose;
         }
+        elsif ($docs
+            && $filename =~ /^doc\/signatures\/.*\.txt/ && -d $docs )
+        {
+            $singlefile =~
+              s/^doc\/signatures\///;
+            $tar->extract_file( $filename, $docs . $singlefile );
+            print "\tExtracted: $docs$singlefile\n" if $Verbose == 2;
+        }
     }
     if ( !$Verbose ) { print "\tDone!\n"; }
 }
@@ -242,7 +251,8 @@ sub compare_md5 {
     my (
         $oinkcode, $rule_file, $temp_path,   $Hash,
         $base_url, $md5,       $rule_digest, $Distro,
-        $arch,     $Snort,     $Sorules,     $ignore_files
+        $arch,     $Snort,     $Sorules,     $ignore_files,
+        $docs
     ) = @_;
     if ( $rule_digest =~ $md5 && !$Hash ) {
         if ($Verbose) {
@@ -251,7 +261,7 @@ sub compare_md5 {
         }
         if ( !$Verbose ) { print "\tThey Match\n\tDone!\n"; }
         rule_extract( $rule_file, $temp_path, $Distro, $arch, $Snort, $Sorules,
-            $ignore_files ) if !$grabonly;
+            $ignore_files, $docs ) if !$grabonly;
     }
     elsif ( !$Hash ) {
         if ($Verbose) {
@@ -264,7 +274,8 @@ sub compare_md5 {
         compare_md5(
             $oinkcode, $rule_file, $temp_path,   $Hash,
             $base_url, $md5,       $rule_digest, $Distro,
-            $arch,     $Snort,     $Sorules,     $ignore_files
+            $arch,     $Snort,     $Sorules,     $ignore_files,
+            $docs
         );
     }
     else {
@@ -276,7 +287,7 @@ sub compare_md5 {
         }
         if ( !$Verbose ) { print "\tNo Verify Set\n\tDone!\n"; }
         rule_extract( $rule_file, $temp_path, $Distro, $arch, $Snort, $Sorules,
-            $ignore_files ) if !$grabonly;
+            $ignore_files, $docs ) if !$grabonly;
     }
 }
 
@@ -1114,6 +1125,7 @@ GetOptions(
     "L=s"    => \$local_rules,
     "s=s"    => \$Sorules,
     "t=s"    => \$Sostubs,
+    "r=s" 	 => \$docs,
     "p=s"    => \$Snort_path,
     "m=s"    => \$sid_msg_map,
     "D=s"    => \$Distro,
@@ -1142,6 +1154,7 @@ if ($Verbose) {
     if ($local_rules) { print "\tlocal.rules path is: $local_rules\n"; }
     if ($Sorules)     { print "\tSO Output Path is: $Sorules\n"; }
     if ($Sostubs)     { print "\tSO Stub File is: $Sostubs\n"; }
+    if ($docs)		  { print "\tDocs Reference Location is: $docs\n"; }
     if ($sid_msg_map) { print "\tsid-msg.map Output Path is: $sid_msg_map\n"; }
     if ($sid_changelog) {
         print "\tsid changes will be logged to: $sid_changelog\n";
@@ -1188,7 +1201,7 @@ if ($Verbose) {
 if ( exists $Config_info{'version'} ) {
     croak "You are not using the current version of pulledpork.conf!\n",
       "Please use the version that shipped with $VERSION!\n\n"
-      if $Config_info{'version'} ne "0.5.0D";
+      if $Config_info{'version'} ne "0.5.0";
 }
 else {
     croak
@@ -1246,6 +1259,10 @@ if ( !$Sorules ) {
     $Sorules = ( $Config_info{'sorule_path'} );
 }
 $Sorules = slash( 1, $Sorules ) if $Sorules;
+
+if ( !$docs ) {
+	$docs = ( $Config_info{'docs'} );
+}
 
 if ( !$Sostubs ) {
     $Sostubs = ( $Config_info{'sostub_path'} );
@@ -1384,7 +1401,8 @@ if ( @base_url && -d $temp_path ) {
             compare_md5(
                 $oinkcode, $rule_file, $temp_path,   $Hash,
                 $base_url, $md5,       $rule_digest, $Distro,
-                $arch,     $Snort,     $Sorules,     $ignore_files
+                $arch,     $Snort,     $Sorules,     $ignore_files,
+                $docs
             );
         }
     }
@@ -1405,7 +1423,7 @@ if ( @base_url && -d $temp_path ) {
             croak "file $temp_path/$rule_file does not exist!\n"
               unless -f "$temp_path/$rule_file";
             rule_extract( $rule_file, $temp_path, $Distro, $arch, $Snort,
-                $Sorules, $ignore_files ) if !$grabonly;
+                $Sorules, $ignore_files, $docs ) if !$grabonly;
         }
     }
     if ($Output && !$grabonly) {
