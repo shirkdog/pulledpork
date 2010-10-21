@@ -28,6 +28,7 @@ thoroughly so that you don't overlook something!
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
    -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
+   -r <path to docs folder>
   
    Options:
    -c Where the pulledpork config file lives.
@@ -36,6 +37,7 @@ thoroughly so that you don't overlook something!
    -e Where the enablesid config file lives.
    -M where the modifysid config file lives.
    -o Where do you want me to put generic rules file?
+   -r Where do you want me to put the reference files (xxxx.txt)
    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -h path to the sid_changelog if you want to keep one?
    -u Where do you want me to pull the rules tarball from 
