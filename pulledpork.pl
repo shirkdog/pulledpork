@@ -35,12 +35,52 @@ use POSIX qw(:errno_h);
 use Switch;
 use Carp;
 
+### Vars here
+
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file , $Syslogging);
 my $VERSION = "PulledPork v0.5.0 The Drowning Rat";
 my $ua      = LWP::UserAgent->new;
 
-# routine to grab our config from the defined config file
+my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
+my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog,$ignore_files );
+my ( $Snort_config, $Snort_path,  $Textonly,    $grabonly,	  $ips_policy, );
+my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, @base_url );
+my ( $local_rules,  $arch, 		  $docs);
+
+# verbose and quiet control print()
+# default values if not set otherwise in getopt
+# $Verbose = 0 is normal output (default behaviour)
+# $Verbose = 1 is loud output
+# $Verbose = 2 is troubleshooting output
+# $Quiet   = 0 leaves verbosity as default or otherwise set
+# $Quiet   = 1 suppresses all but FAIL messages, eg, anything preceding an exit
+
+my $Verbose = 0;
+my $Quiet = 0;
+
+undef($Hash);
+undef($ALogger);
+
+my %rules_hash    = ();
+my %oldrules_hash = ();
+my %sid_msg_map   = ();
+my %sidmod 	  = ();
+undef %rules_hash;
+undef %oldrules_hash;
+undef %sid_msg_map;
+
+## initialize some vars
+my $rule_digest = "";
+my $md5         = "";
+
+# Vars the subroutine to fetch config values
+my ($Config_key);
+my %Config_info = ();
+
+### Subroutines here
+
+## routine to grab our config from the defined config file
 sub parse_config_file {
     my ( $FileConf, $Config_val ) = @_;
     my ( $config_line, $Name, $Value );
@@ -73,25 +113,6 @@ sub parse_config_file {
     close(CONFIG);
 
 }
-
-my ( $Verbose, $Hash, $ALogger, $Config_file, $Sorules, $Auto );
-my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog,$ignore_files );
-my ( $Snort_config, $Snort_path,  $Textonly,    $grabonly,	  $ips_policy, );
-my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, @base_url );
-my ( $local_rules,  $arch, 		  $docs);
-
-
-$Verbose = 0;
-undef($Hash);
-undef($ALogger);
-
-my %rules_hash    = ();
-my %oldrules_hash = ();
-my %sid_msg_map   = ();
-my %sidmod 		  = ();
-undef %rules_hash;
-undef %oldrules_hash;
-undef %sid_msg_map;
 
 ## Help routine.. display help to stdout then exit
 sub Help {
@@ -167,37 +188,24 @@ sub pulledpork {
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 __EOT
-
 }
 
-## initialize some vars
-my $rule_digest = "";
-my $md5         = "";
-
-## Fly piggy fly!
-pulledpork();
-if ( $#ARGV == -1 ) {
-    Help(
-"Please read the README for runtime options and configuration documentation"
-    );
-}
-
-# subroutine to cleanup the temp rubbish!!!
+## subroutine to cleanup the temp rubbish!!!
 sub temp_cleanup {
     my $remove = rmtree( $temp_path . "tha_rules" );
-    print "Cleanup....\n" if $Verbose;
-    print
-      "\tremoved $remove temporary snort files or directories from $temp_path"
+    if ($Verbose && !$Quiet) {
+        print "Cleanup....\n";
+        print "\tremoved $remove temporary snort files or directories from $temp_path"
       . "tha_rules!\n"
-      if $Verbose;
+    }
 }
 
 # subroutine to extract the files to a temp path so that we can do what we need to do..
 sub rule_extract {
     my ( $rule_file, $temp_path, $Distro, $arch, $Snort, $Sorules, $ignore, $docs ) =
       @_;
-    print "Prepping rules from $rule_file for work....\n";
-    print "\textracting contents of $temp_path$rule_file...\n" if $Verbose;
+    print "Prepping rules from $rule_file for work....\n" if !$Quiet;
+    print "\textracting contents of $temp_path$rule_file...\n" if ($Verbose && !$Quiet);
     mkpath( $temp_path . "tha_rules" );
     mkpath( $temp_path . "tha_rules/so_rules" );
     my $tar = Archive::Tar->new();
@@ -205,7 +213,7 @@ sub rule_extract {
     my @ignores = split( /,/, $ignore );
 
     foreach (@ignores) {
-        print "\tIgnoring: $_.rules from the tarball\n" if $Verbose;
+        print "\tIgnoring: $_.rules from the tarball\n" if ($Verbose && !$Quiet);
         $tar->remove("rules/$_.rules");
         $tar->remove("preproc_rules/$_.rules");
     }
@@ -217,13 +225,13 @@ sub rule_extract {
             $singlefile =~ s/^rules\///;
             $tar->extract_file( $filename,
                 $temp_path . "/tha_rules/" . $singlefile );
-            print "\tExtracted: /tha_rules/$singlefile\n" if $Verbose;
+            print "\tExtracted: /tha_rules/$singlefile\n" if ($Verbose && !$Quiet);
         }
         elsif ( $filename =~ /^preproc_rules\/.*\.rules$/ ) {
             $singlefile =~ s/^preproc_rules\///;
             $tar->extract_file( $filename,
                 $temp_path . "/tha_rules/" . $singlefile );
-            print "\tExtracted: /tha_rules/$singlefile\n" if $Verbose;
+            print "\tExtracted: /tha_rules/$singlefile\n" if ($Verbose && !$Quiet);
         }
         elsif ($Sorules
             && $filename =~
@@ -233,7 +241,7 @@ sub rule_extract {
             $singlefile =~
               s/^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\///;
             $tar->extract_file( $filename, $Sorules . $singlefile );
-            print "\tExtracted: $Sorules$singlefile\n" if $Verbose;
+            print "\tExtracted: $Sorules$singlefile\n" if ($Verbose && !$ Quiet);
         }
         elsif ($docs
             && $filename =~ /^doc\/signatures\/.*\.txt/ && -d $docs )
@@ -241,13 +249,13 @@ sub rule_extract {
             $singlefile =~
               s/^doc\/signatures\///;
             $tar->extract_file( $filename, $docs . $singlefile );
-            print "\tExtracted: $docs$singlefile\n" if $Verbose == 2;
+            print "\tExtracted: $docs$singlefile\n" if ($Verbose == 2 && !$Quiet);
         }
     }
-    if ( !$Verbose ) { print "\tDone!\n"; }
+    print "\tDone!\n" if (!$Verbose && !$Quiet);
 }
 
-# subroutine to actually check the md5 values, if they match we move onto file manipulation routines
+## subroutine to actually check the md5 values, if they match we move onto file manipulation routines
 sub compare_md5 {
     my (
         $oinkcode, $rule_file, $temp_path,   $Hash,
@@ -256,20 +264,20 @@ sub compare_md5 {
         $docs
     ) = @_;
     if ( $rule_digest =~ $md5 && !$Hash ) {
-        if ($Verbose) {
+        if ($Verbose && !$Quiet) {
             print
 "\tThe MD5 for $rule_file matched $md5\n\tso I'm not gonna download the rules file again suckas!\n";
         }
-        if ( !$Verbose ) { print "\tThey Match\n\tDone!\n"; }
+        if ( !$Verbose && !$Quiet ) { print "\tThey Match\n\tDone!\n"; }
         rule_extract( $rule_file, $temp_path, $Distro, $arch, $Snort, $Sorules,
             $ignore_files, $docs ) if !$grabonly;
     }
     elsif ( !$Hash ) {
-        if ($Verbose) {
+        if ($Verbose && !$Quiet) {
             print
 "\tThe MD5 for $rule_file did not match the latest digest... so I am gonna fetch the latest rules file!\n";
         }
-        if ( !$Verbose ) { print "\tNo Match\n\tDone\n"; }
+        if ( !$Verbose && !$Quiet ) { print "\tNo Match\n\tDone\n"; }
         rulefetch( $oinkcode, $rule_file, $temp_path, $base_url );
         $rule_digest = md5sum( $rule_file, $temp_path );
         compare_md5(
@@ -280,19 +288,19 @@ sub compare_md5 {
         );
     }
     else {
-        if ($Verbose) {
+        if ($Verbose && !$Quiet) {
             print
 "\tOk, not verifying the digest.. lame, but that's what you specified!\n";
             print
 "\tSo if the rules tarball doesn't extract properly and this script croaks.. it's your fault!\n";
+            print "\tNo Verify Set\n\tDone!\n"; 
         }
-        if ( !$Verbose ) { print "\tNo Verify Set\n\tDone!\n"; }
         rule_extract( $rule_file, $temp_path, $Distro, $arch, $Snort, $Sorules,
             $ignore_files, $docs ) if !$grabonly;
     }
 }
 
-# mimic LWP::Simple getstore routine - Thx pkthound!
+## mimic LWP::Simple getstore routine - Thx pkthound!
 sub getstore {
     my ( $url, $file ) = @_;
     my $request = HTTP::Request->new( GET => $url );
@@ -303,10 +311,10 @@ sub getstore {
 ## time to grab the real 0xb33f
 sub rulefetch {
     my ( $oinkcode, $rule_file, $temp_path, $base_url ) = @_;
-    print "Rules tarball download of $rule_file....\n";
+    print "Rules tarball download of $rule_file....\n" if (!$Quiet);
     $base_url = slash( 0, $base_url );
     my ($getrules_rule);
-    if ($Verbose) {
+    if ($Verbose && !$Quiet) {
         print "\tFetching rules file: $rule_file\n";
         if ($Hash) { print "But not verifying MD5\n"; }
     }
@@ -338,11 +346,11 @@ sub rulefetch {
 		croak "\tError $getrules_rule when fetching " . $rule_file;
     }
 
-    if ($Verbose)    { print("\tstoring file at: $temp_path$rule_file\n\n"); }
-    if ( !$Verbose ) { "\tDone!\n"; }
+    if ($Verbose && !$Quiet) { print("\tstoring file at: $temp_path$rule_file\n\n"); }
+    if ( !$Verbose && !$Quiet ) { "\tDone!\n"; }
 }
 
-# subroutine to deterine the md5 digest of the current rules file
+## subroutine to deterine the md5 digest of the current rules file
 sub md5sum {
     my ( $rule_file, $temp_path ) = @_;
     open( MD5FILE, "$temp_path$rule_file" )
@@ -354,19 +362,19 @@ sub md5sum {
         print $@;
         return "";
     }
-    if ($Verbose) {
+    if ($Verbose && !$Quiet) {
         print "\tcurrent local rules file  digest: $rule_digest\n";
     }
     return $rule_digest;
 }
 
-# subroutine to fetch the latest md5 digest signature file from snort.org
+## subroutine to fetch the latest md5 digest signature file from snort.org
 sub md5file {
     my ( $oinkcode, $rule_file, $temp_path, $base_url ) = @_;
     my ( $getrules_md5, $md5 );
     $base_url = slash( 0, $base_url );
-    print "Checking latest MD5 for $rule_file....\n";
-    print "\tFetching md5sum for: " . $rule_file . ".md5\n" if $Verbose;
+    print "Checking latest MD5 for $rule_file....\n" if !$Quiet;
+    print "\tFetching md5sum for: " . $rule_file . ".md5\n" if ($Verbose && !$Quiet);
     if ( $base_url =~ /snort\.org/i ) {
         $getrules_md5 =
           getstore( "https://www.snort.org/reg-rules/$rule_file.md5/$oinkcode",
@@ -399,18 +407,18 @@ sub md5file {
     $md5 =~ /\w{32}/
       ; ## Lets just grab the hash out of the string.. don't care about the rest!
     $md5 = $&;
-    if ($Verbose) { print "\tmost recent rules file digest: $md5\n"; }
+    if ($Verbose && !$Quiet) { print "\tmost recent rules file digest: $md5\n"; }
     return $md5;
 }
 
-# This replaces the copy_rules routine and allows for in-memory processing
+## This replaces the copy_rules routine and allows for in-memory processing
 # of disablesid, enablesid, dropsid and other sid functions.. here we place
 # all of the rules values into a hash as {$gid}{$sid}=$rule
 sub read_rules {
     my ( $hashref, $path, $extra_rules ) = @_;
     my ( $file, $sid, $gid, @elements );
-    print "\t" if $Verbose;
-    print "Reading rules...\n";
+    print "\t" if ($Verbose && !$Quiet);
+    print "Reading rules...\n" if !$Quiet;
     my @local_rules = split( /,/, $extra_rules );
     foreach (@local_rules) {
         $extra_rules = slash( 0, $_ );
@@ -541,15 +549,15 @@ sub read_rules {
     undef @elements;
 }
 
-# sub to generate stub files using the snort --dump-dynamic-rules option
+## sub to generate stub files using the snort --dump-dynamic-rules option
 sub gen_stubs {
     my ( $Snort_path, $Snort_config, $Sostubs ) = @_;
-    print "Generating Stub Rules....\n";
+    print "Generating Stub Rules....\n" if !$Quiet;
     unless ( -B $Snort_path ) {
         Help("$Snort_path is not a valid binary file");
     }
     if ( -d $Sostubs && -B $Snort_path && -f $Snort_config ) {
-        if ($Verbose) {
+        if ($Verbose && !$Quiet) {
             print(
 "\tGenerating shared object stubs via:$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs\n"
             );
@@ -558,10 +566,11 @@ sub gen_stubs {
             "$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs 2>&1|"
         );
         while (<FH>) {
-            print "\t$_" if $_ =~ /Dumping/i && $Verbose;
+            print "\t$_" if $_ =~ /Dumping/i && ($Verbose && !$Quiet);
             next unless $_ =~ /(err|warn|fail)/i;
             syslogit( 'warning|local0', "FATAL: An error occured: $_" ) if $Syslogging;
             print "\tAn error occurred: $_\n";
+            # Yes, this is lame error reporting to stdout ...
         }
         close(FH);
     }
@@ -569,7 +578,7 @@ sub gen_stubs {
         print(
 "Something failed in the gen_stubs sub, please verify your shared object config!\n"
         );
-        if ($Verbose) {
+        if ($Verbose && !$Quiet) {
             unless ( -d $Sostubs ) {
                 Help(
 "The path that you specified: $Sostubs does not exist! Please verify your configuration.\n"
@@ -587,7 +596,7 @@ sub gen_stubs {
             }
         }
     }
-    print "\tDone\n";
+    print "\tDone\n" if !$Quiet;
 }
 
 sub vrt_policy {
@@ -606,7 +615,7 @@ sub policy_set {
     my ( $ids_policy, $hashref ) = @_;
     if ($hashref) {
         if ( $ids_policy ne "Disabled" && $ids_policy ne "" ) {
-            print "Activating $ids_policy rulesets....\n";
+            print "Activating $ids_policy rulesets....\n" if !$Quiet;
             foreach my $k ( sort keys %$hashref ) {
                 foreach my $k2 ( keys %{ $$hashref{$k} } ) {
                     $$hashref{$k}{$k2}{'rule'} =
@@ -614,16 +623,16 @@ sub policy_set {
                 }
             }
 
-            print "\tDone\n";
+            print "\tDone\n" if !$Quiet;
         }
     }
 }
 
-# this allows the user to use regular expressions to modify rule contents
+## this allows the user to use regular expressions to modify rule contents
 sub modify_sid {
     my ( $href, $file ) = @_;
     my @arry;
-    print "Modifying Sids....\n";
+    print "Modifying Sids....\n" if !$Quiet;
     open( FH, "<$file" ) || carp "Unable to open $file\n";
     while (<FH>) {
         next if ( ( $_ =~ /^\s*#/ ) || ( $_ eq " " ) );
@@ -635,13 +644,13 @@ sub modify_sid {
                 $sid = trim($sid);
                 if ( $sid ne "*" && exists $$href{1}{$sid} ) {
                     print "\tModifying SID:$sid from:$from to:$to\n"
-                      if $Verbose;
+                      if ($Verbose && !$Quiet);
                     $$href{1}{$sid}{'rule'} =~ s/$from/$to/
                       if $$href{1}{$sid}{'rule'} !~ /^\s*#/;
                 }
                 elsif ( $sid eq "*" ) {
                     print "\tModifying ALL SIDS from:$from to:$to\n"
-                      if $Verbose;
+                      if ($Verbose && !$Quiet);
                     foreach my $k ( sort keys %{ $$href{1} } ) {
                         $$href{1}{$k}{'rule'} =~ s/$from/$to/;
                     }
@@ -650,16 +659,16 @@ sub modify_sid {
             undef @arry;
         }
     }
-    print "\tDONE\n";
+    print "\tDONE\n" if !$Quiet;
     close(FH);
 }
 
-# this relaces the enablesid, disablesid and dropsid functions..
+## this relaces the enablesid, disablesid and dropsid functions..
 # speed ftw!
 sub modify_state {
     my ( $function, $SID_conf, $hashref ) = @_;
     my ( @sid_mod, $sidlist );
-    print "Processing $SID_conf....\n";
+    print "Processing $SID_conf....\n" if !$Quiet;
     if ( -f $SID_conf ) {
         open( DATA, "$SID_conf" ) or carp "unable to open $SID_conf $!";
         while (<DATA>) {
@@ -772,7 +781,7 @@ sub modify_state {
                                 {
                                     $$hashref{$gid}{$sid}{'rule'} =~
                                       s/^\s*#+\s*//;
-                                    if ($Verbose) {
+                                    if ($Verbose && !$Quiet) {
                                         print "\tEnabled $gid:$sid\n";
                                     }
                                     $sidcount++;
@@ -787,7 +796,7 @@ sub modify_state {
                                       s/^\s*#*\s*//;
                                     $$hashref{$gid}{$sid}{'rule'} =~
                                       s/^alert/drop/;
-                                    if ($Verbose) {
+                                    if ($Verbose && !$Quiet) {
                                         print "\tWill drop $gid:$sid\n";
                                     }
                                     $sidcount++;
@@ -800,7 +809,7 @@ sub modify_state {
                                 {
                                     $$hashref{$gid}{$sid}{'rule'} =
                                       "# " . $$hashref{$gid}{$sid}{'rule'};
-                                    if ($Verbose) {
+                                    if ($Verbose && !$Quiet) {
                                         print "\tDisabled $gid:$sid\n";
                                     }
                                     $sidcount++;
@@ -810,13 +819,14 @@ sub modify_state {
                     }
                 }
             }
-            print "\tModified $sidcount rules\n";
+            print "\tModified $sidcount rules\n" if !$Quiet;
         }
     }
-    print "\tDone\n";
+    print "\tDone\n" if !$Quiet;
     undef @sid_mod;
 }
 
+##
 sub sig_hup {
     my ($pidlist) = @_;
     my @pids = split( /,/, $pidlist );
@@ -829,19 +839,20 @@ sub sig_hup {
         chomp($realpid);
         close(FILE);
         my $hupres = kill 1, $realpid;
-        if ($Verbose) {
+        if ($Verbose && !$Quiet) {
             print
               "\tSent kill signal to $realpid from $pid with result $hupres\n";
         }
     }
-    if ( !$Verbose ) { print "\tDone!\n"; }
+    if ( !$Verbose && !$Quiet ) { print "\tDone!\n"; }
     undef @pids;
 }
 
+##
 sub sid_msg {
     my ( $ruleshash, $sidhash ) = @_;
     my ( $gid, $arg, $msg );
-    print "Generating sid-msg.map....\n";
+    print "Generating sid-msg.map....\n" if !$Quiet;
     foreach my $k ( sort keys %$ruleshash ) {
         foreach my $k2 ( sort keys %{ $$ruleshash{$k} } ) {
             ( my $header, my $options ) =
@@ -873,12 +884,13 @@ sub sid_msg {
             undef @optarray;
         }
     }
-    print "\tDone\n";
+    print "\tDone\n" if !$Quiet;
 }
 
+##
 sub rule_write {
     my ( $hashref, $file, $gid ) = @_;
-    print "Writing $file....\n";
+    print "Writing $file....\n" if !$Quiet;
     open( WRITE, ">$file" ) || croak "Unable to write $file - $!\n";
     if ( $gid == 1 ) {
         foreach my $k ( sort keys %$hashref ) {
@@ -896,12 +908,13 @@ sub rule_write {
         }
     }
     close(WRITE);
-    print "\tDone\n";
+    print "\tDone\n" if !$Quiet;
 }
 
+##
 sub sid_write {
     my ( $hashref, $file ) = @_;
-    print "Writing $file....\n";
+    print "Writing $file....\n" if !$Quiet;
     open( WRITE, ">$file" ) || croak "Unable to write $file -$!";
     foreach my $k ( sort keys %$hashref ) {
         next unless defined $$hashref{$k}{'msg'};
@@ -912,9 +925,10 @@ sub sid_write {
         print WRITE "\n";
     }
     close(WRITE);
-    print "\tDone\n";
+    print "\tDone\n" if !$Quiet;
 }
 
+##
 sub flowbit_check {
     my ( $rule, $aref ) = @_;
     my ( $header, $options ) = split( /^[^"]* \(/, $rule );
@@ -928,6 +942,7 @@ sub flowbit_check {
     }
 }
 
+##
 sub flowbit_set {
     my $href    = shift;
     my $counter = 0;
@@ -958,14 +973,15 @@ sub flowbit_set {
         }
     }
     undef @flowbits;
-    print "\tEnabled $counter flowbits\n" if $counter > 0;
+    print "\tEnabled $counter flowbits\n" if ($counter > 0 && !$Quiet);
     return $counter;
 }
 
+##
 sub changelog {
     my ( $changelog, $hashref, $hashref2, $ips_policy ) = @_;
 
-    print "Writing $changelog....\n";
+    print "Writing $changelog....\n" if !$Quiet;
     my ( @newsids, @delsids );
     undef @newsids;
     undef @delsids;
@@ -1026,24 +1042,26 @@ sub changelog {
     print WRITE "\tTotal:-----" . ( $enabled + $disabled + $dropped ) . "\n";
     print WRITE "\n-=End Changes Logged for " . gmtime(time) . " GMT=-\n";
     close(WRITE);
-    print "\tDone\n";
 
-    print "Rule Stats....\n";
-    print "\tNew:-------$rt\n";
-    print "\tDeleted:---$dt\n";
-    print "\tEnabled Rules:----$enabled\n";
-    print "\tDropped Rules:----$dropped\n";
-    print "\tDisabled Rules:---$disabled\n";
-    print "\tTotal Rules:------"
-      . ( $enabled + $dropped + $disabled )
-      . "\n\tDone\n";
-    print "Please review $sid_changelog for additional details\n"
-      if $sid_changelog;
+    if (!$Quiet) {
+        print "\tDone\n";
+        print "Rule Stats....\n";
+        print "\tNew:-------$rt\n";
+        print "\tDeleted:---$dt\n";
+        print "\tEnabled Rules:----$enabled\n";
+        print "\tDropped Rules:----$dropped\n";
+        print "\tDisabled Rules:---$disabled\n";
+        print "\tTotal Rules:------"
+          . ( $enabled + $dropped + $disabled )
+          . "\n\tDone\n";
+        print "Please review $sid_changelog for additional details\n"
+          if $sid_changelog;
+    }
     undef @newsids;
     undef @delsids;
-
 }
 
+##
 sub trim {
     my ($trimmer) = @_;
     if ($trimmer) {
@@ -1053,6 +1071,7 @@ sub trim {
     }
 }
 
+##
 sub slash {
     my ( $operation, $string ) = @_;
     if ( $operation == 0 && $string =~ /\/$/ && $string ne "" ) {
@@ -1064,11 +1083,13 @@ sub slash {
     return $string;
 }
 
+##
 sub Version {
     print("$VERSION\n\n");
     exit(0);
 }
 
+##
 sub snort_version {
     my $cmd = shift;
     $cmd .= " -V";
@@ -1087,6 +1108,7 @@ sub snort_version {
     return $version;
 }
 
+##
 sub get_arch {
     my $cmd = "uname -a";
     open( FH, "$cmd |" );
@@ -1101,7 +1123,7 @@ sub get_arch {
     return $arch;
 }
 
-# log to syslog
+## log to syslog
 sub syslogit {
     my ( $level, $msg ) = @_;
 
@@ -1110,9 +1132,18 @@ sub syslogit {
     closelog;
 }
 
+###
+### Main here, let's get on with it already
+###
+
+if ( $#ARGV == -1 ) {
+    Help("Please read the README for runtime options and configuration documentation");
+}
+
 ## Lets grab any runtime values and insert into our variables using getopt::long
 GetOptions(
     "v+"     => \$Verbose,
+    "q"      => \$Quiet,
     "V!"     => sub { Version() },
     "d!"     => \$Hash,
     "l!"     => \$Syslogging,
@@ -1142,11 +1173,14 @@ GetOptions(
     "help|?" => sub { Help() }
 );
 
+## Fly piggy fly!
+pulledpork() if !$Quiet;
+
 # Dump our variables for verbose/debug output
 
 if ( !$Config_file ) { Help("No configuration file specified"); }
 
-if ($Verbose) {
+if ($Verbose && !$Quiet ) {
     print "Command Line Variable Debug:\n";
     if ($Config_file) { print "\tConfig Path is: $Config_file\n"; }
     if ($rule_file)   { print "\tRule File is: $rule_file\n"; }
@@ -1155,7 +1189,7 @@ if ($Verbose) {
     if ($local_rules) { print "\tlocal.rules path is: $local_rules\n"; }
     if ($Sorules)     { print "\tSO Output Path is: $Sorules\n"; }
     if ($Sostubs)     { print "\tSO Stub File is: $Sostubs\n"; }
-    if ($docs)		  { print "\tDocs Reference Location is: $docs\n"; }
+    if ($docs)        { print "\tDocs Reference Location is: $docs\n"; }
     if ($sid_msg_map) { print "\tsid-msg.map Output Path is: $sid_msg_map\n"; }
     if ($sid_changelog) {
         print "\tsid changes will be logged to: $sid_changelog\n";
@@ -1166,8 +1200,8 @@ if ($Verbose) {
     if ($Snort_config)   { print "\tSnort Config File: $Snort_config\n"; }
     if ($sidmod{disable}){ print "\tPath to disablesid file: $sidmod{disable}\n"; }
     if ($sidmod{drop})   { print "\tPath to dropsid file: $sidmod{drop}\n"; }
-    if ($sidmod{enable})    { print "\tPath to enablesid file: $sidmod{enable}\n"; }
-    if ($sidmod{modify})      { print "\tPath to modifysid file: $sidmod{modify}\n"; }
+    if ($sidmod{enable}) { print "\tPath to enablesid file: $sidmod{enable}\n"; }
+    if ($sidmod{modify}) { print "\tPath to modifysid file: $sidmod{modify}\n"; }
     if ($Distro)         { print "\tDistro Def is: $Distro\n"; }
     if ($arch)           { print "\tarch Def is: $arch\n"; }
     if ($Verbose)        { print "\tVerbose Flag is Set\n"; }
@@ -1176,20 +1210,17 @@ if ($Verbose) {
     if ($Textonly)       { print "\tText Rules only Flag is Set\n"; }
     if ($SigHup)         { print "\tSIGHUP Flag is Set\n"; }
     if ($NoDownload)     { print "\tNo Download Flag is Set\n"; }
-    if ($grabonly)		 { print "\tgrabonly Flag is Set, only gonna download!"; }
+    if ($grabonly)	 { print "\tgrabonly Flag is Set, only gonna download!"; }
 
     if ($Hash) {
-        print
-"\tNo MD5 Flag is Set, uhm, ok? I'm gonna fetch the latest file no matter what!\n";
+        print "\tNo MD5 Flag is Set, uhm, ok? I'm gonna fetch the latest file no matter what!\n";
     }
 }
 
 # Call the subroutine to fetch config values
-my ($Config_key);
-my %Config_info = ();
 parse_config_file( $Config_file, \%Config_info );
 
-if ($Verbose) {
+if ($Verbose && !$Quiet) {
     print "Config File Variable Debug $Config_file\n";
     foreach $Config_key ( keys %Config_info ) {
         if ( $Config_info{$Config_key} ) {
@@ -1320,7 +1351,7 @@ if ( !-d $temp_path ) {
 
 # set some UserAgent and other connection configs
 $ua->agent("$VERSION");
-$ua->show_progress(1) if $Verbose;
+$ua->show_progress(1) if ($Verbose && !$Quiet);
 
 # New Settings to allow proxy connections to use proper SSL formating - Thx pkthound!
 $ua->timeout(15);
@@ -1334,16 +1365,15 @@ if ($proxy) {
 }
 if ( $Verbose == 2 ) {
     $ENV{HTTPS_DEBUG} = 1;
-    print "\n\nMY HTTPS PROXY = " . $proxy . "\n" if $proxy;
+    print "\n\nMY HTTPS PROXY = " . $proxy . "\n" if ($proxy && !$Quiet);
 }
 
 # let's fetch the most recent md5 file then compare and do our foo
 if ( @base_url && -d $temp_path ) {
 
     if ( -d $temp_path . "tha_rules" ) {
-        print
-"\tdoh, we need to perform some cleanup... an unclean run last time?\n"
-          if $Verbose;
+        print "\tdoh, we need to perform some cleanup ... an unclean run last time?\n"
+            if ($Verbose && !$Quiet);
         temp_cleanup($temp_path);
     }
 
@@ -1387,7 +1417,7 @@ if ( @base_url && -d $temp_path ) {
                 $md5 = md5file( $oinkcode, $rule_file, $temp_path, $base_url );
             }
 
-      # and now lets determine the md5 of the last saved rules file if it exists
+            # and now lets determine the md5 of the last saved rules file if it exists
             if ( -f "$temp_path" . "$rule_file" && !$Hash ) {
                 $rule_digest = md5sum( $rule_file, $temp_path );
             }
@@ -1398,7 +1428,7 @@ if ( @base_url && -d $temp_path ) {
                 }
             }
 
-# compare the online current md5 against against the md5 of the rules file on system
+            # compare the online current md5 against against the md5 of the rules file on system
             compare_md5(
                 $oinkcode, $rule_file, $temp_path,   $Hash,
                 $base_url, $md5,       $rule_digest, $Distro,
@@ -1467,12 +1497,15 @@ if (!$grabonly ) {
 	    modify_sid( \%rules_hash, $sidmod{modify} );
 	}
 	
-	print "Setting Flowbit State....\n";
+	print "Setting Flowbit State....\n"
+            if (!$Quiet);
+
 	my $fbits = 1;
 	while ( $fbits > 0 ) {
 	    $fbits = flowbit_set( \%rules_hash );
 	}
-	print "\tDone\n";
+	print "\tDone\n"
+            if (!$Quiet);
 	
 	if ($Output) {
 	    rule_write( \%rules_hash, $Output, 1 );
@@ -1489,15 +1522,17 @@ if (!$grabonly ) {
 	
 	if ( $SigHup && $pid_path ne "" ) {
 	    sig_hup($pid_path) unless $Sostubs;
-	    print "WARNING, cannot send sighup if also processing SO rules",
-	      "\n\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
-	      if $Sostubs;
+	    print "WARNING, cannot send sighup if also processing SO rules\n",
+	      "\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
+	      if ($Sostubs && !$Quiet);
 	}
 	
 	if ( $sid_changelog && -f $Output ) {
 	    changelog( $sid_changelog, \%rules_hash, \%oldrules_hash, $ips_policy );
 	}
 }
-print("Fly Piggy Fly!\n");
+
+print("Fly Piggy Fly!\n") if !$Quiet;
 syslogit( 'warning|local0', "INFO: Finished Cleanly" ) if $Syslogging;
+
 __END__
