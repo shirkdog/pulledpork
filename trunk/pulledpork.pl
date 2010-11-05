@@ -1368,11 +1368,11 @@ if ($proxy) {
 		my $proxyaddy = $4;
 		
 		$ENV{HTTP_PROXY} = "$proxytype://$proxyaddy";
-        $ENV{HTTP_PROXY_USERNAME} = $user;
-        $ENV{HTTP_PROXY_PASSWORD} = $pass;
+        $ENV{HTTP_PROXY_USERNAME} = $proxyuser;
+        $ENV{HTTP_PROXY_PASSWORD} = $proxypass;
 		$ENV{HTTPS_PROXY} = "$proxytype://$proxyaddy";
-        $ENV{HTTPS_PROXY_USERNAME} = $user;
-        $ENV{HTTPS_PROXY_PASSWORD} = $pass;
+        $ENV{HTTPS_PROXY_USERNAME} = $proxyuser;
+        $ENV{HTTPS_PROXY_PASSWORD} = $proxypass;
 	}
 	else {
 	    $ENV{HTTPS_PROXY} = $proxy;
@@ -1390,8 +1390,8 @@ if ($proxy) {
 		my $proxyaddy = $4;
 		
 		$ENV{HTTPS_PROXY} = "$proxytype://$proxyaddy";
-        $ENV{HTTPS_PROXY_USERNAME} = $user;
-        $ENV{HTTPS_PROXY_PASSWORD} = $pass;
+        $ENV{HTTPS_PROXY_USERNAME} = $proxyuser;
+        $ENV{HTTPS_PROXY_PASSWORD} = $proxypass;
 	}
 	else {
 	    $ENV{HTTPS_PROXY} = $proxy;
