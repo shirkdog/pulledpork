@@ -86,9 +86,9 @@ sub parse_config_file {
     my ( $config_line, $Name, $Value );
 
     if ( !open( CONFIG, "$FileConf" ) ) {
-        print "ERROR: Config file not found : $FileConf\n";
+        carp "ERROR: Config file not found : $FileConf\n";
         syslogit( 'err|local0', "FATAL: Config file not found: $FileConf" ) if $Syslogging;
-        exit(0);
+        exit(1);
     }
     open( CONFIG, "$FileConf" );
     while (<CONFIG>) {
@@ -1360,9 +1360,44 @@ $ua->protocols_allowed( [ 'http', 'https' ] );
 my $proxy = $ENV{http_proxy};
 if ($proxy) {
     $ua->proxy( ['http'], $proxy );
-    $proxy = $ENV{https_proxy};
-    $ENV{HTTPS_PROXY} = $proxy;
+    #Let's handle proxy variables with username / passphrase in them!
+    if ($proxy =~ /^(http|https):\/\/([^:]+):([^:]+)@(.+)$/i) {
+		my $proxytype = $1;
+		my $proxyuser = $2;
+		my $proxypass = $3;
+		my $proxyaddy = $4;
+		
+		$ENV{HTTP_PROXY} = "$proxytype://$proxyaddy";
+        $ENV{HTTP_PROXY_USERNAME} = $user;
+        $ENV{HTTP_PROXY_PASSWORD} = $pass;
+		$ENV{HTTPS_PROXY} = "$proxytype://$proxyaddy";
+        $ENV{HTTPS_PROXY_USERNAME} = $user;
+        $ENV{HTTPS_PROXY_PASSWORD} = $pass;
+	}
+	else {
+	    $ENV{HTTPS_PROXY} = $proxy;
+	}
 }
+undef $proxy;
+$proxy = $ENV{https_proxy}; #check for https_proxy env var
+if ($proxy) {
+    $ua->proxy( ['http'], $proxy );
+    #Let's handle proxy variables with username / passphrase in them!
+    if ($proxy =~ /^(http|https):\/\/([^:]+):([^:]+)@(.+)$/i) {
+		my $proxytype = $1;
+		my $proxyuser = $2;
+		my $proxypass = $3;
+		my $proxyaddy = $4;
+		
+		$ENV{HTTPS_PROXY} = "$proxytype://$proxyaddy";
+        $ENV{HTTPS_PROXY_USERNAME} = $user;
+        $ENV{HTTPS_PROXY_PASSWORD} = $pass;
+	}
+	else {
+	    $ENV{HTTPS_PROXY} = $proxy;
+	}
+}	
+
 if ( $Verbose == 2 ) {
     $ENV{HTTPS_DEBUG} = 1;
     print "\n\nMY HTTPS PROXY = " . $proxy . "\n" if ($proxy && !$Quiet);
