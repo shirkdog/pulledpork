@@ -1,13 +1,16 @@
 PulledPork Changelog
 
 
-v0.tbd
+v0.5.1
 
 New Features / changes:
 - Added -q command line switch to squelch everything except fatal errors
 - Code clean up for readability
 
-
+Bug Fixes:
+- Bug #39 - updated to allow for use of username:pass@proxy.url
+	
+		
 v0.5.0
 
 New Features / changes:
