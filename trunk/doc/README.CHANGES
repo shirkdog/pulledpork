@@ -16,6 +16,7 @@ Bug Fixes:
 	from snort when generating so_stubs! (only if the file does not already exist, and only if 
 	you are using SOs!
 - Bug #46 - throw error if a config file that is specified does not exist	
+- Bug #42 - Added OpenSUSE-11-3 to list
 	
 		
 v0.5.0
