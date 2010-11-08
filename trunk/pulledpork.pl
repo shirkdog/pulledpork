@@ -1301,6 +1301,8 @@ if ( !$Sostubs ) {
 }
 $Sostubs = slash( 0, $Sostubs ) if $Sostubs;
 
+undef $Sostubs if ($Textonly && $Sostubs);
+
 if ( !$Distro ) {
     $Distro = ( $Config_info{'distro'} );
 }
