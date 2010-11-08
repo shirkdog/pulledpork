@@ -1180,43 +1180,6 @@ pulledpork() if !$Quiet;
 
 if ( !$Config_file ) { Help("No configuration file specified"); }
 
-if ($Verbose && !$Quiet ) {
-    print "Command Line Variable Debug:\n";
-    if ($Config_file) { print "\tConfig Path is: $Config_file\n"; }
-    if ($rule_file)   { print "\tRule File is: $rule_file\n"; }
-    if (@base_url)    { print "\tBase URL is: @base_url\n"; }
-    if ($Output)      { print "\tRules file is: $Output\n"; }
-    if ($local_rules) { print "\tlocal.rules path is: $local_rules\n"; }
-    if ($Sorules)     { print "\tSO Output Path is: $Sorules\n"; }
-    if ($Sostubs)     { print "\tSO Stub File is: $Sostubs\n"; }
-    if ($docs)        { print "\tDocs Reference Location is: $docs\n"; }
-    if ($sid_msg_map) { print "\tsid-msg.map Output Path is: $sid_msg_map\n"; }
-    if ($sid_changelog) {
-        print "\tsid changes will be logged to: $sid_changelog\n";
-    }
-    if ($ips_policy)     { print "\t$ips_policy policy specified\n"; }
-    if ($Snort)          { print "\tSnort Version is: $Snort\n"; }
-    if ($Snort_path)     { print "\tSnort Path is: $Snort_path\n"; }
-    if ($Snort_config)   { print "\tSnort Config File: $Snort_config\n"; }
-    if ($sidmod{disable}){ print "\tPath to disablesid file: $sidmod{disable}\n"; }
-    if ($sidmod{drop})   { print "\tPath to dropsid file: $sidmod{drop}\n"; }
-    if ($sidmod{enable}) { print "\tPath to enablesid file: $sidmod{enable}\n"; }
-    if ($sidmod{modify}) { print "\tPath to modifysid file: $sidmod{modify}\n"; }
-    if ($Distro)         { print "\tDistro Def is: $Distro\n"; }
-    if ($arch)           { print "\tarch Def is: $arch\n"; }
-    if ($Verbose)        { print "\tVerbose Flag is Set\n"; }
-    if ( $Verbose == 2 ) { print "\tExtra Verbose Flag is Set\n"; }
-    if ($Syslogging)     { print "\tLogging Flag is Set\n"; }
-    if ($Textonly)       { print "\tText Rules only Flag is Set\n"; }
-    if ($SigHup)         { print "\tSIGHUP Flag is Set\n"; }
-    if ($NoDownload)     { print "\tNo Download Flag is Set\n"; }
-    if ($grabonly)	 { print "\tgrabonly Flag is Set, only gonna download!"; }
-
-    if ($Hash) {
-        print "\tNo MD5 Flag is Set, uhm, ok? I'm gonna fetch the latest file no matter what!\n";
-    }
-}
-
 # Call the subroutine to fetch config values
 parse_config_file( $Config_file, \%Config_info );
 
@@ -1344,6 +1307,43 @@ if ( !$sid_changelog ) {
 
 if ( !$ips_policy ) {
     $ips_policy = "Disabled";
+}
+
+if ($Verbose && !$Quiet ) {
+    print "MISC (CLI and Autovar) Variable Debug:\n";
+    if ($Config_file) { print "\tConfig Path is: $Config_file\n"; }
+    if ($rule_file)   { print "\tRule File is: $rule_file\n"; }
+    if (@base_url)    { print "\tBase URL is: @base_url\n"; }
+    if ($Output)      { print "\tRules file is: $Output\n"; }
+    if ($local_rules) { print "\tlocal.rules path is: $local_rules\n"; }
+    if ($Sorules)     { print "\tSO Output Path is: $Sorules\n"; }
+    if ($Sostubs)     { print "\tSO Stub File is: $Sostubs\n"; }
+    if ($docs)        { print "\tDocs Reference Location is: $docs\n"; }
+    if ($sid_msg_map) { print "\tsid-msg.map Output Path is: $sid_msg_map\n"; }
+    if ($sid_changelog) {
+        print "\tsid changes will be logged to: $sid_changelog\n";
+    }
+    if ($ips_policy)     { print "\t$ips_policy policy specified\n"; }
+    if ($Snort)          { print "\tSnort Version is: $Snort\n"; }
+    if ($Snort_path)     { print "\tSnort Path is: $Snort_path\n"; }
+    if ($Snort_config)   { print "\tSnort Config File: $Snort_config\n"; }
+    if ($sidmod{disable}){ print "\tPath to disablesid file: $sidmod{disable}\n"; }
+    if ($sidmod{drop})   { print "\tPath to dropsid file: $sidmod{drop}\n"; }
+    if ($sidmod{enable}) { print "\tPath to enablesid file: $sidmod{enable}\n"; }
+    if ($sidmod{modify}) { print "\tPath to modifysid file: $sidmod{modify}\n"; }
+    if ($Distro)         { print "\tDistro Def is: $Distro\n"; }
+    if ($arch)           { print "\tarch Def is: $arch\n"; }
+    if ($Verbose)        { print "\tVerbose Flag is Set\n"; }
+    if ( $Verbose == 2 ) { print "\tExtra Verbose Flag is Set\n"; }
+    if ($Syslogging)     { print "\tLogging Flag is Set\n"; }
+    if ($Textonly)       { print "\tText Rules only Flag is Set\n"; }
+    if ($SigHup)         { print "\tSIGHUP Flag is Set\n"; }
+    if ($NoDownload)     { print "\tNo Download Flag is Set\n"; }
+    if ($grabonly)	 { print "\tgrabonly Flag is Set, only gonna download!"; }
+
+    if ($Hash) {
+        print "\tNo MD5 Flag is Set, uhm, ok? I'm gonna fetch the latest file no matter what!\n";
+    }
 }
 
 # We need a temp path to work with the files while we do magics on them.. make sure you have plenty
@@ -1534,7 +1534,9 @@ if (!$grabonly ) {
 		if ( $sidmod{$_} && -f $sidmod{$_} ) {
 			modify_state( $_, $sidmod{$_}, \%rules_hash );
 		}
-		carp "Unable to read: $sidmod{$_} - $!\n" unless -f $sidmod{$_};
+		elsif ($sidmod{$_} && !-f $sidmod{$_}) {
+			carp "Unable to read: $sidmod{$_} - $!\n";
+		}
 	}
 	
 	if ( $sidmod{modify} && -f $sidmod{modify} ) {
