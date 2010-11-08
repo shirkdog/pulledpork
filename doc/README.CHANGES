@@ -6,6 +6,7 @@ v0.5.1
 New Features / changes:
 - Added -q command line switch to squelch everything except fatal errors
 - Code clean up for readability
+- Move debug output to allow for better debugging of actual variable values
 
 Bug Fixes:
 - Bug #39 - updated to allow for use of username:pass@proxy.url
