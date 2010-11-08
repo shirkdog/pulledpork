@@ -10,6 +10,11 @@ New Features / changes:
 Bug Fixes:
 - Bug #39 - updated to allow for use of username:pass@proxy.url
 - Bug #49 - fix for race condition not allowing HUP to work with -nTH switches specified
+- Bug #40 - allow so_rules to be handled when non VRT rulesets are downloaded
+- Bug #45 - create a blank so_stub rules file so that we don't get an error re: a blank file 
+	from snort when generating so_stubs! (only if the file does not already exist, and only if 
+	you are using SOs!
+- Bug #46 - throw error if a config file that is specified does not exist	
 	
 		
 v0.5.0

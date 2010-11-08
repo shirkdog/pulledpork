@@ -1534,6 +1534,7 @@ if (!$grabonly ) {
 		if ( $sidmod{$_} && -f $sidmod{$_} ) {
 			modify_state( $_, $sidmod{$_}, \%rules_hash );
 		}
+		carp "Unable to read: $sidmod{$_} - $!\n" unless -f $sidmod{$_};
 	}
 	
 	if ( $sidmod{modify} && -f $sidmod{modify} ) {
