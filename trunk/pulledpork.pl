@@ -1300,8 +1300,14 @@ if ( !$Sostubs ) {
     $Sostubs = ( $Config_info{'sostub_path'} );
 }
 $Sostubs = slash( 0, $Sostubs ) if $Sostubs;
-
 undef $Sostubs if ($Textonly && $Sostubs);
+
+if ($Sostubs) {
+	unless (-e $Sostubs) {
+		open (FH,'>',$Sostubs) || carp "Can't create $Sostubs - $!\n";
+		close(FH);
+	}
+}
 
 if ( !$Distro ) {
     $Distro = ( $Config_info{'distro'} );
@@ -1418,7 +1424,7 @@ if ( @base_url && -d $temp_path ) {
 
         foreach (@base_url) {
 
-            undef $Sostubs if ( $Textonly || ( $_ =~ /emergingthreats/ ) );
+            #undef $Sostubs if ( $Textonly || ( $_ =~ /emergingthreats/ ) );
             my ( $base_url, $rule_file, $oinkcode ) = split( /\|/, $_ );
             croak
 "You need to define an oinkcode, please review the rule_url section of the pulledpork config file!\n"
@@ -1445,7 +1451,7 @@ if ( @base_url && -d $temp_path ) {
                 my $Snortv = $Snort;
                 $Snortv =~ s/(?<=\d\.\d\.\d)\.\d//;
                 $base_url .= "$oinkcode/snort-$Snortv/";
-                $Textonly = 1;
+                #$Textonly = 1;
             }
 
             $Hash = 1 unless $base_url =~ /(emergingthreats|snort.org)/;
@@ -1497,7 +1503,7 @@ if ( @base_url && -d $temp_path ) {
     if ($Output && !$grabonly) {
         read_rules( \%rules_hash, "$temp_path" . "tha_rules/", $local_rules );
     }
-	if ( $Sorules && $Distro && $Snort && !$Textonly && !$grabonly) {
+	if ( $Sorules && -e $Sorules && $Distro && $Snort && !$Textonly && !$grabonly) {
 		gen_stubs( $Snort_path, $Snort_config,
 			"$temp_path" . "tha_rules/so_rules/" );
 		read_rules( \%rules_hash, "$temp_path" . "tha_rules/so_rules/",
