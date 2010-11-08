@@ -1264,7 +1264,8 @@ if ( !$Sostubs ) {
     $Sostubs = ( $Config_info{'sostub_path'} );
 }
 $Sostubs = slash( 0, $Sostubs ) if $Sostubs;
-undef $Sostubs if ($Textonly && $Sostubs);
+undef $Sostubs if ($Textonly);
+undef $Sorules if ($Textonly);
 
 if ($Sostubs) {
 	unless (-e $Sostubs) {
