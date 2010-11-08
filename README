@@ -57,6 +57,7 @@ thoroughly so that you don't overlook something!
 		CentOS-4.6, Centos-4-8, CentOS-5.0, Centos-5-4
 		FC-5, FC-9, FC-11, FC-12, RHEL-5.0
 		FreeBSD-6.3, FreeBSD-7-2, FreeBSD-7-3, FreeBSD-7.0, FreeBSD-8-0, FreeBSD-8-1
+		OpenSUSE-11-3
    -l Log Important Info to Syslog (Errors, Successful run etc, all items logged as WARN or higher) 
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
@@ -66,6 +67,7 @@ thoroughly so that you don't overlook something!
    -g grabonly (download tarball rule file(s) and do NOT process)
    -V Print Version and exit
    -help/? Print this help info.
+
 
 
 
