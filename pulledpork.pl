@@ -603,7 +603,7 @@ sub gen_stubs {
 sub vrt_policy {
     my ( $ids_policy, $rule ) = @_;
     my ( $gid, $sid );
-    if ( $rule =~ /policy\s$ids_policy/i && $rule !~ /flowbits:noalert/i ) {
+    if ( $rule =~ /policy\s$ids_policy/i && $rule !~ /flowbits\s*:\s*noalert/i ) {
         $rule =~ s/^#*\s*//;
     }
     elsif ( $rule !~ /^\s*#/ ) {
@@ -939,7 +939,7 @@ sub flowbit_check {
         next unless ( $kw && $arg && $kw eq "flowbits" );
         my ( $flowact, $flowbit ) = split( /,/, $arg );
         next unless $flowact =~ /is(not)?set/i;
-        push( @$aref, $flowbit );
+        push( @$aref, trim($flowbit) );
     }
 }
 
@@ -953,7 +953,7 @@ sub flowbit_set {
             next unless $$href{$k1}{$k2}{'rule'} =~ /^\s*(alert|drop|pass)/;
             next
               unless $$href{$k1}{$k2}{'rule'} =~
-                  /flowbits:\s*is(not)?set\s*,\s*(\w|\.|\-|_)+/i;
+                  /flowbits:\s*is(not)?set\s*,\s*[^;]+/i;
             flowbit_check( $$href{$k1}{$k2}{'rule'}, \@flowbits );
         }
     }

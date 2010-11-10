@@ -17,6 +17,8 @@ Bug Fixes:
 	you are using SOs!
 - Bug #46 - throw error if a config file that is specified does not exist	
 - Bug #42 - Added OpenSUSE-11-3 to list
+- Fixed race condition that did not properly handle certain spaces in flowbits
+	set and isset values, resulting in unchecked flowbits etc...
 	
 		
 v0.5.0
