@@ -660,7 +660,7 @@ sub modify_sid {
             undef @arry;
         }
     }
-    print "\tDONE\n" if !$Quiet;
+    print "\tDone!\n" if !$Quiet;
     close(FH);
 }
 
@@ -1364,7 +1364,7 @@ $ua->agent("$VERSION");
 $ua->show_progress(1) if ($Verbose && !$Quiet);
 
 # New Settings to allow proxy connections to use proper SSL formating - Thx pkthound!
-$ua->timeout(15);
+$ua->timeout(60);
 $ua->cookie_jar( {} );
 $ua->protocols_allowed( [ 'http', 'https' ] );
 my $proxy = $ENV{http_proxy};
