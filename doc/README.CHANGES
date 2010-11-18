@@ -19,6 +19,7 @@ Bug Fixes:
 - Bug #42 - Added OpenSUSE-11-3 to list
 - Fixed race condition that did not properly handle certain spaces in flowbits
 	set and isset values, resulting in unchecked flowbits etc...
+- Bug #51 - Increased timeout value to 60 seconds
 	
 		
 v0.5.0
