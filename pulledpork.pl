@@ -247,10 +247,10 @@ sub rule_extract {
             print "\tExtracted: $Sorules$singlefile\n" if ($Verbose && !$ Quiet);
         }
         elsif ($docs
-            && $filename =~ /^(doc\/signatures|signatures)\/.*\.txt/ && -d $docs )
+            && $filename =~ /^doc\/signatures/.*\.txt/ && -d $docs )
         {
             $singlefile =~
-              s/^(doc\/signatures|signatures)\///;
+              s/^doc\/signatures\///;
             $tar->extract_file( $filename, $docs . $singlefile );
             print "\tExtracted: $docs$singlefile\n" if ($Verbose == 2 && !$Quiet);
         }
