@@ -33,13 +33,14 @@ use Getopt::Long qw(:config no_ignore_case bundling);
 use Archive::Tar;
 use POSIX qw(:errno_h);
 use Switch;
+use Cwd;
 use Carp;
 
 ### Vars here
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file , $Syslogging);
-my $VERSION = "PulledPork v0.5.0 The Drowning Rat";
+my $VERSION = "PulledPork v0.5.1 Dev";
 my $ua      = LWP::UserAgent->new;
 
 my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
@@ -211,6 +212,7 @@ sub rule_extract {
     mkpath( $temp_path . "tha_rules/so_rules" );
     my $tar = Archive::Tar->new();
     $tar->read( $temp_path . $rule_file );
+    $tar->setcwd( cwd() );
     my @ignores = split( /,/, $ignore );
 
     foreach (@ignores) {
@@ -245,7 +247,7 @@ sub rule_extract {
             print "\tExtracted: $Sorules$singlefile\n" if ($Verbose && !$ Quiet);
         }
         elsif ($docs
-            && $filename =~ /^doc\/signatures\/.*\.txt/ && -d $docs )
+            && $filename =~ /^(doc|signatures)\/signatures\/.*\.txt/ && -d $docs )
         {
             $singlefile =~
               s/^doc\/signatures\///;
@@ -1197,7 +1199,7 @@ if ($Verbose && !$Quiet) {
 if ( exists $Config_info{'version'} ) {
     croak "You are not using the current version of pulledpork.conf!\n",
       "Please use the version that shipped with $VERSION!\n\n"
-      if $Config_info{'version'} ne "0.5.0";
+      if $Config_info{'version'} ne "0.5.1";
 }
 else {
     croak
