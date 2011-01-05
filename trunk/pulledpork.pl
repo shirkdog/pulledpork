@@ -224,6 +224,7 @@ sub rule_extract {
     foreach (@files) {
         my $filename   = $_->name;
         my $singlefile = $filename;
+
         if ( $filename =~ /^rules\/.*\.rules$/ ) {
             $singlefile =~ s/^rules\///;
             $tar->extract_file( $filename,
@@ -247,11 +248,11 @@ sub rule_extract {
             print "\tExtracted: $Sorules$singlefile\n" if ($Verbose && !$ Quiet);
         }
         elsif ($docs
-            && $filename =~ /^doc\/signatures\/.*\.txt/ && -d $docs )
+            && $filename =~ /^(doc\/signatures\/)?.*\.txt/ && -d $docs )
         {
             $singlefile =~
               s/^doc\/signatures\///;
-            $tar->extract_file( $filename, $docs . $singlefile );
+            $tar->extract_file( "doc/signatures/$filename", $docs . $singlefile );
             print "\tExtracted: $docs$singlefile\n" if ($Verbose == 2 && !$Quiet);
         }
     }
