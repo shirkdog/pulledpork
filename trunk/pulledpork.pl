@@ -1441,7 +1441,7 @@ if ( @base_url && -d $temp_path ) {
               unless defined $rule_file;
 
             if ( $base_url =~ /snort\.org/i ) {
-                unless ( $rule_file =~ /snortrules-snapshot-\d{4}\.tar\.gz/ ) {
+                unless ( $rule_file =~ /snortrules-snapshot-\d{4}\.tar\.gz/ || $rule_file =~ /opensource\.gz/ ) {
                     croak(
 "The specified Snort binary does not exist!\nPlease correct the value or specify the FULL",
                         " rules tarball name in the pulledpork.conf!\n"
