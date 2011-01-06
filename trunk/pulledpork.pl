@@ -539,7 +539,7 @@ sub read_rules {
                             my ( $kw, $arg ) = split( /:/, $option ) if $option;
                             next unless ( $kw && $arg && $kw eq "flowbits" );
                             my ( $flowact, $flowbit ) = split( /,/, $arg );
-                            next unless $flowact =~ /(un)?set/i;
+                            next unless $flowact =~ /^\s*(un)?set/i;
                             $$hashref{ trim($gid) }{ trim($sid) }
                               { trim($flowbit) } = 1;
                         }
