@@ -219,10 +219,10 @@ sub rule_extract {
 		if ($Verbose && !$Quiet) {
 			print "\tIgnoring: $_ ";
 			print "plaintext category\n" if $_ !~ /\.so/;
-			print "shared object category\n" if $_ =~ /\.so/;
+			print "shared object category in /so_rules/precompiled/$Distro/$arch/$Snort/\n" if $_ =~ /\.so/;
 		}
-        $tar->remove("rules/$_.rules");
-        $tar->remove("preproc_rules/$_.rules");
+        $tar->remove("rules/$_.rules") if $_ !~ /\.so/;
+        $tar->remove("preproc_rules/$_.rules") if $_ !~ /\.so/;
         $tar->remove("so_rules/precompiled/$Distro/$arch/$Snort/$_") if $_ =~ /\.so/;
     }
     my @files = $tar->get_files();
