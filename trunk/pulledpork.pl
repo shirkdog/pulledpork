@@ -216,9 +216,10 @@ sub rule_extract {
     my @ignores = split( /,/, $ignore );
 
     foreach (@ignores) {
-        print "\tIgnoring: $_.rules from the tarball\n" if ($Verbose && !$Quiet);
+        print "\tIgnoring: $_ categories from the tarball\n" if ($Verbose && !$Quiet);
         $tar->remove("rules/$_.rules");
         $tar->remove("preproc_rules/$_.rules");
+        $tar->remove("so_rules/precompiled/$Distro/$arch/$Snort/$_") if $_ =~ /\.so/;
     }
     my @files = $tar->get_files();
     foreach (@files) {
