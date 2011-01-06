@@ -499,7 +499,7 @@ sub read_rules {
                                 next
                                   unless ( $kw && $arg && $kw eq "flowbits" );
                                 my ( $flowact, $flowbit ) = split( /,/, $arg );
-                                next unless $flowact =~ /(un)?set/i;
+                                next unless $flowact =~ /^\s*(un)?set/i;
                                 $$hashref{ trim($gid) }{ trim($sid) }
                                   { trim($flowbit) } = 1;
                             }
@@ -953,7 +953,7 @@ sub flowbit_set {
     my @flowbits;
     foreach my $k1 ( keys %$href ) {
         foreach my $k2 ( keys %{ $$href{$k1} } ) {
-            next unless $$href{$k1}{$k2}{'rule'} =~ /^\s*(alert|drop|pass)/;
+            next unless $$href{$k1}{$k2}{'rule'} =~ /^(alert|drop|pass)/;
             next
               unless $$href{$k1}{$k2}{'rule'} =~
                   /flowbits:\s*is(not)?set\s*,\s*[^;]+/i;
