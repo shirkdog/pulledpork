@@ -140,7 +140,6 @@ sub Help {
    -h path to the sid_changelog if you want to keep one?
    -u Where do you want me to pull the rules tarball from 
       (ET, Snort.org, see pulledpork config rule_url option for value ideas)
-   -O What is your Oinkcode?
    -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
    -T Process text based rules files only, i.e. DO NOT process so_rules
    -m where do you want me to put the sid-msg.map file?
