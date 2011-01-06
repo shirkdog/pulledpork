@@ -9,6 +9,7 @@ New Features / changes:
 - Move debug output to allow for better debugging of actual variable values
 - Update config to allow for ssl from ET
 - Update config to allow for new snort rules gzip
+- Bug #55 - Create capability to ignore shared object categories from tarball
 
 Bug Fixes:
 - Bug #39 - updated to allow for use of username:pass@proxy.url
@@ -24,6 +25,7 @@ Bug Fixes:
 - Bug #51 - Increased timeout value to 60 seconds
 - Bug #53 - Fixed pcre issue that caused certain rules containing isset and set flobwits values to
 	incorrectly be auto-enabled.
+
 	
 		
 v0.5.0
