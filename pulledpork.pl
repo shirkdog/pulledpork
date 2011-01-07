@@ -223,7 +223,7 @@ sub rule_extract {
 			print "\tIgnoring preprocessor rules: $_\n" if ($Verbose && !$Quiet);
 			my $preprocfile = $_;
 			$preprocfile =~ s/preproc/rules/;
-			$tar->remove("preproc_rules/$_");
+			$tar->remove("preproc_rules/$preprocfile");
 		}
 		elsif ($_ =~ /\.so/) {
 			print "\tIgnoring shared object rules: $_\n" if ($Verbose && !$Quiet);
