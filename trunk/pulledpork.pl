@@ -231,9 +231,9 @@ sub rule_extract {
 		}
 		else {
 			print "\tIgnoring all rule types in $_ category!\n" if ($Verbose && !$Quiet);
-			$tar->remove("rules/$_.rules") if $_ !~ /\.so/;
-			$tar->remove("preproc_rules/$_.rules") if $_ !~ /\.so/;
-			$tar->remove("so_rules/precompiled/$Distro/$arch/$Snort/$_") if $_ =~ /\.so/;
+			$tar->remove("rules/$_.rules");
+			$tar->remove("preproc_rules/$_.rules");
+			$tar->remove("so_rules/precompiled/$Distro/$arch/$Snort/$_");
 		}		
     }
     my @files = $tar->get_files();
