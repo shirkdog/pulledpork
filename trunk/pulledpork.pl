@@ -215,14 +215,26 @@ sub rule_extract {
     my @ignores = split( /,/, $ignore );
 
     foreach (@ignores) {
-		if ($Verbose && !$Quiet) {
-			print "\tIgnoring: $_ ";
-			print "plaintext category\n" if $_ !~ /\.so/;
-			print "shared object category in /so_rules/precompiled/$Distro/$arch/$Snort/\n" if $_ =~ /\.so/;
+		if ($_ =~ /\.rules/) {
+			print "\tIgnoring plaintext rules: $_\n" if ($Verbose && !$Quiet);
+			$tar->remove("rules/$_");
 		}
-        $tar->remove("rules/$_.rules") if $_ !~ /\.so/;
-        $tar->remove("preproc_rules/$_.rules") if $_ !~ /\.so/;
-        $tar->remove("so_rules/precompiled/$Distro/$arch/$Snort/$_") if $_ =~ /\.so/;
+		elsif ($_ =~ /\.preproc/) {
+			print "\tIgnoring preprocessor rules: $_\n" if ($Verbose && !$Quiet);
+			my $preprocfile = $_;
+			$preprocfile =~ s/preproc/rules/;
+			$tar->remove("preproc_rules/$_");
+		}
+		elsif ($_ =~ /\.so/) {
+			print "\tIgnoring shared object rules: $_\n" if ($Verbose && !$Quiet);
+			$tar->remove("so_rules/precompiled/$Distro/$arch/$Snort/$_");
+		}
+		else {
+			print "\tIgnoring all rule types in $_ category!\n" if ($Verbose && !$Quiet);
+			$tar->remove("rules/$_.rules") if $_ !~ /\.so/;
+			$tar->remove("preproc_rules/$_.rules") if $_ !~ /\.so/;
+			$tar->remove("so_rules/precompiled/$Distro/$arch/$Snort/$_") if $_ =~ /\.so/;
+		}		
     }
     my @files = $tar->get_files();
     foreach (@files) {

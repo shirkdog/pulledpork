@@ -9,7 +9,8 @@ New Features / changes:
 - Move debug output to allow for better debugging of actual variable values
 - Update config to allow for ssl from ET
 - Update config to allow for new snort rules gzip
-- Bug #55 - Create capability to ignore shared object categories from tarball
+- Bug #55 - Create capability to ignore more granularly (plaintext, prepro, shared object
+	or global).
 
 Bug Fixes:
 - Bug #39 - updated to allow for use of username:pass@proxy.url
