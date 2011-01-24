@@ -23,7 +23,7 @@ thoroughly so that you don't overlook something!
 
 -=Command Usage Reference=-
 
-    Usage: ./pulledpork.pl [-lvvVdnHTn? -help] -c <config filename> -o <rule output path>
+  Usage: ./pulledpork.pl [-lvvVdnHTngER? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
@@ -35,14 +35,15 @@ thoroughly so that you don't overlook something!
    -i Where the disablesid config file lives.
    -b Where the dropsid config file lives.
    -e Where the enablesid config file lives.
+   -E Write ONLY the enabled rules to the output files.
    -M where the modifysid config file lives.
    -o Where do you want me to put generic rules file?
-   -r Where do you want me to put the reference files (xxxx.txt)
+   -r Where do you want me to put the reference docs (xxxx.txt)
+   -R When processing enablesid, return the rules to their ORIGINAL state
    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -h path to the sid_changelog if you want to keep one?
    -u Where do you want me to pull the rules tarball from 
       (ET, Snort.org, see pulledpork config rule_url option for value ideas)
-   -O What is your Oinkcode?
    -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
    -T Process text based rules files only, i.e. DO NOT process so_rules
    -m where do you want me to put the sid-msg.map file?

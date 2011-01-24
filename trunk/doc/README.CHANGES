@@ -16,6 +16,8 @@ New Features / changes:
 	* This adds the PM requirement of File::Find
 - Bug #56 - More verbose output when a flowbit is re-enabled (only when run with -v)
 - Bug #60 - added -E flag that will cause ONLY enabled rules to be written to output files
+- Bug #47 - added -R flag that will set the state of the rules specified in enablesid.conf 
+	back to their ORIGINAL state, as read from the source rules tarball.
 
 Bug Fixes:
 - Bug #39 - updated to allow for use of username:pass@proxy.url
@@ -23,7 +25,7 @@ Bug Fixes:
 - Bug #40 - allow so_rules to be handled when non VRT rulesets are downloaded
 - Bug #45 - create a blank so_stub rules file so that we don't get an error re: a blank file 
 	from snort when generating so_stubs! (only if the file does not already exist, and only if 
-	you are using SOs!
+	you are using SOs!)
 - Bug #46 - throw error if a config file that is specified does not exist	
 - Bug #42 - Added OpenSUSE-11-3 to list
 - Fixed race condition that did not properly handle certain spaces in flowbits
@@ -32,6 +34,14 @@ Bug Fixes:
 - Bug #53 - Fixed pcre issue that caused certain rules containing isset and set flobwits values to
 	incorrectly be auto-enabled.
 - Bug #61 - Fixed so that .so rules are not touched!
+
+Special Notes:
+- Bug #47 - This should be used by advanced users only, it can produce results that may
+	not make sense to the typical user.  And frankly, I don't understand it ;-)
+- Bug #60 - This fix WILL cause inconsistency in your changelog, as when PP reads the old rules
+	from the existing rules file, it will have only the enabled rules in it.. thus any rules that
+	were not enabled in that file will show up as NEW rules in the changelog output, you have been 
+	warned, so no whining!
 
 	
 		
