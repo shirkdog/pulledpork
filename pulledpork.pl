@@ -49,6 +49,7 @@ my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog,$ignore_files );
 my ( $Snort_config, $Snort_path,  $Textonly,    $grabonly,	  $ips_policy, );
 my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, @base_url );
 my ( $local_rules,  $arch, 		  $docs,		@records,	   $enonly);
+my ( $rstate );
 
 # verbose and quiet control print()
 # default values if not set otherwise in getopt
@@ -122,7 +123,7 @@ sub Help {
     if ($msg) { print "\nERROR: $msg\n"; }
 
     print <<__EOT;
-  Usage: $0 [-lvvVdnHTngE? -help] -c <config filename> -o <rule output path>
+  Usage: $0 [-lvvVdnHTngER? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
@@ -137,7 +138,8 @@ sub Help {
    -E Write ONLY the enabled rules to the output files.
    -M where the modifysid config file lives.
    -o Where do you want me to put generic rules file?
-   -r Where do you want me to put the reference files (xxxx.txt)
+   -r Where do you want me to put the reference docs (xxxx.txt)
+   -R When processing enablesid, return the rules to their ORIGINAL state
    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -h path to the sid_changelog if you want to keep one?
    -u Where do you want me to pull the rules tarball from 
@@ -523,6 +525,12 @@ sub read_rules {
                             }
 
                         }
+                        if ($rule =~ /^\s*\#+/) {
+							$$hashref{ trim($gid) }{ trim($sid) }{'state'} = 0;
+						}
+						elsif ($rule =~ /^\s*(alert|pass|drop)/) {
+							$$hashref{ trim($gid) }{ trim($sid) }{'state'} = 1;
+						}
                         $$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
                         $file =~ s/\.rules//;
                         $$hashref{ trim($gid) }{ trim($sid) }{$file} = 1;
@@ -688,9 +696,11 @@ sub modify_sid {
 ## this relaces the enablesid, disablesid and dropsid functions..
 # speed ftw!
 sub modify_state {
-    my ( $function, $SID_conf, $hashref ) = @_;
+    my ( $function, $SID_conf, $hashref, $rstate ) = @_;
     my ( @sid_mod, $sidlist );
     print "Processing $SID_conf....\n" if !$Quiet;
+    print "\tSetting rules specified in $SID_conf to their default state!\n"
+		if (!$Quiet && $function eq 'enable');
     if ( -f $SID_conf ) {
         open( DATA, "$SID_conf" ) or carp "unable to open $SID_conf $!";
         while (<DATA>) {
@@ -799,7 +809,8 @@ sub modify_state {
                             case "enable" {
                                 if ( exists $$hashref{$gid}{$sid}
                                     && $$hashref{$gid}{$sid}{'rule'} =~
-                                    /^\s*#\s*(alert|drop|pass)/i )
+                                    /^\s*#\s*(alert|drop|pass)/i 
+                                    && !$rstate)
                                 {
                                     $$hashref{$gid}{$sid}{'rule'} =~
                                       s/^\s*#+\s*//;
@@ -808,6 +819,31 @@ sub modify_state {
                                     }
                                     $sidcount++;
                                 }
+                                # Return State!
+                                if ( exists $$hashref{$gid}{$sid}
+                                    && $$hashref{$gid}{$sid}{'state'} == 0
+                                    && $$hashref{$gid}{$sid}{'rule'} =~
+                                    /^\s*(alert|drop|pass)/ && $rstate)
+                                {
+									$$hashref{$gid}{$sid}{'rule'} =
+									"# ".$$hashref{$gid}{$sid}{'rule'};
+									$sidcount++;
+									if ($Verbose && !$Quiet) {
+                                        print "\tRe-Disabled $gid:$sid\n";
+                                    }
+								}
+								elsif ( exists $$hashref{$gid}{$sid}
+                                    && $$hashref{$gid}{$sid}{'state'} == 1
+                                    && $$hashref{$gid}{$sid}{'rule'} =~
+                                    /^\s*#+\s*(alert|drop|pass)/ && $rstate)
+                                {
+									$$hashref{$gid}{$sid}{'rule'} =~
+									s/^\s*#+\s*//;
+									$sidcount++;
+									if ($Verbose && !$Quiet) {
+                                        print "\tRe-Enabled $gid:$sid\n";
+                                    }
+								}
                             }
                             case "drop" {
                                 if ( exists $$hashref{$gid}{$sid}
@@ -1226,6 +1262,7 @@ GetOptions(
     "n!"     => \$NoDownload,
     "g!"	 => \$grabonly,
     "E!"	 => \$enonly,
+    "R!" 	 => \$rstate,
     "h=s"    => \$sid_changelog,
     "M=s"    => \$sidmod{modify},
     "L=s"    => \$local_rules,
@@ -1415,7 +1452,8 @@ if ($Verbose && !$Quiet ) {
     if ($SigHup)         { print "\tSIGHUP Flag is Set\n"; }
     if ($NoDownload)     { print "\tNo Download Flag is Set\n"; }
     if ($enonly)		 { print "\tWrite ONLY enabled rules flag is Set\n"; }
-    if ($grabonly)	 { print "\tgrabonly Flag is Set, only gonna download!"; }
+    if ($rstate)		 { print "\tReturn State flag is Set\n"; }
+    if ($grabonly)	 	 { print "\tgrabonly Flag is Set, only gonna download!"; }
 
     if ($Hash) {
         print "\tNo MD5 Flag is Set, uhm, ok? I'm gonna fetch the latest file no matter what!\n";
@@ -1608,7 +1646,7 @@ if (!$grabonly ) {
 	
 	foreach (@sidact) {
 		if ( $sidmod{$_} && -f $sidmod{$_} ) {
-			modify_state( $_, $sidmod{$_}, \%rules_hash );
+			modify_state( $_, $sidmod{$_}, \%rules_hash, $rstate );
 		}
 		elsif ($sidmod{$_} && !-f $sidmod{$_}) {
 			carp "Unable to read: $sidmod{$_} - $!\n";
