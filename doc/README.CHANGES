@@ -30,6 +30,7 @@ Bug Fixes:
 - Bug #51 - Increased timeout value to 60 seconds
 - Bug #53 - Fixed pcre issue that caused certain rules containing isset and set flobwits values to
 	incorrectly be auto-enabled.
+- Bug #61 - Fixed so that .so rules are not touched!
 
 	
 		
