@@ -11,9 +11,10 @@ New Features / changes:
 - Update config to allow for new snort rules gzip
 - Bug #55 - Create capability to ignore more granularly (plaintext, prepro, shared object
 	or global).
-- Archive - You can now create backups and archives of your existing config
+- Bug #50 - You can now create backups and archives of your existing config
 	and rules files etc...
 	* This adds the PM requirement of File::Find
+- Bug #56 - More verbose output when a flowbit is re-enabled (only when run with -v)
 
 Bug Fixes:
 - Bug #39 - updated to allow for use of username:pass@proxy.url
