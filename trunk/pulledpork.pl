@@ -3,7 +3,7 @@
 ## pulledpork v(whatever it says below!)
 ## cummingsj@gmail.com
 
-# Copyright (C) 2009-2010 JJ Cummings
+# Copyright (C) 2009-2010 JJ Cummings and the PulledPork Team!
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -830,11 +830,18 @@ sub modify_state {
                                 {
                                     $$hashref{$gid}{$sid}{'rule'} =
                                       "# " . $$hashref{$gid}{$sid}{'rule'};
+                                    $$hashref{$gid}{$sid}{'disabled'} = 1;
                                     if ($Verbose && !$Quiet) {
                                         print "\tDisabled $gid:$sid\n";
                                     }
                                     $sidcount++;
                                 }
+                                elsif ( exists $$hashref{$gid}{$sid}
+                                    && $$hashref{$gid}{$sid}{'rule'} =~
+                                    /^\s*#*\s*(alert|drop|pass)/i )
+                                {
+                                    $$hashref{$gid}{$sid}{'disabled'} = 1;
+  							    }
                             }
                         }
                     }
@@ -847,7 +854,7 @@ sub modify_state {
     undef @sid_mod;
 }
 
-##
+## goodbye
 sub sig_hup {
     my ($pidlist) = @_;
     my @pids = split( /,/, $pidlist );
@@ -869,7 +876,7 @@ sub sig_hup {
     undef @pids;
 }
 
-##
+## make the sid-msg.map
 sub sid_msg {
     my ( $ruleshash, $sidhash ) = @_;
     my ( $gid, $arg, $msg );
@@ -908,7 +915,7 @@ sub sid_msg {
     print "\tDone\n" if !$Quiet;
 }
 
-##
+## write the rules
 sub rule_write {
     my ( $hashref, $file, $gid ) = @_;
     print "Writing $file....\n" if !$Quiet;
@@ -932,7 +939,7 @@ sub rule_write {
     print "\tDone\n" if !$Quiet;
 }
 
-##
+## sid file time!
 sub sid_write {
     my ( $hashref, $file ) = @_;
     print "Writing $file....\n" if !$Quiet;
@@ -949,7 +956,7 @@ sub sid_write {
     print "\tDone\n" if !$Quiet;
 }
 
-##
+## Pull the flowbits requirements from the currently enabled rules.
 sub flowbit_check {
     my ( $rule, $aref ) = @_;
     my ( $header, $options ) = split( /^[^"]* \(/, $rule );
@@ -963,7 +970,7 @@ sub flowbit_check {
     }
 }
 
-##
+## Enable flowbits if there is a rule that requires them!
 sub flowbit_set {
     my $href    = shift;
     my $counter = 0;
@@ -989,6 +996,11 @@ sub flowbit_set {
                       && $$href{$k1}{$k2}{'rule'} =~
                       /^\s*#\s*(alert|drop|pass)/i;
                 $$href{$k1}{$k2}{'rule'} =~ s/^\s*#\s*//;
+                if (defined $$href{$k1}{$k2}{'disabled'}) {
+					print "\tWARN - $k1:$k2 is re-enabled by a",
+					" check of the $flowbit flowbit!\n"
+						if $Verbose && !$Quiet;
+				}
                 $counter++;
             }
         }
@@ -998,7 +1010,7 @@ sub flowbit_set {
     return $counter;
 }
 
-##
+## Make some changelog fun!
 sub changelog {
     my ( $changelog, $hashref, $hashref2, $ips_policy ) = @_;
 
@@ -1082,7 +1094,7 @@ sub changelog {
     undef @delsids;
 }
 
-##
+## Trim it up, loves the trim!
 sub trim {
     my ($trimmer) = @_;
     if ($trimmer) {
@@ -1092,7 +1104,7 @@ sub trim {
     }
 }
 
-##
+## Does it hurt when I slash you?
 sub slash {
     my ( $operation, $string ) = @_;
     if ( $operation == 0 && $string =~ /\/$/ && $string ne "" ) {
@@ -1104,13 +1116,13 @@ sub slash {
     return $string;
 }
 
-##
+## uh, yeah
 sub Version {
     print("$VERSION\n\n");
     exit(0);
 }
 
-##
+## find the snort version baby!
 sub snort_version {
     my $cmd = shift;
     $cmd .= " -V";
@@ -1129,7 +1141,7 @@ sub snort_version {
     return $version;
 }
 
-##
+## our arch
 sub get_arch {
     my $cmd = "uname -a";
     open( FH, "$cmd |" );
