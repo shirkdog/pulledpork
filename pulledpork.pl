@@ -29,6 +29,7 @@ use Crypt::SSLeay;
 use Sys::Syslog;
 use Digest::MD5;
 use File::Path;
+use File::Find;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use Archive::Tar;
 use POSIX qw(:errno_h);
@@ -47,7 +48,7 @@ my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
 my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog,$ignore_files );
 my ( $Snort_config, $Snort_path,  $Textonly,    $grabonly,	  $ips_policy, );
 my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, @base_url );
-my ( $local_rules,  $arch, 		  $docs);
+my ( $local_rules,  $arch, 		  $docs,		@records);
 
 # verbose and quiet control print()
 # default values if not set otherwise in getopt
@@ -1152,6 +1153,33 @@ sub syslogit {
     closelog;
 }
 
+## Create some backup and archive foo!
+sub archive {
+	my ( $data, $filename ) = @_;
+	my @records;
+	$filename .= ".".time().".tgz";
+	print "Creating backup at: $filename\n" unless $Quiet;
+	foreach my $record (@$data) {
+		if (-f $record) {
+			print "\tAdding file: $record\n" if $Verbose && !$Quiet;
+			push (@records,$record);
+		}
+		elsif ( -d $record ) {
+			print "\tAdding dir: $record\n" if $Verbose && !$Quiet;
+			find(\&archive_wanted,$record);
+		}
+	}
+	print "\tWriting Archive: $filename - may take several minutes!\n" if $Verbose && !$Quiet;
+	Archive::Tar->create_archive( $filename, COMPRESS_GZIP, @records );
+}
+
+## Define what we will find for the archive sub when dir is found!
+sub archive_wanted {
+	return unless -f $_;
+	print "\tAdding file: $File::Find::name\n" if $Verbose == 2 && !$Quiet;
+	push (@records,$File::Find::name);
+}
+
 ###
 ### Main here, let's get on with it already
 ###
@@ -1592,6 +1620,16 @@ if (!$grabonly ) {
 	    print "WARNING, cannot send sighup if also processing SO rules\n",
 	      "\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
 	      if ($Sostubs && !$Quiet);
+	}
+	
+	if ( $Config_info{backup} ) {
+		@records = split(/,/,$Config_info{backup});
+		archive(\@records,$Config_info{backup_file}) if $Config_info{backup_file};
+		if ($Verbose) {
+			print "\tWARN - Unable to create a backup without defining backup_file in config!\n",
+				unless $Config_info{backup_file};
+		}
+		print "\tDone\n" unless $Quiet;		
 	}
 	
 	if ( $sid_changelog && -f $Output ) {
