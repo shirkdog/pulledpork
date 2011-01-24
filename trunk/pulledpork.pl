@@ -257,7 +257,7 @@ sub rule_extract {
         elsif ($Sorules
             && $filename =~
             /^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\/.*\.so/
-            && -d $Sorules )
+            && -d $Sorules && !$Textonly)
         {
             $singlefile =~
               s/^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\///;
