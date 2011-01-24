@@ -41,7 +41,7 @@ use Carp;
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file , $Syslogging);
-my $VERSION = "PulledPork v0.5.1 Dev";
+my $VERSION = "PulledPork v0.6.0 Dev";
 my $ua      = LWP::UserAgent->new;
 
 my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
@@ -185,7 +185,7 @@ sub pulledpork {
      `----,\\    )
       `--==\\\\  /    $VERSION
        `--==\\\\/
-     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2010 JJ Cummings
+     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2011 JJ Cummings
   \@_/        /  66\\_  cummingsj\@gmail.com
     |    \\   \\   _(\")
      \\   /-| ||'--'  Rules give me wings!
@@ -700,7 +700,7 @@ sub modify_state {
     my ( @sid_mod, $sidlist );
     print "Processing $SID_conf....\n" if !$Quiet;
     print "\tSetting rules specified in $SID_conf to their default state!\n"
-		if (!$Quiet && $function eq 'enable');
+		if (!$Quiet && $function eq 'enable' && $rstate);
     if ( -f $SID_conf ) {
         open( DATA, "$SID_conf" ) or carp "unable to open $SID_conf $!";
         while (<DATA>) {
@@ -1307,7 +1307,7 @@ if ($Verbose && !$Quiet) {
 if ( exists $Config_info{'version'} ) {
     croak "You are not using the current version of pulledpork.conf!\n",
       "Please use the version that shipped with $VERSION!\n\n"
-      if $Config_info{'version'} ne "0.5.1";
+      if $Config_info{'version'} ne "0.6.0";
 }
 else {
     croak
