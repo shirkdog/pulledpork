@@ -48,7 +48,7 @@ my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
 my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog,$ignore_files );
 my ( $Snort_config, $Snort_path,  $Textonly,    $grabonly,	  $ips_policy, );
 my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, @base_url );
-my ( $local_rules,  $arch, 		  $docs,		@records);
+my ( $local_rules,  $arch, 		  $docs,		@records,	   $enonly);
 
 # verbose and quiet control print()
 # default values if not set otherwise in getopt
@@ -122,7 +122,7 @@ sub Help {
     if ($msg) { print "\nERROR: $msg\n"; }
 
     print <<__EOT;
-  Usage: $0 [-lvvVdnHTng? -help] -c <config filename> -o <rule output path>
+  Usage: $0 [-lvvVdnHTngE? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
@@ -134,6 +134,7 @@ sub Help {
    -i Where the disablesid config file lives.
    -b Where the dropsid config file lives.
    -e Where the enablesid config file lives.
+   -E Write ONLY the enabled rules to the output files.
    -M where the modifysid config file lives.
    -o Where do you want me to put generic rules file?
    -r Where do you want me to put the reference files (xxxx.txt)
@@ -917,22 +918,34 @@ sub sid_msg {
 
 ## write the rules
 sub rule_write {
-    my ( $hashref, $file, $gid ) = @_;
+    my ( $hashref, $file, $gid, $enonly ) = @_;
     print "Writing $file....\n" if !$Quiet;
     open( WRITE, ">$file" ) || croak "Unable to write $file - $!\n";
     if ( $gid == 1 ) {
         foreach my $k ( sort keys %$hashref ) {
             foreach my $k2 ( sort keys %{ $$hashref{$k} } ) {
                 next unless defined $$hashref{$k}{$k2}{'rule'};
-                print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
-                  if ( $k ne 0 ) && ( $k ne 3 );
+                if ($enonly && $$hashref{$k}{$k2}{'rule'} 
+						=~ /^\s*(alert|drop|pass)/) {
+	                print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
+	                  if ( $k ne 0 ) && ( $k ne 3 );
+				}
+				elsif (!$enonly) {
+					print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
+	                  if ( $k ne 0 ) && ( $k ne 3 );
+				}
             }
         }
     }
     elsif ( $gid == 3 ) {
         foreach my $k2 ( sort keys %{ $$hashref{$gid} } ) {
             next unless defined $$hashref{$gid}{$k2}{'rule'};
-            print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
+            if ($enonly && $$hashref{$gid}{$k2}{'rule'} =~ /^\s*(alert|drop|pass)/) {
+				print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
+			}
+			elsif (!$enonly) {
+				print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
+			}
         }
     }
     close(WRITE);
@@ -1212,6 +1225,7 @@ GetOptions(
     "H!"     => \$SigHup,
     "n!"     => \$NoDownload,
     "g!"	 => \$grabonly,
+    "E!"	 => \$enonly,
     "h=s"    => \$sid_changelog,
     "M=s"    => \$sidmod{modify},
     "L=s"    => \$local_rules,
@@ -1400,6 +1414,7 @@ if ($Verbose && !$Quiet ) {
     if ($Textonly)       { print "\tText Rules only Flag is Set\n"; }
     if ($SigHup)         { print "\tSIGHUP Flag is Set\n"; }
     if ($NoDownload)     { print "\tNo Download Flag is Set\n"; }
+    if ($enonly)		 { print "\tWrite ONLY enabled rules flag is Set\n"; }
     if ($grabonly)	 { print "\tgrabonly Flag is Set, only gonna download!"; }
 
     if ($Hash) {
@@ -1615,10 +1630,10 @@ if (!$grabonly ) {
             if (!$Quiet);
 	
 	if ($Output) {
-	    rule_write( \%rules_hash, $Output, 1 );
+	    rule_write( \%rules_hash, $Output, 1, $enonly );
 	}
 	if ( $Sostubs && !$Textonly ) {
-	    rule_write( \%rules_hash, $Sostubs, 3 );
+	    rule_write( \%rules_hash, $Sostubs, 3, $enonly );
 	}
 	
 	if ($sid_msg_map) {
