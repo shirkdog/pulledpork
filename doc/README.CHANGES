@@ -9,7 +9,7 @@ New Features / changes:
 - Move debug output to allow for better debugging of actual variable values
 - Update config to allow for ssl from ET
 - Update config to allow for new snort rules gzip
-- Bug #55 - Create capability to ignore more granularly (plaintext, prepro, shared object
+- Bug #55 - Create capability to ignore more granularly (plaintext, preproc, shared object
 	or global).
 - Bug #50 - You can now create backups and archives of your existing config
 	and rules files etc...
