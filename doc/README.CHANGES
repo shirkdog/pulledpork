@@ -15,6 +15,7 @@ New Features / changes:
 	and rules files etc...
 	* This adds the PM requirement of File::Find
 - Bug #56 - More verbose output when a flowbit is re-enabled (only when run with -v)
+- Bug #60 - added -E flag that will cause ONLY enabled rules to be written to output files
 
 Bug Fixes:
 - Bug #39 - updated to allow for use of username:pass@proxy.url
