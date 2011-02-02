@@ -3,7 +3,7 @@
 ## pulledpork v(whatever it says below!)
 ## cummingsj@gmail.com
 
-# Copyright (C) 2009-2010 JJ Cummings and the PulledPork Team!
+# Copyright (C) 2009-2011 JJ Cummings and the PulledPork Team!
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -1196,10 +1196,11 @@ sub get_arch {
     open( FH, "$cmd |" );
     my $arch;
     while (<FH>) {
-        next unless $_ =~ /(i386|x86-64|x86_64|i686)/i;
+        next unless $_ =~ /(i386|x86-64|x86_64|i686|amd64)/i;
         $arch = $&;
         $arch =~ s/_/-/;
         $arch =~ s/i686/i386/;
+        $arch =~ s/amd64/x86-64/;
     }
     close(FH);
     return $arch;
