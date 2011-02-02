@@ -42,6 +42,7 @@ Special Notes:
 	from the existing rules file, it will have only the enabled rules in it.. thus any rules that
 	were not enabled in that file will show up as NEW rules in the changelog output, you have been 
 	warned, so no whining!
+- Bug #62 - Added check for amd64 string during arch detection!
 
 	
 		
