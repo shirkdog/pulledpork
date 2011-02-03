@@ -18,6 +18,7 @@ New Features / changes:
 - Bug #60 - added -E flag that will cause ONLY enabled rules to be written to output files
 - Bug #47 - added -R flag that will set the state of the rules specified in enablesid.conf 
 	back to their ORIGINAL state, as read from the source rules tarball.
+- Bug #63 - added sid MSG information to changelog output.
 
 Bug Fixes:
 - Bug #39 - updated to allow for use of username:pass@proxy.url

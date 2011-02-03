@@ -1075,8 +1075,15 @@ sub changelog {
     foreach my $k1 ( keys %rules_hash ) {
 
         foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
-            push( @newsids, $k1 . ":" . $k2 )
-              unless defined $$hashref2{$k1}{$k2}{'rule'};
+            if (!defined $$hashref2{$k1}{$k2}{'rule'}) {
+                my $msg_holder = $$hashref2{$k1}{$k2}{'rule'};
+                $msg_holder =~ /msg:"[^"]+";/;
+                $msg_holder =~ $&;
+                $msg_holder =~ s/msg:"//;
+                $msg_holder =~ s/";//;
+                push( @newsids, "$msg_holder ($k1:$k2)" );
+            }
+            }
             $rt++ unless defined $$hashref2{$k1}{$k2}{'rule'};
             next  unless defined $$hashref{$k1}{$k2}{'rule'};
             if ( $$hashref{$k1}{$k2}{'rule'} =~ /^\s*(alert|pass)/ ) {
@@ -1095,7 +1102,12 @@ sub changelog {
     foreach my $k1 ( sort keys %$hashref2 ) {
         for my $k2 ( sort keys %{ $$hashref2{$k1} } ) {
             next if defined $$hashref{$k1}{$k2}{'rule'};
-            push( @delsids, $k1 . ":" . $k2 );
+            my $msg_holder = $$hashref{$k1}{$k2}{'rule'};
+             $msg_holder =~ /msg:"[^"]+";/;
+             $msg_holder =~ $&;
+             $msg_holder =~ s/msg:"//;
+             $msg_holder =~ s/";//;
+            push( @delsids, "$msg_holder ($k1:k2)" );
             $dt++;
         }
     }
