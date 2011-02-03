@@ -1077,10 +1077,11 @@ sub changelog {
         foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
             if (!defined $$hashref2{$k1}{$k2}{'rule'}) {
                 my $msg_holder = $$hashref{$k1}{$k2}{'rule'};
-                $msg_holder =~ /msg:"[^"]+";/;
-                $msg_holder =~ $&;
-                $msg_holder =~ s/msg:"//;
-                $msg_holder =~ s/";//;
+                if ($msg_holder =~ /msg:"[^"]+";/i) {
+                    $msg_holder = $&;
+                    $msg_holder =~ s/msg:"//;
+                    $msg_holder =~ s/";//;
+                } else { $msg_holder = "Unknown MSG"};
                 push( @newsids, "$msg_holder ($k1:$k2)" );
             }
             $rt++ unless defined $$hashref2{$k1}{$k2}{'rule'};
@@ -1102,10 +1103,11 @@ sub changelog {
         for my $k2 ( sort keys %{ $$hashref2{$k1} } ) {
             next if defined $$hashref{$k1}{$k2}{'rule'};
             my $msg_holder = $$hashref{$k1}{$k2}{'rule'};
-             $msg_holder =~ /msg:"[^"]+";/;
-             $msg_holder =~ $&;
-             $msg_holder =~ s/msg:"//;
-             $msg_holder =~ s/";//;
+             if ($msg_holder =~ /msg:"[^"]+";/) {
+                $msg_holder = $&;
+                $msg_holder =~ s/msg:"//;
+                $msg_holder =~ s/";//;
+            } else { $msg_holder = "Unknown MSG"};
             push( @delsids, "$msg_holder ($k1:k2)" );
             $dt++;
         }
@@ -1122,6 +1124,8 @@ sub changelog {
     }
     print WRITE "\n-=Begin Changes Logged for " . gmtime(time) . " GMT=-\n";
     print WRITE "\nNew Rules\n" if @newsids;
+    @newsids = sort(@newsids);
+    @delsids = sort(@delsids);
     foreach (@newsids) { print WRITE "\t" . $_ . "\n"; }
     print WRITE "\nDeleted Rules\n" if @delsids;
     foreach (@delsids) { print WRITE "\t" . $_ . "\n"; }
