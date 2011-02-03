@@ -1083,7 +1083,6 @@ sub changelog {
                 $msg_holder =~ s/";//;
                 push( @newsids, "$msg_holder ($k1:$k2)" );
             }
-            }
             $rt++ unless defined $$hashref2{$k1}{$k2}{'rule'};
             next  unless defined $$hashref{$k1}{$k2}{'rule'};
             if ( $$hashref{$k1}{$k2}{'rule'} =~ /^\s*(alert|pass)/ ) {
