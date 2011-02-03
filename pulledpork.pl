@@ -1076,7 +1076,7 @@ sub changelog {
 
         foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
             if (!defined $$hashref2{$k1}{$k2}{'rule'}) {
-                my $msg_holder = $$hashref2{$k1}{$k2}{'rule'};
+                my $msg_holder = $$hashref{$k1}{$k2}{'rule'};
                 $msg_holder =~ /msg:"[^"]+";/;
                 $msg_holder =~ $&;
                 $msg_holder =~ s/msg:"//;
