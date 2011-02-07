@@ -1234,6 +1234,7 @@ sub syslogit {
 sub archive {
 	my ( $data, $filename ) = @_;
 	my @records;
+	my $compression = "COMPRESS_GZIP";
 	$filename .= ".".time().".tgz";
 	print "Creating backup at: $filename\n" unless $Quiet;
 	foreach my $record (@$data) {
@@ -1247,7 +1248,7 @@ sub archive {
 		}
 	}
 	print "\tWriting Archive: $filename - may take several minutes!\n" if $Verbose && !$Quiet;
-	Archive::Tar->create_archive( $filename, COMPRESS_GZIP, @records );
+	Archive::Tar->create_archive( $filename, $compression, @records );
 }
 
 ## Define what we will find for the archive sub when dir is found!
