@@ -720,6 +720,7 @@ sub modify_state {
         if ($hashref) {
             my $sidcount = 0;
             foreach (@sid_mod) {
+		# ranges
                 if ( $_ =~ /^(\d+):\d+-\1:\d+/ ) {
                     my ( $lsid, $usid ) = split( /-/, $& );
                     my $gid = $lsid;
@@ -732,6 +733,7 @@ sub modify_state {
                         push( @sid_mod, $gid . ':' . $lsid );
                     }
                 }
+		# pcres
                 elsif ( $_ =~ /^pcre\:.+/i ) {
                     my ( $pcre, $regex ) = split( /\:/, $& );
                     foreach my $k1 ( keys %$hashref ) {
@@ -749,6 +751,7 @@ sub modify_state {
                         }
                     }
                 }
+		# specific sid
                 elsif ( $_ =~ /^[a-xA-X]+\:.+/ ) {
                     my $regex = $&;
                     $regex =~ s/\:/,/;
@@ -767,6 +770,7 @@ sub modify_state {
                         }
                     }
                 }
+		# MS reference
                 elsif ( $_ =~ /^MS\d+-.+/i ) {
                     my $regex = $&;
                     foreach my $k1 ( keys %$hashref ) {
@@ -784,6 +788,7 @@ sub modify_state {
                         }
                     }
                 }
+		# Category
                 elsif ( $_ =~ /[a-xA-X]+(-|\w)*/ ) {
                     my $category = $&;
                     foreach my $k1 ( keys %$hashref ) {
