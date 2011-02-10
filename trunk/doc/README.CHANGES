@@ -89,7 +89,7 @@ Perl Module Requriement Changes:
 - LWP::UserAgent now required
 - HTTP::Request now required
 - HTTP::Status now required
-- SYS::Syslog now required
+- Sys::Syslog now required
 - Crypt::SSLeay now required
 - Carp now required
 
