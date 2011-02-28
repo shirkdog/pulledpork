@@ -1,3 +1,5 @@
+README.SHAREDOBJECTS v 1.1 Alan Ptak
+
 To use shared objects, it is CRITICAl that you specify the correct distribution.
 
 Pulledpork will determine your arch and snort version.  You must, however, be using
@@ -8,8 +10,8 @@ snort, if you attempt to send a HUP to the snort pid, you will end up with eithe
 immediate segfault.. or one shortly to come (i.e. your snort will no longer be sniffing!).
 
 For more information on proper usage of SO rules, please see the docs directory in the 
-snort tarball, or read the following:
-http://www.snort.org/snort-rules/about-so_rules
+snort tarball, or check out the following page maintained by snort.org at:
 
+http://www.snort.org/snort-rules/shared-object-rules
 
 
