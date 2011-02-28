@@ -46,10 +46,10 @@ my $ua      = LWP::UserAgent->new;
 
 my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
 my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog,$ignore_files );
-my ( $Snort_config, $Snort_path,  $Textonly,    $grabonly,	  $ips_policy, );
-my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, @base_url );
-my ( $local_rules,  $arch, 		  $docs,		@records,	   $enonly);
-my ( $rstate );
+my ( $Snort_config, $Snort_path,  $Textonly,    $grabonly,	$ips_policy, );
+my ( $pid_path,     $SigHup,      $NoDownload,  $sid_msg_map, 	@base_url );
+my ( $local_rules,  $arch, 	  $docs,	@records,	$enonly);
+my ( $rstate,       $keep_rulefiles,		$rule_file_path );
 
 # verbose and quiet control print()
 # default values if not set otherwise in getopt
@@ -123,53 +123,54 @@ sub Help {
     if ($msg) { print "\nERROR: $msg\n"; }
 
     print <<__EOT;
-  Usage: $0 [-lvvVdnHTngER? -help] -c <config filename> -o <rule output path>
+  Usage: $0 [-dEgHklnRTVvv? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
    -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
-   -r <path to docs folder>
+   -r <path to docs folder> -K <directory for separate rules files>
   
    Options:
-   -c Where the pulledpork config file lives.
-   -i Where the disablesid config file lives.
+   -help/? Print this help info.
    -b Where the dropsid config file lives.
-   -e Where the enablesid config file lives.
-   -E Write ONLY the enabled rules to the output files.
-   -M where the modifysid config file lives.
-   -o Where do you want me to put generic rules file?
-   -r Where do you want me to put the reference docs (xxxx.txt)
-   -R When processing enablesid, return the rules to their ORIGINAL state
-   -L Where do you want me to read your local.rules for inclusion in sid-msg.map
-   -h path to the sid_changelog if you want to keep one?
-   -u Where do you want me to pull the rules tarball from 
-      (ET, Snort.org, see pulledpork config rule_url option for value ideas)
-   -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
-   -T Process text based rules files only, i.e. DO NOT process so_rules
-   -m where do you want me to put the sid-msg.map file?
-   -s Where do you want me to put the so_rules?
-   -S What version of snort are you using (2.8.6 or 2.9.0) are valid values
    -C Path to your snort.conf
-   -p Path to your Snort binary
-   -t Where do you want me to put the so_rule stub files? ** Thus MUST be uniquely 
-      different from the -o option value
+   -c Where the pulledpork config file lives.
+   -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
    -D What Distro are you running on, for the so_rules
+      For latest supported options see http://www.snort.org/snort-rules/shared-object-rules
       Valid Distro Types=Debian-Lenny, Ubuntu-6.01.1, Ubuntu-8.04
 		CentOS-4.6, Centos-4-8, CentOS-5.0, Centos-5-4
 		FC-5, FC-9, FC-11, FC-12, RHEL-5.0
 		FreeBSD-6.3, FreeBSD-7-2, FreeBSD-7-3, FreeBSD-7.0, FreeBSD-8-0, FreeBSD-8-1
 		OpenSUSE-11-3
+   -e Where the enablesid config file lives.
+   -E Write ONLY the enabled rules to the output files.
+   -g grabonly (download tarball rule file(s) and do NOT process)
+   -h path to the sid_changelog if you want to keep one?
+   -H Send a SIGHUP to the pids listed in the config file
+   -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
+   -i Where the disablesid config file lives.
+   -k Keep the rules in separate files (using same file names as found when reading)
+   -K Where (what directory) do you want me to put the separate rules files?
    -l Log Important Info to Syslog (Errors, Successful run etc, all items logged as WARN or higher) 
+   -L Where do you want me to read your local.rules for inclusion in sid-msg.map
+   -m where do you want me to put the sid-msg.map file?
+   -M where the modifysid config file lives.
+   -n Do everything other than download of new files (disablesid, etc)
+   -o Where do you want me to put generic rules file?
+   -p Path to your Snort binary
+   -R When processing enablesid, return the rules to their ORIGINAL state
+   -r Where do you want me to put the reference docs (xxxx.txt)
+   -S What version of snort are you using (2.8.6 or 2.9.0) are valid values
+   -s Where do you want me to put the so_rules?
+   -T Process text based rules files only, i.e. DO NOT process so_rules
+   -t Where do you want me to put the so_rule stub files?
+      ** Thus MUST be uniquely different from the -o option value
+   -u Where do you want me to pull the rules tarball from
+      ** E.g., ET, Snort.org. See pulledpork config rule_url option for value ideas
+   -V Print Version and exit
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
-   -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
-   -H Send a SIGHUP to the pids listed in the config file
-   -n Do everything other than download of new files (disablesid, etc)
-   -g grabonly (download tarball rule file(s) and do NOT process)
-   -V Print Version and exit
-   -help/? Print this help info.
-
-
 __EOT
 
     exit(0);
@@ -526,11 +527,11 @@ sub read_rules {
 
                         }
                         if ($rule =~ /^\s*\#+/) {
-							$$hashref{ trim($gid) }{ trim($sid) }{'state'} = 0;
-						}
-						elsif ($rule =~ /^\s*(alert|pass|drop)/) {
-							$$hashref{ trim($gid) }{ trim($sid) }{'state'} = 1;
-						}
+				$$hashref{ trim($gid) }{ trim($sid) }{'state'} = 0;
+			}
+			elsif ($rule =~ /^\s*(alert|pass|drop)/) {
+				$$hashref{ trim($gid) }{ trim($sid) }{'state'} = 1;
+			}
                         $$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
                         $file =~ s/\.rules//;
                         $$hashref{ trim($gid) }{ trim($sid) }{$file} = 1;
@@ -967,14 +968,14 @@ sub rule_write {
             foreach my $k2 ( sort keys %{ $$hashref{$k} } ) {
                 next unless defined $$hashref{$k}{$k2}{'rule'};
                 if ($enonly && $$hashref{$k}{$k2}{'rule'} 
-						=~ /^\s*(alert|drop|pass)/) {
-	                print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
-	                  if ( $k ne 0 ) && ( $k ne 3 );
-				}
-				elsif (!$enonly) {
-					print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
-	                  if ( $k ne 0 ) && ( $k ne 3 );
-				}
+			=~ /^\s*(alert|drop|pass)/) {
+	            print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
+	                if ( $k ne 0 ) && ( $k ne 3 );
+		}
+		elsif (!$enonly) {
+		    print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
+	                 if ( $k ne 0 ) && ( $k ne 3 );
+		}
             }
         }
     }
@@ -982,11 +983,11 @@ sub rule_write {
         foreach my $k2 ( sort keys %{ $$hashref{$gid} } ) {
             next unless defined $$hashref{$gid}{$k2}{'rule'};
             if ($enonly && $$hashref{$gid}{$k2}{'rule'} =~ /^\s*(alert|drop|pass)/) {
-				print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
-			}
-			elsif (!$enonly) {
-				print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
-			}
+		print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
+	    }
+	    elsif (!$enonly) {
+		print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
+	    }
         }
     }
     close(WRITE);
@@ -1273,36 +1274,38 @@ if ( $#ARGV == -1 ) {
 
 ## Lets grab any runtime values and insert into our variables using getopt::long
 GetOptions(
-    "v+"     => \$Verbose,
-    "q"      => \$Quiet,
-    "V!"     => sub { Version() },
-    "d!"     => \$Hash,
-    "l!"     => \$Syslogging,
     "a!"     => \$Auto,
-    "T!"     => \$Textonly,
-    "H!"     => \$SigHup,
-    "n!"     => \$NoDownload,
-    "g!"	 => \$grabonly,
-    "E!"	 => \$enonly,
-    "R!" 	 => \$rstate,
-    "h=s"    => \$sid_changelog,
-    "M=s"    => \$sidmod{modify},
-    "L=s"    => \$local_rules,
-    "s=s"    => \$Sorules,
-    "t=s"    => \$Sostubs,
-    "r=s" 	 => \$docs,
-    "p=s"    => \$Snort_path,
-    "m=s"    => \$sid_msg_map,
-    "D=s"    => \$Distro,
-    "c=s"    => \$Config_file,
-    "i=s"	 => \$sidmod{disable},
-    "e=s"    => \$sidmod{enable},
-    "I=s"    => \$ips_policy,
     "b=s"	 => \$sidmod{drop},
-    "S=s"    => \$Snort,
+    "c=s"    => \$Config_file,
     "C=s"    => \$Snort_config,
+    "d!"     => \$Hash,
+    "D=s"    => \$Distro,
+    "E!"	 => \$enonly,
+    "e=s"    => \$sidmod{enable},
+    "g!"	 => \$grabonly,
+    "H!"     => \$SigHup,
+    "h=s"    => \$sid_changelog,
+    "i=s"	 => \$sidmod{disable},
+    "I=s"    => \$ips_policy,
+    "k"	     => \$keep_rulefiles,
+    "K"      => \$rule_file_path,
+    "l!"     => \$Syslogging,
+    "L=s"    => \$local_rules,
+    "M=s"    => \$sidmod{modify},
+    "m=s"    => \$sid_msg_map,
+    "n!"     => \$NoDownload,
     "o=s"    => \$Output,
+    "p=s"    => \$Snort_path,
+    "q"      => \$Quiet,
+    "R!" 	 => \$rstate,
+    "r=s" 	 => \$docs,
+    "S=s"    => \$Snort,
+    "s=s"    => \$Sorules,
+    "T!"     => \$Textonly,
+    "t=s"    => \$Sostubs,
     "u=s"    => \@base_url,
+    "V!"     => sub { Version() },
+    "v+"     => \$Verbose,
     "help|?" => sub { Help() }
 );
 
