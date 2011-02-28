@@ -1275,17 +1275,17 @@ if ( $#ARGV == -1 ) {
 ## Lets grab any runtime values and insert into our variables using getopt::long
 GetOptions(
     "a!"     => \$Auto,
-    "b=s"	 => \$sidmod{drop},
+    "b=s"    => \$sidmod{drop},
     "c=s"    => \$Config_file,
     "C=s"    => \$Snort_config,
     "d!"     => \$Hash,
     "D=s"    => \$Distro,
-    "E!"	 => \$enonly,
+    "E!"     => \$enonly,
     "e=s"    => \$sidmod{enable},
-    "g!"	 => \$grabonly,
+    "g!"     => \$grabonly,
     "H!"     => \$SigHup,
     "h=s"    => \$sid_changelog,
-    "i=s"	 => \$sidmod{disable},
+    "i=s"    => \$sidmod{disable},
     "I=s"    => \$ips_policy,
     "k"	     => \$keep_rulefiles,
     "K"      => \$rule_file_path,
@@ -1297,8 +1297,8 @@ GetOptions(
     "o=s"    => \$Output,
     "p=s"    => \$Snort_path,
     "q"      => \$Quiet,
-    "R!" 	 => \$rstate,
-    "r=s" 	 => \$docs,
+    "R!"     => \$rstate,
+    "r=s"    => \$docs,
     "S=s"    => \$Snort,
     "s=s"    => \$Sorules,
     "T!"     => \$Textonly,
@@ -1448,41 +1448,36 @@ if ( !$ips_policy ) {
 
 if ($Verbose && !$Quiet ) {
     print "MISC (CLI and Autovar) Variable Debug:\n";
-    if ($Config_file) { print "\tConfig Path is: $Config_file\n"; }
-    if ($rule_file)   { print "\tRule File is: $rule_file\n"; }
-    if (@base_url)    { print "\tBase URL is: @base_url\n"; }
-    if ($Output)      { print "\tRules file is: $Output\n"; }
-    if ($local_rules) { print "\tlocal.rules path is: $local_rules\n"; }
-    if ($Sorules)     { print "\tSO Output Path is: $Sorules\n"; }
-    if ($Sostubs)     { print "\tSO Stub File is: $Sostubs\n"; }
-    if ($docs)        { print "\tDocs Reference Location is: $docs\n"; }
-    if ($sid_msg_map) { print "\tsid-msg.map Output Path is: $sid_msg_map\n"; }
-    if ($sid_changelog) {
-        print "\tsid changes will be logged to: $sid_changelog\n";
-    }
+    if ($arch)           { print "\tarch Def is: $arch\n"; }
+    if ($Config_file)    { print "\tConfig Path is: $Config_file\n"; }
+    if ($Distro)         { print "\tDistro Def is: $Distro\n"; }
+    if ($docs)           { print "\tDocs Reference Location is: $docs\n"; }
+    if ($enonly)         { print "\tWrite ONLY enabled rules flag is Set\n"; }
+    if ($grabonly)       { print "\tgrabonly Flag is Set, only gonna download!"; }
+    if ($Hash)           { print "\tNo MD5 Flag is Set, uhm, ok? I'm gonna fetch the latest file no matter what!\n"; }
     if ($ips_policy)     { print "\t$ips_policy policy specified\n"; }
-    if ($Snort)          { print "\tSnort Version is: $Snort\n"; }
-    if ($Snort_path)     { print "\tSnort Path is: $Snort_path\n"; }
-    if ($Snort_config)   { print "\tSnort Config File: $Snort_config\n"; }
+    if ($local_rules)    { print "\tlocal.rules path is: $local_rules\n"; }
+    if ($NoDownload)     { print "\tNo Download Flag is Set\n"; }
+    if ($Output)         { print "\tRules file is: $Output\n"; }
+    if ($rstate)         { print "\tReturn State flag is Set\n"; }
+    if ($rule_file)      { print "\tRule File is: $rule_file\n"; }
     if ($sidmod{disable}){ print "\tPath to disablesid file: $sidmod{disable}\n"; }
     if ($sidmod{drop})   { print "\tPath to dropsid file: $sidmod{drop}\n"; }
     if ($sidmod{enable}) { print "\tPath to enablesid file: $sidmod{enable}\n"; }
     if ($sidmod{modify}) { print "\tPath to modifysid file: $sidmod{modify}\n"; }
-    if ($Distro)         { print "\tDistro Def is: $Distro\n"; }
-    if ($arch)           { print "\tarch Def is: $arch\n"; }
-    if ($Verbose)        { print "\tVerbose Flag is Set\n"; }
-    if ( $Verbose == 2 ) { print "\tExtra Verbose Flag is Set\n"; }
+    if ($sid_changelog)  { print "\tsid changes will be logged to: $sid_changelog\n"; }
+    if ($sid_msg_map)    { print "\tsid-msg.map Output Path is: $sid_msg_map\n"; }
+    if ($SigHup)         { print "\tSIGHUP Flag is Set\n"; }
+    if ($Snort)          { print "\tSnort Version is: $Snort\n"; }
+    if ($Snort_config)   { print "\tSnort Config File: $Snort_config\n"; }
+    if ($Snort_path)     { print "\tSnort Path is: $Snort_path\n"; }
+    if ($Sorules)        { print "\tSO Output Path is: $Sorules\n"; }
+    if ($Sostubs)        { print "\tSO Stub File is: $Sostubs\n"; }
     if ($Syslogging)     { print "\tLogging Flag is Set\n"; }
     if ($Textonly)       { print "\tText Rules only Flag is Set\n"; }
-    if ($SigHup)         { print "\tSIGHUP Flag is Set\n"; }
-    if ($NoDownload)     { print "\tNo Download Flag is Set\n"; }
-    if ($enonly)		 { print "\tWrite ONLY enabled rules flag is Set\n"; }
-    if ($rstate)		 { print "\tReturn State flag is Set\n"; }
-    if ($grabonly)	 	 { print "\tgrabonly Flag is Set, only gonna download!"; }
-
-    if ($Hash) {
-        print "\tNo MD5 Flag is Set, uhm, ok? I'm gonna fetch the latest file no matter what!\n";
-    }
+    if ($Verbose == 2 )  { print "\tExtra Verbose Flag is Set\n"; }
+    if ($Verbose)        { print "\tVerbose Flag is Set\n"; }
+    if (@base_url)       { print "\tBase URL is: @base_url\n"; }
 }
 
 # We need a temp path to work with the files while we do magics on them.. make sure you have plenty
