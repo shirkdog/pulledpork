@@ -35,6 +35,7 @@ Bug Fixes:
 - Bug #53 - Fixed pcre issue that caused certain rules containing isset and set flobwits values to
 	incorrectly be auto-enabled.
 - Bug #61 - Fixed so that .so rules are not touched!
+- Bug #67 - Fixed regex to allow for space between ( and msg.
 
 Special Notes:
 - Bug #47 - This should be used by advanced users only, it can produce results that may
@@ -44,6 +45,7 @@ Special Notes:
 	were not enabled in that file will show up as NEW rules in the changelog output, you have been 
 	warned, so no whining!
 - Bug #62 - Added check for amd64 string during arch detection!
+
 
 	
 		
