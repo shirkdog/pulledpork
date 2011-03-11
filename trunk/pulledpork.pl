@@ -927,7 +927,7 @@ sub sid_msg {
     foreach my $k ( sort keys %$ruleshash ) {
         foreach my $k2 ( sort keys %{ $$ruleshash{$k} } ) {
             ( my $header, my $options ) =
-              split( /^[^"]* \(/, $$ruleshash{$k}{$k2}{'rule'} )
+              split( /^[^"]* \(\s*/, $$ruleshash{$k}{$k2}{'rule'} )
               if defined $$ruleshash{$k}{$k2}{'rule'};
             my @optarray = split( /;(\t|\s)?/, $options ) if $options;
             foreach my $option ( reverse(@optarray) ) {
