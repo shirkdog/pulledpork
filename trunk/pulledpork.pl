@@ -457,21 +457,22 @@ sub read_rules {
             foreach my $row (@extra_raw) {
                 $row = trim($row);
                 chomp($row);
-                if ( $row =~ /^\s*#*\s*(alert|drop|pass)/i ) {
+                if ( $row =~ /^\s*#*\s*(alert|drop|pass)/i || $trk == 1) {
                     if ( ( $row !~ /^#/ ) && ( $row ne "" ) ) {
-                        if ( $row =~ /\\$/ ) {
+                        if ( $row =~ /\\$/ ) { # handle multiline rules here
                             $row =~ s/\\$//;
-                            $record = $record . $row;
+                            $record .= $row;
                             $trk    = 1;
                         }
-                        elsif ( $row !~ /\\$/ && $trk == 1 ) {
-                            $record = $record . $row;
+                        elsif ( $row !~ /\\$/ && $trk == 1 ) { # last line of multiline rule here
+                            $record .= $row;
                             if ( $record =~ /sid:\s*\d+/ ) {
                                 $sid = $&;
                                 $sid =~ s/sid:\s*//;
                                 $$hashref{0}{ trim($sid) }{'rule'} = $record;
                             }
                             $trk = 0;
+			    undef $record;
                         }
                         else {
                             if ( $row =~ /sid:\s*\d+/ ) {

@@ -36,6 +36,7 @@ Bug Fixes:
 	incorrectly be auto-enabled.
 - Bug #61 - Fixed so that .so rules are not touched!
 - Bug #67 - Fixed regex to allow for space between ( and msg.
+- Bug #71 - Flaw in if statement logic did not allow for proper multiline rule parsing
 
 Special Notes:
 - Bug #47 - This should be used by advanced users only, it can produce results that may
