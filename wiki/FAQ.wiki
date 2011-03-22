@@ -16,6 +16,7 @@ Below you will find answers to the most commonly asked questions.
 
 *When I run PP, I get a 500 error and something about Certificate Authority or verification about SSL Peers*
   * You need to update your trusted root certificates on your OS, consult the documentation for your OS to do this.
+  * Alternately you can change the url to http from https for your snortrules tarball.
 
 *When I run PP, I get a 501 error and PP ends*
   * Install Crypt::SSLeay either from CPAN
