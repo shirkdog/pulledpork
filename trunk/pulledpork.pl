@@ -1080,7 +1080,6 @@ sub changelog {
     my $enabled  = 0;
     my $disabled = 0;
     foreach my $k1 ( keys %rules_hash ) {
-
         foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
             if (!defined $$hashref2{$k1}{$k2}{'rule'}) {
                 my $msg_holder = $$hashref{$k1}{$k2}{'rule'};
@@ -1109,13 +1108,13 @@ sub changelog {
     foreach my $k1 ( sort keys %$hashref2 ) {
         for my $k2 ( sort keys %{ $$hashref2{$k1} } ) {
             next if defined $$hashref{$k1}{$k2}{'rule'};
-            my $msg_holder = $$hashref{$k1}{$k2}{'rule'};
+            my $msg_holder = $$hashref2{$k1}{$k2}{'rule'};
              if ($msg_holder =~ /msg:"[^"]+";/) {
                 $msg_holder = $&;
                 $msg_holder =~ s/msg:"//;
                 $msg_holder =~ s/";//;
             } else { $msg_holder = "Unknown MSG"};
-            push( @delsids, "$msg_holder ($k1:k2)" );
+            push( @delsids, "$msg_holder ($k1:$k2)" );
             $dt++;
         }
     }
