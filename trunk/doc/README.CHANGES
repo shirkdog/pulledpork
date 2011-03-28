@@ -25,6 +25,7 @@ New Features / changes:
 	paralell ruleset operations.  This also provides more granularity in that scenario
 	wherein the user could set state in a VRT or ET category only by specifying VRT-category
 	or ET-category in the sid state modification files.
+- Added support for 500 errors, specifying that users should update their root cert store!
 
 Bug Fixes:
 - Bug #39 - updated to allow for use of username:pass@proxy.url
