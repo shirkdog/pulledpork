@@ -7,6 +7,46 @@ PulledPork started in April of 2009(and renamed from Baconator in June of '09), 
 
 = Breakin it down... =
 
+v0.6.0 (the Smoking Pig)
+
+New Features / changes:
+  * Added -q command line switch to squelch everything except fatal errors
+  * Code clean up for readability
+  * Move debug output to allow for better debugging of actual variable values
+  * Update config to allow for ssl from ET
+  * Update config to allow for new snort rules gzip
+  * Bug #55 - Create capability to ignore more granularly (plaintext, preproc, shared object or global).
+  * Bug #50 - You can now create backups and archives of your existing config and rules files etc...
+     * This adds the PM requirement of File::Find
+  * Bug #56 - More verbose output when a flowbit is re-enabled (only when run with -v)
+  * Bug #60 - added -E flag that will cause ONLY enabled rules to be written to output files
+  * Bug #47 - added -R flag that will set the state of the rules specified in enablesid.conf back to their ORIGINAL state, as read from the source rules tarball. 
+  * Bug #63 - added sid MSG information to changelog output.
+  * Added -k and -K options to allow for the writing of the original source file rather than one large output file.
+  * Bug #66 - Prepend VRT rulesets with VRT- and ET rulesets with ET- to allow for paralell ruleset operations.  This also provides more granularity in that scenario wherein the user could set state in a VRT or ET category only by specifying VRT-category or ET-category in the sid state modification files.
+  * Added support for 500 errors, specifying that users should update their root cert store!
+
+Bug Fixes:
+  * Bug #39 - updated to allow for use of username:pass@proxy.url
+  * Bug #49 - fix for race condition not allowing HUP to work with -nTH switches specified
+  * Bug #40 - allow so_rules to be handled when non VRT rulesets are downloaded
+  * Bug #45 - create a blank so_stub rules file so that we don't get an error re: a blank file from snort when generating so_stubs! (only if the file does not already exist, and only if you are using SOs!)
+  * Bug #46 - throw error if a config file that is specified does not exist	
+  * Bug #42 - Added OpenSUSE-11-3 to list
+  * Fixed race condition that did not properly handle certain spaces in flowbits set and isset values, resulting in unchecked flowbits etc...
+  * Bug #51 - Increased timeout value to 60 seconds
+  * Bug #53 - Fixed pcre issue that caused certain rules containing isset and set flobwits values to incorrectly be auto-enabled.
+  * Bug #61 - Fixed so that .so rules are not touched!
+  * Bug #67 - Fixed regex to allow for space between ( and msg.
+  * Bug #71 - Flaw in if statement logic did not allow for proper multiline rule parsing
+  * Undocumented ID - Flaw in changelog routine did not allow for proper writing of sid-msg or sid in
+     "deleted rules" section of the changelog.
+  * Bug #62 - Added check for amd64 string during arch detection!
+
+Special Notes:
+  * Bug #47 - This should be used by advanced users only, it can produce results that may not make sense to the typical user.  And frankly, I don't understand it ;-)
+  * Bug #60 - This fix WILL cause inconsistency in your changelog, as when PP reads the old rules from the existing rules file, it will have only the enabled rules in it.. thus any rules that were not enabled in that file will show up as NEW rules in the changelog output, you have been warned, so no whining!
+
 v0.5.0 (the Drowning Rat)
 
 New Features / changes:
