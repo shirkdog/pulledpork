@@ -19,6 +19,12 @@ New Features / changes:
 - Bug #47 - added -R flag that will set the state of the rules specified in enablesid.conf 
 	back to their ORIGINAL state, as read from the source rules tarball.
 - Bug #63 - added sid MSG information to changelog output.
+- Added -k and -K options to allow for the writing of the original source file rather than
+	one large output file.
+- Bug #66 - Prepend VRT rulesets with VRT- and ET rulesets with ET- to allow for
+	paralell ruleset operations.  This also provides more granularity in that scenario
+	wherein the user could set state in a VRT or ET category only by specifying VRT-category
+	or ET-category in the sid state modification files.
 
 Bug Fixes:
 - Bug #39 - updated to allow for use of username:pass@proxy.url
