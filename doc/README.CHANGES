@@ -1,7 +1,7 @@
 PulledPork Changelog
 
 
-v0.5.1
+v0.6.0 the Smoking Pig
 
 New Features / changes:
 - Added -q command line switch to squelch everything except fatal errors
@@ -46,6 +46,7 @@ Bug Fixes:
 - Bug #71 - Flaw in if statement logic did not allow for proper multiline rule parsing
 - Undocumented ID - Flaw in changelog routine did not allow for proper writing of sid-msg or sid in
 	"deleted rules" section of the changelog.
+- Bug #62 - Added check for amd64 string during arch detection!
 
 Special Notes:
 - Bug #47 - This should be used by advanced users only, it can produce results that may
@@ -54,8 +55,6 @@ Special Notes:
 	from the existing rules file, it will have only the enabled rules in it.. thus any rules that
 	were not enabled in that file will show up as NEW rules in the changelog output, you have been 
 	warned, so no whining!
-- Bug #62 - Added check for amd64 string during arch detection!
-
 
 	
 		
