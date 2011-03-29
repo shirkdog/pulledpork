@@ -840,9 +840,11 @@ sub modify_state {
                     my $category = $&;
                     foreach my $k1 ( keys %$hashref ) {
                         foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
+			    next
+			      unless defined $$hashref{$k1}{$k2}{'category'};
                             next
-                              unless $$hashref{$k1}{$k2}{'category'} ==
-                                  $category;
+                              unless $$hashref{$k1}{$k2}{'category'} =~
+                                  /($category)/;
                             $sid_mod[$sidcount] = $k1 . ":" . $k2;
                             push( @sid_mod, $k1 . ":" . $k2 )
                               if $sid_mod[$sidcount] =~ /\d+:\d+/;
