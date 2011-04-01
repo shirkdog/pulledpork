@@ -1,5 +1,10 @@
 PulledPork Changelog
 
+v0.6.1 the Smoking Pig, revisited
+
+Bug Fixes:
+- Bug #75 - Fixed issue causing output errors when a custom url was used, sub issue was
+	also noted and custom url rules are now prepended with Custom- (see README.CATEGORIES)
 
 v0.6.0 the Smoking Pig
 

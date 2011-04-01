@@ -41,7 +41,7 @@ use Carp;
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
-my $VERSION = "PulledPork v0.6.0 the Smoking Pig <////~";
+my $VERSION = "PulledPork v0.6.1 the Smoking Pig <////~";
 my $ua      = LWP::UserAgent->new;
 
 my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
@@ -1750,6 +1750,8 @@ if ( @base_url && -d $temp_path ) {
 
                 #$Textonly = 1;
             }
+	    
+	    $prefix = "Custom-" unless $prefix;
 
             $Hash = 1 unless $base_url =~ /(emergingthreats|snort.org)/;
 
