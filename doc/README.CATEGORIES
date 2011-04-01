@@ -1,6 +1,15 @@
 Readme (dot) Categories May 4, 2010 - JJC
 
-Edited March 28, 2011 - JJC (Discussion of source)
+Edited April 1, 2011 - JJC (Discussion of source)
+
+Rule categories are prepended with VRT- or ET- based on source.  If you download
+a ruleset from EmergingThreats, the category(and output file if using -k) will be
+prepended with ET- and if downloaded from snort.org the same will happen but substitute
+ET- with VRT-.  Lastly, if you specify a custom url to fetch the rules from, these
+items will be prepended with Custom-
+
+However, simply specifying the category without noting the source will cause modification to
+ALL sources.. VRT, ET and Custom!.. i.e. specifying only "icmp".
 
 Each respective ruleset from VRT or Emerging Threats (ET) contains categories 
 that their rules belong to.  This file lists (it may not be complete)
