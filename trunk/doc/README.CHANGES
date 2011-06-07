@@ -1,5 +1,13 @@
 PulledPork Changelog
 
+V0.6.2 the Cigar Pig
+
+Bug Fixes:
+- Bug #79 - Fixed race condition that did not allow for disabled rules to be modified using modifysid
+	These rules would then be enabled by flowbit dependency check and be unmodified
+- Bug #77 - Adjusted chown property of archive::tar
+- Bug #78 - Adjusted per bug report to allow for proper ignoring of preproc.rules 
+
 v0.6.1 the Smoking Pig, revisited
 
 Bug Fixes:

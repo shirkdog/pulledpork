@@ -41,7 +41,7 @@ use Carp;
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
-my $VERSION = "PulledPork v0.6.1 the Smoking Pig <////~";
+my $VERSION = "PulledPork v0.6.2dev the Cigar Pig <////~";
 my $ua      = LWP::UserAgent->new;
 
 my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
@@ -222,6 +222,7 @@ sub rule_extract {
     my $tar = Archive::Tar->new();
     $tar->read( $temp_path . $rule_file );
     $tar->setcwd( cwd() );
+    local $Archive::Tar::CHOWN = 0; 
     my @ignores = split( /,/, $ignore );
 
     foreach (@ignores) {
@@ -233,7 +234,7 @@ sub rule_extract {
             print "\tIgnoring preprocessor rules: $_\n"
               if ( $Verbose && !$Quiet );
             my $preprocfile = $_;
-            $preprocfile =~ s/preproc/rules/;
+            $preprocfile =~ s/\.preproc/\.rules/;
             $tar->remove("preproc_rules/$preprocfile");
         }
         elsif ( $_ =~ /\.so/ ) {
@@ -714,11 +715,10 @@ sub modify_sid {
             @arry = "*" if $sids =~ /\*/;
             foreach my $sid (@arry) {
                 $sid = trim($sid);
-                if ( $sid ne "*" && exists $$href{1}{$sid} ) {
+                if ( $sid ne "*" && defined $$href{1}{$sid}{'rule'} ) {
                     print "\tModifying SID:$sid from:$from to:$to\n"
                       if ( $Verbose && !$Quiet );
-                    $$href{1}{$sid}{'rule'} =~ s/$from/$to/
-                      if $$href{1}{$sid}{'rule'} !~ /^\s*#/;
+                    $$href{1}{$sid}{'rule'} =~ s/$from/$to/;
                 }
                 elsif ( $sid eq "*" ) {
                     print "\tModifying ALL SIDS from:$from to:$to\n"
