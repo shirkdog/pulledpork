@@ -15,7 +15,9 @@ Below you will find answers to the most commonly asked questions.
   * Start snort
 
 *When I run PP, I get a 500 error and something about Certificate Authority or verification about SSL Peers*
-  * You need to update your trusted root certificates on your OS, consult the documentation for your OS to do this.
+  * install or update Mozilla::CA IO::Socket::SSL
+     * Will fix it most times. The Mozilla::CA installs/updates the perl root certificates and IO::Socket::SSL enables ssl verification by hostname in Crypt::SSLeay.
+  * Update your trusted root certificates on your OS, consult the documentation for your OS to do this.
   * Alternately you can change the url to http from https for your snortrules tarball.
 
 *When I run PP, I get a 501 error and PP ends*
