@@ -739,21 +739,22 @@ sub modify_sid {
 # speed ftw!
 sub modify_state {
     my ( $function, $SID_conf, $hashref, $rstate ) = @_;
-    my ( @sid_mod, $sidlist );
+    my ( @sid_mod, $sidlist);
     print "Processing $SID_conf....\n" if !$Quiet;
     print "\tSetting rules specified in $SID_conf to their default state!\n"
       if ( !$Quiet && $function eq 'enable' && $rstate );
     if ( -f $SID_conf ) {
         open( DATA, "$SID_conf" ) or carp "unable to open $SID_conf $!";
         while (<DATA>) {
-            $sidlist = $_;
+	    next unless ($_ !~ /^\s*#/ && $_ ne "");
+	    $sidlist = (split '#',$_)[0];
             chomp($sidlist);
             $sidlist = trim($sidlist);
-            if ( ( $sidlist !~ /^\s*#/ ) && ( $sidlist ne "" ) && !(@sid_mod) )
+            if (!@sid_mod )
             {
                 @sid_mod = split( /,/, $sidlist );
             }
-            elsif ( ( $sidlist !~ /^\s*#/ ) && ( $sidlist ne "" && @sid_mod ) )
+            elsif (@sid_mod)
             {
                 push( @sid_mod, split( /,/, $sidlist ) );
             }

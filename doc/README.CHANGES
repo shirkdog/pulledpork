@@ -9,6 +9,8 @@ Bug Fixes:
 - Bug #78 - Adjusted per bug report to allow for proper ignoring of preproc.rules 
 - Bug #102 - Only Enabled rules are written to sid-msg.map now when -E flag is specified
 - Bug #99 - Doc Bug, updated docs associated with snort_version variable
+- Bug #96 - Modified code to allow for same-line traling comments: "1:10011 #can haz disable!"
+		Also updated the rulestate files (enable,disable,drop)
 
 v0.6.1 the Smoking Pig, revisited
 
