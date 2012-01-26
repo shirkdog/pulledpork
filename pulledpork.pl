@@ -974,11 +974,12 @@ sub sig_hup {
 
 ## make the sid-msg.map
 sub sid_msg {
-    my ( $ruleshash, $sidhash ) = @_;
+    my ( $ruleshash, $sidhash, $enonly ) = @_;
     my ( $gid, $arg, $msg );
     print "Generating sid-msg.map....\n" if !$Quiet;
     foreach my $k ( sort keys %$ruleshash ) {
         foreach my $k2 ( sort keys %{ $$ruleshash{$k} } ) {
+	    next if ((defined $enonly) && $$ruleshash{$k}{$k2}{'rule'} !~ /^\s*(alert|drop|pass)/);
             ( my $header, my $options ) =
               split( /^[^"]* \(\s*/, $$ruleshash{$k}{$k2}{'rule'} )
               if defined $$ruleshash{$k}{$k2}{'rule'};
@@ -1878,8 +1879,7 @@ if ( !$grabonly ) {
     }
 
     if ($sid_msg_map) {
-
-        sid_msg( \%rules_hash, \%sid_msg_map );
+        sid_msg( \%rules_hash, \%sid_msg_map, $enonly );
         sid_write( \%sid_msg_map, $sid_msg_map );
     }
 
