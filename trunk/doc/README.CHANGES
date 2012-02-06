@@ -11,6 +11,10 @@ Bug Fixes:
 - Bug #99 - Doc Bug, updated docs associated with snort_version variable
 - Bug #96 - Modified code to allow for same-line traling comments: "1:10011 #can haz disable!"
 		Also updated the rulestate files (enable,disable,drop)
+- Bug #82 - Modified run order to force modifysid to run before all other sid state modification routines
+		This allows for sid changes to be made prior to automatic state determination ala automatic
+		flowbit resolution.  NOTE that this DOES NOT AND WILL NOT disable automatic flowbit
+		resolution, this is a critical piece.	
 
 v0.6.1 the Smoking Pig, revisited
 

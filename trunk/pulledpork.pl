@@ -1845,6 +1845,10 @@ if ( !$grabonly ) {
         policy_set( $ips_policy, \%rules_hash );
     }
 
+    if ( $sidmod{modify} && -f $sidmod{modify} ) {
+        modify_sid( \%rules_hash, $sidmod{modify} );
+    }
+    
     foreach (@sidact) {
         if ( $sidmod{$_} && -f $sidmod{$_} ) {
             modify_state( $_, $sidmod{$_}, \%rules_hash, $rstate );
@@ -1854,11 +1858,7 @@ if ( !$grabonly ) {
         }
     }
 
-    if ( $sidmod{modify} && -f $sidmod{modify} ) {
-        modify_sid( \%rules_hash, $sidmod{modify} );
-    }
-
-    print "Setting Flowbit State....\n"
+   print "Setting Flowbit State....\n"
       if ( !$Quiet );
 
     my $fbits = 1;
