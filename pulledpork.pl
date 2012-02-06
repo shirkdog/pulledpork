@@ -139,11 +139,12 @@ sub Help {
    -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
    -D What Distro are you running on, for the so_rules
       For latest supported options see http://www.snort.org/snort-rules/shared-object-rules
-      Valid Distro Types=Debian-Lenny, Ubuntu-6.01.1, Ubuntu-8.04
-		CentOS-4.6, Centos-4-8, CentOS-5.0, Centos-5-4
-		FC-5, FC-9, FC-11, FC-12, RHEL-5.0
-		FreeBSD-6.3, FreeBSD-7-2, FreeBSD-7-3, FreeBSD-7.0, FreeBSD-8-0, FreeBSD-8-1
-		OpenSUSE-11-3
+      Valid Distro Types:
+		Debian-5-0, Debian-6-0, Ubuntu-8.04, Ubuntu-10-4
+		Centos-4-8, Centos-5-4,	FC-12, FC-14, RHEL-5-5, RHEL-6-0
+		FreeBSD-7-3, FreeBSD-8-1
+		OpenBSD-4-8
+		Slackware-13-1
    -e Where the enablesid config file lives.
    -E Write ONLY the enabled rules to the output files.
    -g grabonly (download tarball rule file(s) and do NOT process)
