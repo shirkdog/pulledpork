@@ -33,7 +33,6 @@ use File::Find;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use Archive::Tar;
 use POSIX qw(:errno_h);
-use Switch;
 use Cwd;
 use Carp;
 
@@ -863,8 +862,8 @@ sub modify_state {
                     if ( $gid && $sid ) {
                         $gid =~ s/:\d+//;
                         $sid =~ s/\d+://;
-                        switch ($function) {
-                            case "enable" {
+                        if ($function) {
+                            if ($function eq "enable") {
                                 if ( exists $$hashref{$gid}{$sid}
                                     && $$hashref{$gid}{$sid}{'rule'} =~
                                     /^\s*#\s*(alert|drop|pass)/i
@@ -906,7 +905,7 @@ sub modify_state {
                                     }
                                 }
                             }
-                            case "drop" {
+                            elsif ($function eq "drop") {
                                 if ( exists $$hashref{$gid}{$sid}
                                     && $$hashref{$gid}{$sid}{'rule'} =~
                                     /^\s*#*\s*alert/i )
@@ -921,7 +920,7 @@ sub modify_state {
                                     $sidcount++;
                                 }
                             }
-                            case "disable" {
+                            elsif ($function eq "disable") {
                                 if ( exists $$hashref{$gid}{$sid}
                                     && $$hashref{$gid}{$sid}{'rule'} =~
                                     /^\s*(alert|drop|pass)/i )
