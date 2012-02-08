@@ -17,6 +17,9 @@ Bug Fixes:
 		resolution, this is a critical piece.
 - Bug #81 - Updated valid SO distro pre-compiled list
 
+New Features / changes:
+- Bug #105 - Removed Switch function as it is deprecated in > 5.12 perl
+
 v0.6.1 the Smoking Pig, revisited
 
 Bug Fixes:
