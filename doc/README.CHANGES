@@ -16,6 +16,8 @@ Bug Fixes:
 		flowbit resolution.  NOTE that this DOES NOT AND WILL NOT disable automatic flowbit
 		resolution, this is a critical piece.
 - Bug #81 - Updated valid SO distro pre-compiled list
+- Bug #114 - Update Regex to allow for null search/replace in modify_sid sub
+- Unlisted Bug - Allow for escaped ; "\;" in references
 
 New Features / changes:
 - Bug #105 - Removed Switch function as it is deprecated in > 5.12 perl
