@@ -709,7 +709,7 @@ sub modify_sid {
     open( FH, "<$file" ) || carp "Unable to open $file\n";
     while (<FH>) {
         next if ( ( $_ =~ /^\s*#/ ) || ( $_ eq " " ) );
-        if ( $_ =~ /([\d+|,|\*]*)\s+"(.+)"\s+"(.+)"/ ) {
+        if ( $_ =~ /([\d+|,|\*]*)\s+"(.+)"\s+"(.*)"/ ) {
             my ( $sids, $from, $to ) = ( $1, $2, $3 );
             @arry = split( /,/, $sids ) if $sids !~ /\*/;
             @arry = "*" if $sids =~ /\*/;
@@ -984,7 +984,7 @@ sub sid_msg {
             ( my $header, my $options ) =
               split( /^[^"]* \(\s*/, $$ruleshash{$k}{$k2}{'rule'} )
               if defined $$ruleshash{$k}{$k2}{'rule'};
-            my @optarray = split( /;(\t|\s)?/, $options ) if $options;
+            my @optarray = split( /[^\];(\t|\s)?/, $options ) if $options;
             foreach my $option ( reverse(@optarray) ) {
                 my ( $kw, $arg ) = split( /:/, $option ) if $option;
                 if ( $kw && $arg ) {
