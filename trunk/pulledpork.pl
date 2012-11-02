@@ -369,6 +369,10 @@ sub rulefetch {
           getstore( "https://www.snort.org/reg-rules/$rule_file/$oinkcode",
             $temp_path . $rule_file );
     }
+    elsif ($rule_file eq "IPBLACKLIST"){
+	$getrules_rule =
+	  getstore( "http://labs.snort.org/feeds/ip-filter.blf", $temp_path . "black_list.rules")
+    }
     else {
         $getrules_rule =
           getstore( $base_url . "/" . $rule_file, $temp_path . $rule_file );
@@ -436,7 +440,7 @@ sub md5file {
           getstore( "https://www.snort.org/reg-rules/$rule_file.md5/$oinkcode",
             $temp_path . $rule_file . ".md5" );
     }
-    elsif ( $base_url =~ /emergingthreats\.net/i ) {
+    elsif ( $base_url =~ /(emergingthreats\.net|emergingthreatspro\.com)/i ) {
         $getrules_md5 = getstore(
             "$base_url/$rule_file" . ".md5",
             $temp_path . $rule_file . ".md5"
@@ -984,7 +988,7 @@ sub sid_msg {
             ( my $header, my $options ) =
               split( /^[^"]* \(\s*/, $$ruleshash{$k}{$k2}{'rule'} )
               if defined $$ruleshash{$k}{$k2}{'rule'};
-            my @optarray = split( /[^\];(\t|\s)?/, $options ) if $options;
+            my @optarray = split( /[^\\];(\t|\s)?/, $options ) if $options;
             foreach my $option ( reverse(@optarray) ) {
                 my ( $kw, $arg ) = split( /:/, $option ) if $option;
                 if ( $kw && $arg ) {
@@ -1462,8 +1466,8 @@ if ( $Verbose && !$Quiet ) {
 
 if ( exists $Config_info{'version'} ) {
     croak "You are not using the current version of pulledpork.conf!\n",
-      "Please use the version that shipped with $VERSION!\n\n"
-      if $Config_info{'version'} ne "0.6.0";
+      "Please use the version of pulledpork.conf that shipped with $VERSION!\n\n"
+      if $Config_info{'version'} ne "0.6.1";
 }
 else {
     croak
@@ -1676,6 +1680,7 @@ if ($proxy) {
     }
     else {
         $ENV{HTTPS_PROXY} = $proxy;
+	$ENV{HTTP_PROXY} = $proxy;
     }
 }
 undef $proxy;
@@ -1744,7 +1749,7 @@ if ( @base_url && -d $temp_path ) {
                     $rule_file = "snortrules-snapshot-$Snortv.tar.gz";
                 }
             }
-            elsif ( $base_url =~ /emergingthreats.net/ ) {
+            elsif ( $base_url =~ /(emergingthreats.net|emergingthreatspro.com)/ ) {
                 $prefix = "ET-";
                 my $Snortv = $Snort;
                 $Snortv =~ s/(?<=\d\.\d\.\d)\.\d//;
@@ -1796,7 +1801,7 @@ if ( @base_url && -d $temp_path ) {
                     $rule_file = "snortrules-snapshot-$Snortv.tar.gz";
                 }
             }
-            $prefix = "ET-" if $base_url =~ /emergingthreats.net/;
+            $prefix = "ET-" if $base_url =~ /(emergingthreats.net|emergingthreatspro.com)/;
             croak "file $temp_path/$rule_file does not exist!\n"
               unless -f "$temp_path/$rule_file";
             rule_extract(

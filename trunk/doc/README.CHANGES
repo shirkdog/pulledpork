@@ -18,9 +18,12 @@ Bug Fixes:
 - Bug #81 - Updated valid SO distro pre-compiled list
 - Bug #114 - Update Regex to allow for null search/replace in modify_sid sub
 - Unlisted Bug - Allow for escaped ; "\;" in references
+- Bug #121 - Update to allow for new etpro.com url and cert!
+- Bug #119 - Fixed regex [^\\]...
 
 New Features / changes:
 - Bug #105 - Removed Switch function as it is deprecated in > 5.12 perl
+- Unlisted Bug - Include IP Reputation capability
 
 v0.6.1 the Smoking Pig, revisited
 
