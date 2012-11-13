@@ -484,7 +484,7 @@ sub read_iplist {
     my ($href,$path) = @_;
     print "\t" if ( $Verbose && !$Quiet );
     print "Reading IP List...\n" if !$Quiet;
-    open (FH,'<',$path) || croak "Couldn't read $path - $!\n";;
+    open (FH,'<',$path) || croak "Couldn't read $path - $!\n";
     while (<FH>) {
 	chomp();
 	# we only want valid IP addresses, otherwise shiz melts!
@@ -1108,7 +1108,7 @@ sub rule_category_write {
 sub blacklist_write{
     my ($href,$path) = @_;
     print "Writing $path....\n" if !$Quiet;
-    open (FH,'>',$path);
+    open (FH,'>',$path) || croak("Unable to open $path for writing! - $!\n");
     foreach (sort keys %$href){
 	print FH "$_\n";
     }
