@@ -3,7 +3,7 @@
 ## pulledpork v(whatever it says below!)
 ## cummingsj@gmail.com
 
-# Copyright (C) 2009-2011 JJ Cummings and the PulledPork Team!
+# Copyright (C) 2009-2012 JJ Cummings and the PulledPork Team!
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -35,6 +35,7 @@ use Archive::Tar;
 use POSIX qw(:errno_h);
 use Cwd;
 use Carp;
+use Data::Dumper;
 
 ### Vars here
 
@@ -48,7 +49,7 @@ my ( $Output, $Distro, $Snort, $Sostubs, $sid_changelog, $ignore_files );
 my ( $Snort_config, $Snort_path, $Textonly,   $grabonly,    $ips_policy, );
 my ( $pid_path,     $SigHup,     $NoDownload, $sid_msg_map, @base_url );
 my ( $local_rules,  $arch,       $docs,       @records,     $enonly );
-my ( $rstate, $keep_rulefiles, $rule_file_path, $prefix );
+my ( $rstate, $keep_rulefiles, $rule_file_path, $prefix, $black_list );
 
 # verbose and quiet control print()
 # default values if not set otherwise in getopt
@@ -65,6 +66,7 @@ undef($Hash);
 undef($ALogger);
 
 my %rules_hash    = ();
+my %blacklist	  = ();
 my %oldrules_hash = ();
 my %sid_msg_map   = ();
 my %sidmod        = ();
@@ -187,7 +189,7 @@ sub pulledpork {
      `----,\\    )
       `--==\\\\  /    $VERSION
        `--==\\\\/
-     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2011 JJ Cummings
+     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2012 JJ Cummings
   \@_/        /  66\\_  cummingsj\@gmail.com
     |    \\   \\   _(\")
      \\   /-| ||'--'  Rules give me wings!
@@ -331,7 +333,7 @@ sub compare_md5 {
         );
     }
     else {
-        if ( $Verbose && !$Quiet ) {
+        if ( $Verbose && !$Quiet && $rule_file ne "IPBLACKLIST") {
             print
 "\tOk, not verifying the digest.. lame, but that's what you specified!\n";
             print
@@ -342,7 +344,7 @@ sub compare_md5 {
             $rule_file,    $temp_path, $Distro,
             $arch,         $Snort,     $Sorules,
             $ignore_files, $docs,      $prefix
-        ) if !$grabonly;
+        ) if !$grabonly && $rule_file ne "IPBLACKLIST";
     }
 }
 
@@ -362,16 +364,19 @@ sub rulefetch {
     my ($getrules_rule);
     if ( $Verbose && !$Quiet ) {
         print "\tFetching rules file: $rule_file\n";
-        if ($Hash) { print "But not verifying MD5\n"; }
+        if ($Hash && $rule_file ne "IPBLACKLIST") { print "But not verifying MD5\n"; }
     }
-    if ( $base_url =~ /snort\.org/i ) {
+    if ( $base_url =~ /[^labs]\.snort\.org/i ) {
         $getrules_rule =
           getstore( "https://www.snort.org/reg-rules/$rule_file/$oinkcode",
             $temp_path . $rule_file );
     }
     elsif ($rule_file eq "IPBLACKLIST"){
+	my $rand = rand(1000);
 	$getrules_rule =
-	  getstore( "http://labs.snort.org/feeds/ip-filter.blf", $temp_path . "black_list.rules")
+	  getstore( $base_url, $temp_path . "$rand-black_list.rules");
+	read_iplist(\%blacklist,$temp_path . "$rand-black_list.rules");
+	unlink ($temp_path . "$rand-black_list.rules");
     }
     else {
         $getrules_rule =
@@ -403,7 +408,7 @@ sub rulefetch {
         croak "\tError $getrules_rule when fetching " . $rule_file;
     }
 
-    if ( $Verbose && !$Quiet ) {
+    if ( $Verbose && !$Quiet && $rule_file ne "IPBLACKLIST") {
         print("\tstoring file at: $temp_path$rule_file\n\n");
     }
     if ( !$Verbose && !$Quiet ) { "\tDone!\n"; }
@@ -435,7 +440,7 @@ sub md5file {
     print "Checking latest MD5 for $rule_file....\n" if !$Quiet;
     print "\tFetching md5sum for: " . $rule_file . ".md5\n"
       if ( $Verbose && !$Quiet );
-    if ( $base_url =~ /snort\.org/i ) {
+    if ( $base_url =~ /[^labs]\.snort\.org/i ) {
         $getrules_md5 =
           getstore( "https://www.snort.org/reg-rules/$rule_file.md5/$oinkcode",
             $temp_path . $rule_file . ".md5" );
@@ -472,6 +477,23 @@ sub md5file {
         print "\tmost recent rules file digest: $md5\n";
     }
     return $md5;
+}
+
+## This sub allows for ip-reputation list de-duplication and processing:
+sub read_iplist {
+    my ($href,$path) = @_;
+    print "\t" if ( $Verbose && !$Quiet );
+    print "Reading IP List...\n" if !$Quiet;
+    open (FH,'<',$path) || croak "Couldn't read $path - $!\n";;
+    while (<FH>) {
+	chomp();
+	# we only want valid IP addresses, otherwise shiz melts!
+	next unless $_ =~ /(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/;
+	$_ = trim($_);
+	$_ =~ s/,*//;
+	$href->{$_}=1;
+    }
+    close(FH);
 }
 
 ## This replaces the copy_rules routine and allows for in-memory processing
@@ -1082,6 +1104,17 @@ sub rule_category_write {
     print "\tDone\n" if !$Quiet;
 }
 
+## write our blacklist file!
+sub blacklist_write{
+    my ($href,$path) = @_;
+    print "Writing $path....\n" if !$Quiet;
+    open (FH,'>',$path);
+    foreach (sort keys %$href){
+	print FH "$_\n";
+    }
+    close(FH);
+}
+
 ## write the rules to a single output file!
 sub rule_write {
     my ( $hashref, $file, $gid, $enonly ) = @_;
@@ -1194,7 +1227,7 @@ sub flowbit_set {
 
 ## Make some changelog fun!
 sub changelog {
-    my ( $changelog, $hashref, $hashref2, $ips_policy, $enonly ) = @_;
+    my ( $changelog, $hashref, $hashref2, $hashref3, $ips_policy, $enonly ) = @_;
 
     print "Writing $changelog....\n" if !$Quiet;
     my ( @newsids, @delsids );
@@ -1205,6 +1238,8 @@ sub changelog {
     my $dropped  = 0;
     my $enabled  = 0;
     my $disabled = 0;
+    my $ips	 = 0;
+    
     foreach my $k1 ( keys %rules_hash ) {
 
         foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
@@ -1250,11 +1285,16 @@ sub changelog {
             $dt++;
         }
     }
+    if (%$hashref3){
+        foreach (keys %$hashref3){
+	    $ips++
+	}
+    }
     if ( -f $changelog ) {
-        open( WRITE, ">>$changelog" ) || croak "$changelog $!\n";
+        open( WRITE,'>>',$changelog ) || croak "$changelog $!\n";
     }
     else {
-        open( WRITE, ">$changelog" ) || croak "$changelog $!\n";
+        open( WRITE,'>',$changelog ) || croak "$changelog $!\n";
         print WRITE
           "-=BEGIN PULLEDPORK SNORT RULES CHANGELOG, Tracking started on "
           . gmtime(time)
@@ -1275,21 +1315,23 @@ sub changelog {
     print WRITE "\tDropped:---$dropped\n";
     print WRITE "\tDisabled:--$disabled\n";
     print WRITE "\tTotal:-----" . ( $enabled + $disabled + $dropped ) . "\n";
+    print WRITE "\nIP Blacklist Stats\n\tTotal IPs:-----$ips\n" if $ips;
     print WRITE "\n-=End Changes Logged for " . gmtime(time) . " GMT=-\n";
     close(WRITE);
 
     if ( !$Quiet ) {
         print "\tDone\n";
-        print "Rule Stats....\n";
+        print "Rule Stats...\n";
         print "\tNew:-------$rt\n";
         print "\tDeleted:---$dt\n";
         print "\tEnabled Rules:----$enabled\n";
         print "\tDropped Rules:----$dropped\n";
         print "\tDisabled Rules:---$disabled\n";
         print "\tTotal Rules:------"
-          . ( $enabled + $dropped + $disabled )
-          . "\n\tDone\n";
-        print "Please review $sid_changelog for additional details\n"
+          . ( $enabled + $dropped + $disabled );
+        print "\nIP Blacklist Stats...\n\tTotal IPs:-----$ips\n" if $ips;
+        print "\nDone\n";
+	print "Please review $sid_changelog for additional details\n"
           if $sid_changelog;
     }
     undef @newsids;
@@ -1496,6 +1538,10 @@ if ( !$ips_policy && defined $Config_info{'ips_policy'} ) {
     $ips_policy = $Config_info{'ips_policy'};
 }
 
+if ( !$black_list && defined $Config_info{'black_list'} ) {
+    $black_list = $Config_info{'black_list'};
+}
+
 if ( !$sidmod{enable} && defined $Config_info{'enablesid'} ) {
     $sidmod{enable} = $Config_info{'enablesid'};
 }
@@ -1660,53 +1706,58 @@ $ua->show_progress(1) if ( $Verbose && !$Quiet );
 $ua->timeout(60);
 $ua->cookie_jar( {} );
 $ua->protocols_allowed( [ 'http', 'https' ] );
-my $proxy = $ENV{http_proxy};
-if ($proxy) {
-    $ua->proxy( ['http'], $proxy );
+$ua->proxy( ['http'], $ENV{http_proxy} ) if $ENV{http_proxy};
+$ua->proxy( ['https'], $ENV{https_proxy} ) if $ENV{https_proxy};
 
-    #Let's handle proxy variables with username / passphrase in them!
-    if ( $proxy =~ /^(http|https):\/\/([^:]+):([^:]+)@(.+)$/i ) {
-        my $proxytype = $1;
-        my $proxyuser = $2;
-        my $proxypass = $3;
-        my $proxyaddy = $4;
-
-        $ENV{HTTP_PROXY}           = "$proxytype://$proxyaddy";
-        $ENV{HTTP_PROXY_USERNAME}  = $proxyuser;
-        $ENV{HTTP_PROXY_PASSWORD}  = $proxypass;
-        $ENV{HTTPS_PROXY}          = "$proxytype://$proxyaddy";
-        $ENV{HTTPS_PROXY_USERNAME} = $proxyuser;
-        $ENV{HTTPS_PROXY_PASSWORD} = $proxypass;
+# Pull in our env vars before we load any of the modules!
+BEGIN {
+    my $proxy = $ENV{http_proxy};
+    if ($proxy) {
+	#Let's handle proxy variables with username / passphrase in them!
+	if ( $proxy =~ /^(http|https):\/\/([^:]+):([^:]+)@(.+)$/i ) {
+	    my $proxytype = $1;
+	    my $proxyuser = $2;
+	    my $proxypass = $3;
+	    my $proxyaddy = $4;
+    
+	    $ENV{HTTP_PROXY}           = "$proxytype://$proxyaddy";
+	    $ENV{HTTP_PROXY_USERNAME}  = $proxyuser;
+	    $ENV{HTTP_PROXY_PASSWORD}  = $proxypass;
+	    $ENV{HTTPS_PROXY}          = "$proxytype://$proxyaddy";
+	    $ENV{HTTPS_PROXY_USERNAME} = $proxyuser;
+	    $ENV{HTTPS_PROXY_PASSWORD} = $proxypass;
+	}
+	else {
+	    $ENV{HTTPS_PROXY} = $proxy;
+	    $ENV{HTTP_PROXY} = $proxy;
+	}
     }
-    else {
-        $ENV{HTTPS_PROXY} = $proxy;
-	$ENV{HTTP_PROXY} = $proxy;
-    }
-}
-undef $proxy;
-$proxy = $ENV{https_proxy};    #check for https_proxy env var
-if ($proxy) {
-    $ua->proxy( ['http'], $proxy );
-
-    #Let's handle proxy variables with username / passphrase in them!
-    if ( $proxy =~ /^(http|https):\/\/([^:]+):([^:]+)@(.+)$/i ) {
-        my $proxytype = $1;
-        my $proxyuser = $2;
-        my $proxypass = $3;
-        my $proxyaddy = $4;
-
-        $ENV{HTTPS_PROXY}          = "$proxytype://$proxyaddy";
-        $ENV{HTTPS_PROXY_USERNAME} = $proxyuser;
-        $ENV{HTTPS_PROXY_PASSWORD} = $proxypass;
-    }
-    else {
-        $ENV{HTTPS_PROXY} = $proxy;
+    undef $proxy;
+    $proxy = $ENV{https_proxy};    #check for https_proxy env var
+    if ($proxy) {
+    
+	#Let's handle proxy variables with username / passphrase in them!
+	if ( $proxy =~ /^(http|https):\/\/([^:]+):([^:]+)@(.+)$/i ) {
+	    my $proxytype = $1;
+	    my $proxyuser = $2;
+	    my $proxypass = $3;
+	    my $proxyaddy = $4;
+    
+	    $ENV{HTTPS_PROXY}          = "$proxytype://$proxyaddy";
+	    $ENV{HTTPS_PROXY_USERNAME} = $proxyuser;
+	    $ENV{HTTPS_PROXY_PASSWORD} = $proxypass;
+	}
+	else {
+	    $ENV{HTTPS_PROXY} = $proxy;
+	}
     }
 }
 
 if ( $Verbose == 2 ) {
     $ENV{HTTPS_DEBUG} = 1;
-    print "\n\nMY HTTPS PROXY = " . $proxy . "\n" if ( $proxy && !$Quiet );
+    $ENV{HTTP_DEBUG} = 1;
+    print "\n\nMY HTTPS PROXY = $ENV{HTTPS_PROXY}\n" if ( $ENV{HTTPS_PROXY} && !$Quiet );
+    print "\n\nMY HTTP PROXY = $ENV{HTTP_PROXY}\n" if ( $ENV{HTTP_PROXY} && !$Quiet );
 }
 
 # let's fetch the most recent md5 file then compare and do our foo
@@ -1735,7 +1786,7 @@ if ( @base_url && -d $temp_path ) {
                 "please define the rule_url correctly in the pulledpork.conf\n")
               unless defined $rule_file;
 
-            if ( $base_url =~ /snort\.org/i ) {
+            if ( $base_url =~ /[^labs]\.snort\.org/i ) {
                 $prefix = "VRT-";
                 unless ( $rule_file =~ /snortrules-snapshot-\d{4}\.tar\.gz/
                     || $rule_file =~ /opensource\.gz/ )
@@ -1760,7 +1811,8 @@ if ( @base_url && -d $temp_path ) {
 	    
 	    $prefix = "Custom-" unless $prefix;
 
-            $Hash = 1 unless $base_url =~ /(emergingthreats|snort.org)/;
+            $Hash = 1 unless $base_url =~ /(emergingthreats|[^labs]\.snort\.org)/;
+	    $Hash = 1 if $rule_file eq "IPBLACKLIST";
 
             if ( !$Hash ) {
                 $md5 = md5file( $oinkcode, $rule_file, $temp_path, $base_url );
@@ -1789,7 +1841,7 @@ if ( @base_url && -d $temp_path ) {
     if ( $NoDownload && !$grabonly ) {
         foreach (@base_url) {
             my ( $base_url, $rule_file ) = split( /\|/, $_ );
-            if ( $base_url =~ /snort\.org/i ) {
+            if ( $base_url =~ /[^labs]\.snort\.org/i ) {
                 $prefix = "VRT-";
                 unless ( $rule_file =~ /snortrules-snapshot-\d{4}\.tar\.gz/ ) {
                     croak(
@@ -1811,9 +1863,9 @@ if ( @base_url && -d $temp_path ) {
             ) if !$grabonly;
         }
     }
-    if ( $Output && !$grabonly ) {
+    if ( $Output && !$grabonly) {
         read_rules( \%rules_hash, "$temp_path" . "tha_rules/", $local_rules );
-    }
+    } 
     if (   $Sorules
         && -e $Sorules
         && $Distro
@@ -1883,6 +1935,10 @@ if ( !$grabonly ) {
         rule_category_write( \%rules_hash, $rule_file_path, 3, $enonly )
           if $keep_rulefiles;
     }
+    
+    if ($black_list && %blacklist){
+	blacklist_write(\%blacklist,$black_list);
+    }
 
     if ($sid_msg_map) {
         sid_msg( \%rules_hash, \%sid_msg_map, $enonly );
@@ -1911,7 +1967,7 @@ if ( !$grabonly ) {
     if ( $sid_changelog && -f $Output ) {
         changelog(
             $sid_changelog, \%rules_hash, \%oldrules_hash,
-            $ips_policy,    $enonly
+            \%blacklist, $ips_policy,    $enonly
         );
     }
 }
