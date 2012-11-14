@@ -39,6 +39,9 @@ Below you will find answers to the most commonly asked questions.
   * Verify that your output paths all exist and are writable by the calling user
   * Verify that you are using the latest version of the config file that came with the  version of pulledpork that you are running!
 
+*When I run pulledpork, I get a 403 error*
+  * If you are a subscriber, be sure that your subscription has not expired.
+  * If you are a registered user, there is a 15 minute timeout period that must timeout before you can download rules again.
 
 *When I run pulledpork, I get an error about LWP::Simple?*
   * Ensure LWP::Simple is installed properly (perl -MCPAN -e shell 'install LWP::Simple')
