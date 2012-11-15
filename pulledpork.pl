@@ -50,6 +50,7 @@ my ( $Snort_config, $Snort_path, $Textonly,   $grabonly,    $ips_policy, );
 my ( $pid_path,     $SigHup,     $NoDownload, $sid_msg_map, @base_url );
 my ( $local_rules,  $arch,       $docs,       @records,     $enonly );
 my ( $rstate, $keep_rulefiles, $rule_file_path, $prefix, $black_list );
+my ( $Process, $hmatch, $bmatch );
 
 # verbose and quiet control print()
 # default values if not set otherwise in getopt
@@ -303,9 +304,9 @@ sub compare_md5 {
         $oinkcode, $rule_file, $temp_path,   $Hash,
         $base_url, $md5,       $rule_digest, $Distro,
         $arch,     $Snort,     $Sorules,     $ignore_files,
-        $docs,     $prefix
+        $docs,     $prefix,    $Process, $hmatch
     ) = @_;
-    if ( $rule_digest =~ $md5 && !$Hash ) {
+    if ( $rule_digest =~ $md5 && !$Hash && $Process) {
         if ( $Verbose && !$Quiet ) {
             print
 "\tThe MD5 for $rule_file matched $md5\n\tso I'm not gonna download the rules file again suckas!\n";
@@ -316,8 +317,16 @@ sub compare_md5 {
             $arch,         $Snort,     $Sorules,
             $ignore_files, $docs,      $prefix
         ) if !$grabonly;
+	return(1);
     }
-    elsif ( !$Hash ) {
+    elsif ($rule_file eq "IPBLACKLIST" ) {
+	return($hmatch);
+    }
+    elsif ( $rule_digest =~ $md5 && !$Hash && !$Process) {
+	print "\tThe MD5 for $rule_file matched....not processing tarball!\n";
+	return($hmatch);
+    }
+    elsif ( $rule_digest !~ $md5 && !$Hash ) {
         if ( $Verbose && !$Quiet ) {
             print
 "\tThe MD5 for $rule_file did not match the latest digest... so I am gonna fetch the latest rules file!\n";
@@ -325,14 +334,14 @@ sub compare_md5 {
         if ( !$Verbose && !$Quiet ) { print "\tNo Match\n\tDone\n"; }
         rulefetch( $oinkcode, $rule_file, $temp_path, $base_url );
         $rule_digest = md5sum( $rule_file, $temp_path );
-        compare_md5(
+        return(compare_md5(
             $oinkcode, $rule_file, $temp_path,   $Hash,
             $base_url, $md5,       $rule_digest, $Distro,
             $arch,     $Snort,     $Sorules,     $ignore_files,
-            $docs,     $prefix
-        );
+            $docs,     $prefix,    $Process, $hmatch
+        ));
     }
-    else {
+    elsif ($Hash) {
         if ( $Verbose && !$Quiet && $rule_file ne "IPBLACKLIST") {
             print
 "\tOk, not verifying the digest.. lame, but that's what you specified!\n";
@@ -345,6 +354,9 @@ sub compare_md5 {
             $arch,         $Snort,     $Sorules,
             $ignore_files, $docs,      $prefix
         ) if !$grabonly && $rule_file ne "IPBLACKLIST";
+	return(1);
+    } else {
+	return($hmatch);
     }
 }
 
@@ -359,11 +371,12 @@ sub getstore {
 ## time to grab the real 0xb33f
 sub rulefetch {
     my ( $oinkcode, $rule_file, $temp_path, $base_url ) = @_;
-    print "Rules tarball download of $rule_file....\n" if ( !$Quiet );
+    print "Rules tarball download of $rule_file....\n" if ( !$Quiet && $rule_file ne "IPBLACKLIST" );
+    print "IP Blacklist download of $base_url....\n" if ( !$Quiet && $rule_file eq "IPBLACKLIST" );
     $base_url = slash( 0, $base_url );
     my ($getrules_rule);
     if ( $Verbose && !$Quiet ) {
-        print "\tFetching rules file: $rule_file\n";
+        print "\tFetching rules file: $rule_file\n" if $rule_file ne "IPBLACKLIST";
         if ($Hash && $rule_file ne "IPBLACKLIST") { print "But not verifying MD5\n"; }
     }
     if ( $base_url =~ /[^labs]\.snort\.org/i ) {
@@ -977,6 +990,21 @@ sub modify_state {
     undef @sid_mod;
 }
 
+## iprep control socket!
+sub iprep_control {
+    my ($bin,$path) = @_;
+    my $cmd = "$bin $path 1361";
+    print "Issuing reputation socket reload command\n";
+    print "Command: $cmd\n" if $Verbose;
+    open(FH,"$cmd 2>&1 |");
+    while(<FH>){
+	chomp();
+	next unless $_ =~ /(warn|err|unable)/i;
+	print "$_\n";
+    }
+    close(FH);
+}
+
 ## goodbye
 sub sig_hup {
     my ($pidlist) = @_;
@@ -1104,15 +1132,46 @@ sub rule_category_write {
     print "\tDone\n" if !$Quiet;
 }
 
-## write our blacklist file!
+## write our blacklist and blacklist version file!
 sub blacklist_write{
     my ($href,$path) = @_;
-    print "Writing $path....\n" if !$Quiet;
-    open (FH,'>',$path) || croak("Unable to open $path for writing! - $!\n");
-    foreach (sort keys %$href){
-	print FH "$_\n";
+    my $blv = $Config_info{'IPRVersion'}."IPRVersion.dat";
+    my $blver = 0;
+
+    # First lets be sure that our data is new, if not skip the rest of it!
+    # We will MD5 our HREF then convert it to an integer.
+    my $hobj = Digest::MD5->new;
+    $hobj->add(%$href);
+    my $hash = $hobj->hexdigest;
+    my $ver = unpack ("i",$hash);
+    
+    if (-f $blv){
+	open(FH,'<',$blv);
+	while(<FH>){
+	    next unless $_ =~ /\d+/;
+	    $blver = $_;
+	}
+	close(FH);	
     }
-    close(FH);
+    
+    if ($blver != $ver){
+	print "Writing Blacklist File $path....\n" if !$Quiet;
+	open (FH,'>',$path) || croak("Unable to open $path for writing! - $!\n");
+	foreach (sort keys %$href){
+	    print FH "$_\n";
+	}
+	close(FH);
+	
+	print "Writing Blacklist Version $ver to $blv....\n" if !$Quiet;
+	open (FH,'>',$blv) || croak("Unable to open $blv for writing! - $!\n");
+	print FH $ver;
+	close(FH);
+	return(1);
+    } else {
+	print "Blacklist version is unchanged, not updating!\n" if !$Quiet;
+	return(0);
+    }
+
 }
 
 ## write the rules to a single output file!
@@ -1227,7 +1286,7 @@ sub flowbit_set {
 
 ## Make some changelog fun!
 sub changelog {
-    my ( $changelog, $hashref, $hashref2, $hashref3, $ips_policy, $enonly ) = @_;
+    my ( $changelog, $hashref, $hashref2, $hashref3, $ips_policy, $enonly, $hmatch ) = @_;
 
     print "Writing $changelog....\n" if !$Quiet;
     my ( @newsids, @delsids );
@@ -1286,9 +1345,7 @@ sub changelog {
         }
     }
     if (%$hashref3){
-        foreach (keys %$hashref3){
-	    $ips++
-	}
+        $ips = keys(%$hashref3);
     }
     if ( -f $changelog ) {
         open( WRITE,'>>',$changelog ) || croak "$changelog $!\n";
@@ -1301,35 +1358,43 @@ sub changelog {
           . " GMT=-\n\n\n";
     }
     print WRITE "\n-=Begin Changes Logged for " . gmtime(time) . " GMT=-\n";
-    print WRITE "\nNew Rules\n" if @newsids;
-    @newsids = sort(@newsids);
-    @delsids = sort(@delsids);
-    foreach (@newsids) { print WRITE "\t" . $_ . "\n"; }
-    print WRITE "\nDeleted Rules\n" if @delsids;
-    foreach (@delsids) { print WRITE "\t" . $_ . "\n"; }
-    print WRITE "\nSet Policy: $ips_policy\n" if $ips_policy;
-    print WRITE "\nRule Totals\n";
-    print WRITE "\tNew:-------$rt\n";
-    print WRITE "\tDeleted:---$dt\n";
-    print WRITE "\tEnabled:---$enabled\n";
-    print WRITE "\tDropped:---$dropped\n";
-    print WRITE "\tDisabled:--$disabled\n";
-    print WRITE "\tTotal:-----" . ( $enabled + $disabled + $dropped ) . "\n";
-    print WRITE "\nIP Blacklist Stats\n\tTotal IPs:-----$ips\n" if $ips;
+    if ($hmatch) {
+	print WRITE "\nNew Rules\n" if @newsids;
+	@newsids = sort(@newsids);
+	@delsids = sort(@delsids);
+	foreach (@newsids) { print WRITE "\t" . $_ . "\n"; }
+	print WRITE "\nDeleted Rules\n" if @delsids;
+	foreach (@delsids) { print WRITE "\t" . $_ . "\n"; }
+	print WRITE "\nSet Policy: $ips_policy\n" if $ips_policy;
+	print WRITE "\nRule Totals\n";
+	print WRITE "\tNew:-------$rt\n";
+	print WRITE "\tDeleted:---$dt\n";
+	print WRITE "\tEnabled:---$enabled\n";
+	print WRITE "\tDropped:---$dropped\n";
+	print WRITE "\tDisabled:--$disabled\n";
+	print WRITE "\tTotal:-----" . ( $enabled + $disabled + $dropped ) . "\n";
+    } else { print WRITE "\nNo Rule Changes\n"; }
+    if ($bmatch){
+	print WRITE "\nIP Blacklist Stats\n\tTotal IPs:-----$ips\n" if $ips;
+    } else { print WRITE "\nNo IP Blacklist Changes\n"; }
     print WRITE "\n-=End Changes Logged for " . gmtime(time) . " GMT=-\n";
     close(WRITE);
 
     if ( !$Quiet ) {
         print "\tDone\n";
-        print "Rule Stats...\n";
-        print "\tNew:-------$rt\n";
-        print "\tDeleted:---$dt\n";
-        print "\tEnabled Rules:----$enabled\n";
-        print "\tDropped Rules:----$dropped\n";
-        print "\tDisabled Rules:---$disabled\n";
-        print "\tTotal Rules:------"
-          . ( $enabled + $dropped + $disabled );
-        print "\nIP Blacklist Stats...\n\tTotal IPs:-----$ips\n" if $ips;
+	if ($hmatch) {
+	    print "Rule Stats...\n";
+	    print "\tNew:-------$rt\n";
+	    print "\tDeleted:---$dt\n";
+	    print "\tEnabled Rules:----$enabled\n";
+	    print "\tDropped Rules:----$dropped\n";
+	    print "\tDisabled Rules:---$disabled\n";
+	    print "\tTotal Rules:------"
+	      . ( $enabled + $dropped + $disabled );
+	} else { print "\nNo Rule Changes\n"; }
+	if ($bmatch){
+	    print "\nIP Blacklist Stats...\n\tTotal IPs:-----$ips\n" if $ips;
+	} else { print "\nNo IP Blacklist Changes\n"; }
         print "\nDone\n";
 	print "Please review $sid_changelog for additional details\n"
           if $sid_changelog;
@@ -1473,6 +1538,7 @@ GetOptions(
     "n!"     => \$NoDownload,
     "o=s"    => \$Output,
     "p=s"    => \$Snort_path,
+    "P!"     => \$Process,
     "q"      => \$Quiet,
     "R!"     => \$rstate,
     "r=s"    => \$docs,
@@ -1641,6 +1707,7 @@ if ( !$ips_policy ) {
 
 if ( $Verbose && !$Quiet ) {
     print "MISC (CLI and Autovar) Variable Debug:\n";
+    if ($Process)	 { print "\tProcess flag specified!\n"; }
     if ($arch)           { print "\tarch Def is: $arch\n"; }
     if ($Config_file)    { print "\tConfig Path is: $Config_file\n"; }
     if ($Distro)         { print "\tDistro Def is: $Distro\n"; }
@@ -1802,11 +1869,13 @@ if ( @base_url && -d $temp_path ) {
             }
             elsif ( $base_url =~ /(emergingthreats.net|emergingthreatspro.com)/ ) {
                 $prefix = "ET-";
-                my $Snortv = $Snort;
-                $Snortv =~ s/(?<=\d\.\d\.\d)\.\d//;
-                $base_url .= "$oinkcode/snort-$Snortv/";
-
-                #$Textonly = 1;
+		if ($Snort =~ /(?<=\d\.\d\.\d)\.\d/) {
+		    my $Snortv = $Snort;
+		    $Snortv =~ s/(?<=\d\.\d\.\d)\.\d//;
+		    $base_url .= "$oinkcode/snort-$Snortv/";
+		} elsif ($Snort =~ /suricata/i) {
+		    $base_url .= "$oinkcode/$Snort/";
+		}
             }
 	    
 	    $prefix = "Custom-" unless $prefix;
@@ -1830,11 +1899,11 @@ if ( @base_url && -d $temp_path ) {
             }
 
 # compare the online current md5 against against the md5 of the rules file on system
-            compare_md5(
+            $hmatch = compare_md5(
                 $oinkcode, $rule_file, $temp_path,   $Hash,
                 $base_url, $md5,       $rule_digest, $Distro,
                 $arch,     $Snort,     $Sorules,     $ignore_files,
-                $docs,     $prefix
+                $docs,     $prefix,    $Process, $hmatch
             );
         }
     }
@@ -1863,7 +1932,7 @@ if ( @base_url && -d $temp_path ) {
             ) if !$grabonly;
         }
     }
-    if ( $Output && !$grabonly) {
+    if ( $Output && !$grabonly && $hmatch) {
         read_rules( \%rules_hash, "$temp_path" . "tha_rules/", $local_rules );
     } 
     if (   $Sorules
@@ -1871,7 +1940,8 @@ if ( @base_url && -d $temp_path ) {
         && $Distro
         && $Snort
         && !$Textonly
-        && !$grabonly )
+        && !$grabonly
+	&& $hmatch)
     {
         gen_stubs( $Snort_path, $Snort_config,
             "$temp_path" . "tha_rules/so_rules/" );
@@ -1881,7 +1951,7 @@ if ( @base_url && -d $temp_path ) {
 }
 else { Help("Check your oinkcode, temp path and freespace!"); }
 
-if ( !$grabonly ) {
+if ( !$grabonly && $hmatch) {
     if ( $sid_changelog && -f $Output && !$keep_rulefiles ) {
         read_rules( \%oldrules_hash, "$Output", $local_rules );
     }
@@ -1897,7 +1967,12 @@ if ( -d $temp_path ) {
     temp_cleanup();
 }
 
-if ( !$grabonly ) {
+if ($black_list && %blacklist){
+   $bmatch = blacklist_write(\%blacklist,$black_list);
+   iprep_control($Config_info{'snort_control'},$Config_info{'IPRVersion'}) if $bmatch;
+}
+
+if ( !$grabonly && $hmatch ) {
     if ( $ips_policy ne "Disabled" ) {
         policy_set( $ips_policy, \%rules_hash );
     }
@@ -1936,10 +2011,6 @@ if ( !$grabonly ) {
           if $keep_rulefiles;
     }
     
-    if ($black_list && %blacklist){
-	blacklist_write(\%blacklist,$black_list);
-    }
-
     if ($sid_msg_map) {
         sid_msg( \%rules_hash, \%sid_msg_map, $enonly );
         sid_write( \%sid_msg_map, $sid_msg_map );
@@ -1963,13 +2034,13 @@ if ( !$grabonly ) {
         }
         print "\tDone\n" unless $Quiet;
     }
+}
 
-    if ( $sid_changelog && -f $Output ) {
-        changelog(
-            $sid_changelog, \%rules_hash, \%oldrules_hash,
-            \%blacklist, $ips_policy,    $enonly
-        );
-    }
+if ( $sid_changelog && -f $Output ) {
+    changelog(
+        $sid_changelog, \%rules_hash, \%oldrules_hash,
+        \%blacklist, $ips_policy, $enonly, $hmatch, $bmatch
+    );
 }
 
 print("Fly Piggy Fly!\n") if !$Quiet;
