@@ -23,7 +23,9 @@ Bug Fixes:
 
 New Features / changes:
 - Bug #105 - Removed Switch function as it is deprecated in > 5.12 perl
-- Unlisted Bug - Include IP Reputation capability
+- NEW - Include IP Reputation capability
+- NEW - Capability to use control socket for IP List reload
+- NEW - -P runtime flag to (process even if there is no new rules tarball)**
 
 v0.6.1 the Smoking Pig, revisited
 
