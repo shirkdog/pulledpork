@@ -20,12 +20,14 @@ Bug Fixes:
 - Unlisted Bug - Allow for escaped ; "\;" in references
 - Bug #121 - Update to allow for new etpro.com url and cert!
 - Bug #119 - Fixed regex [^\\]...
+- Bug #120 - Updated proxy code for better support and proper runtime load order
 
 New Features / changes:
 - Bug #105 - Removed Switch function as it is deprecated in > 5.12 perl
 - NEW - Include IP Reputation capability
 - NEW - Capability to use control socket for IP List reload
 - NEW - -P runtime flag to (process even if there is no new rules tarball)**
+- Bug #68 - Added basic surricata support
 
 v0.6.1 the Smoking Pig, revisited
 

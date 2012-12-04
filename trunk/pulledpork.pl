@@ -163,6 +163,7 @@ sub Help {
    -n Do everything other than download of new files (disablesid, etc)
    -o Where do you want me to put generic rules file?
    -p Path to your Snort binary
+   -P Process rules even if no new rules were downloaded
    -R When processing enablesid, return the rules to their ORIGINAL state
    -r Where do you want me to put the reference docs (xxxx.txt)
    -S What version of snort are you using (2.8.6 or 2.9.0) are valid values
@@ -373,6 +374,7 @@ sub rulefetch {
     my ( $oinkcode, $rule_file, $temp_path, $base_url ) = @_;
     print "Rules tarball download of $rule_file....\n" if ( !$Quiet && $rule_file ne "IPBLACKLIST" );
     print "IP Blacklist download of $base_url....\n" if ( !$Quiet && $rule_file eq "IPBLACKLIST" );
+    $Process = 1;
     $base_url = slash( 0, $base_url );
     my ($getrules_rule);
     if ( $Verbose && !$Quiet ) {
