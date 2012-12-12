@@ -590,7 +590,7 @@ sub read_rules {
 # There is a much cleaner way to do this, I just don't have the time to do it right now!
                             my ( $header, $options ) =
                               split( /^[^"]* \(/, $rule );
-                            my @optarray = split( /($<!\\);(\t|\s)*/, $options )
+                            my @optarray = split( /(?<!\\);(\t|\s)*/, $options )
                               if $options;
                             foreach my $option ( reverse(@optarray) ) {
                                 my ( $kw, $arg ) = split( /:/, $option )
@@ -640,7 +640,7 @@ sub read_rules {
                         my ( $header, $options ) = split( /^[^"]* \(/, $rule );
 
 # There is a much cleaner way to do this, I just don't have the time to do it right now!
-                        my @optarray = split( /($<!\\);(\t|\s)*/, $options )
+                        my @optarray = split( /(?<!\\);(\t|\s)*/, $options )
                           if $options;
                         foreach my $option ( reverse(@optarray) ) {
                             my ( $kw, $arg ) = split( /:/, $option ) if $option;
@@ -1040,10 +1040,10 @@ sub sid_msg {
             ( my $header, my $options ) =
               split( /^[^"]* \(\s*/, $$ruleshash{$k}{$k2}{'rule'} )
               if defined $$ruleshash{$k}{$k2}{'rule'};
-            my @optarray = split( /(?<!\\);(\t|\s)*/, $options ) if $options;
+            my @optarray = split( /(?<!\\);\s*/, $options ) if $options;
             foreach my $option ( reverse(@optarray) ) {
                 my ( $kw, $arg ) = split( /:/, $option ) if $option;
-                if ( $kw && $arg ) {
+		if ( $kw && $arg ) {
                     if ( $kw eq "gid" ) {
                         $gid = trim($arg);
                     }
@@ -1189,14 +1189,14 @@ sub sid_write {
 ## Pull the flowbits requirements from the currently enabled rules.
 sub flowbit_check {
     my ( $rule, $aref ) = @_;
-    my ( $header, $options ) = split( /^[^"]* \(/, $rule );
-    my @optarray = split( /($<!\\);(\t|\s)*/, $options ) if $options;
+    my ( $header, $options ) = split( /^[^"]* \(\s*/, $rule );
+    my @optarray = split( /(?<!\\);\s*/, $options ) if $options;
     foreach my $option ( reverse(@optarray) ) {
-        my ( $kw, $arg ) = split( /:/, $option ) if $option;
-        next unless ( $kw && $arg && $kw eq "flowbits" );
+	my ( $kw, $arg ) = split( /:/, $option ) if $option;
+	next unless ( $kw && $arg && $kw eq "flowbits" );
         my ( $flowact, $flowbit ) = split( /,/, $arg );
         next unless $flowact =~ /is(not)?set/i;
-        push( @$aref, trim($flowbit) );
+	push( @$aref, trim($flowbit) );
     }
 }
 
@@ -1961,11 +1961,6 @@ if ( !$grabonly && $hmatch ) {
         rule_category_write( \%rules_hash, $rule_file_path, $enonly )
           if $keep_rulefiles;
     }
-    #if ( $Sostubs && !$Textonly ) {
-    #    rule_write( \%rules_hash, $Sostubs, 3, $enonly ) unless $keep_rulefiles;
-    #    rule_category_write( \%rules_hash, $rule_file_path, 3, $enonly )
-    #      if $keep_rulefiles;
-    #}
     
     if ($sid_msg_map) {
         sid_msg( \%rules_hash, \%sid_msg_map, $enonly );
