@@ -37,6 +37,8 @@ New Features / changes:
 - NEW - Numerous sub rewrites to allow for better performance
 - NEW - New sid-msg.map format for barnyard 2.2+ gid || sid || rev || msg || ref1 || ref2 || etc
 - NEW - SO rule categories are now prepended with VRT-SO
+- NEW - More advanced sid-msg.map structure (for use with by2.2+) and backward compatibility
+		This allows for better mapping of gid:sid:rev in the database!
 
 v0.6.1 the Smoking Pig, revisited
 
