@@ -71,6 +71,7 @@ my %blacklist	  = ();
 my %oldrules_hash = ();
 my %sid_msg_map   = ();
 my %sidmod        = ();
+my $categories 	  = ();
 undef %rules_hash;
 undef %oldrules_hash;
 undef %sid_msg_map;
@@ -520,7 +521,7 @@ sub read_rules {
     print "\t" if ( $Verbose && !$Quiet );
     print "Reading rules...\n" if !$Quiet;
     my @local_rules = split( /,/, $extra_rules );
-    foreach (@local_rules) {
+    foreach (@local_rules) { #First let's read our local rules and assign a gid of 0
         $extra_rules = slash( 0, $_ );
         if ( $extra_rules && -f $extra_rules ) {
             open( DATA, "$extra_rules" )
@@ -589,7 +590,7 @@ sub read_rules {
 # There is a much cleaner way to do this, I just don't have the time to do it right now!
                             my ( $header, $options ) =
                               split( /^[^"]* \(/, $rule );
-                            my @optarray = split( /;(\t|\s)?/, $options )
+                            my @optarray = split( /($<!\\);(\t|\s)*/, $options )
                               if $options;
                             foreach my $option ( reverse(@optarray) ) {
                                 my ( $kw, $arg ) = split( /:/, $option )
@@ -609,12 +610,11 @@ sub read_rules {
                         elsif ( $rule =~ /^\s*(alert|pass|drop)/ ) {
                             $$hashref{ trim($gid) }{ trim($sid) }{'state'} = 1;
                         }
-                        $$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
                         $file =~ s/\.rules//;
-
-                        #$$hashref{ trim($gid) }{ trim($sid) }{$file} = 1;
+			$$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
                         $$hashref{ trim($gid) }{ trim($sid) }{'category'} =
                           $file;
+			push @ {$categories->{$file}{trim($gid)}},($sid);
                     }
                 }
             }
@@ -640,7 +640,7 @@ sub read_rules {
                         my ( $header, $options ) = split( /^[^"]* \(/, $rule );
 
 # There is a much cleaner way to do this, I just don't have the time to do it right now!
-                        my @optarray = split( /;(\t|\s)?/, $options )
+                        my @optarray = split( /($<!\\);(\t|\s)*/, $options )
                           if $options;
                         foreach my $option ( reverse(@optarray) ) {
                             my ( $kw, $arg ) = split( /:/, $option ) if $option;
@@ -1040,19 +1040,19 @@ sub sid_msg {
             ( my $header, my $options ) =
               split( /^[^"]* \(\s*/, $$ruleshash{$k}{$k2}{'rule'} )
               if defined $$ruleshash{$k}{$k2}{'rule'};
-            my @optarray = split( /[^\\];(\t|\s)?/, $options ) if $options;
+            my @optarray = split( /(?<!\\);(\t|\s)*/, $options ) if $options;
             foreach my $option ( reverse(@optarray) ) {
                 my ( $kw, $arg ) = split( /:/, $option ) if $option;
                 if ( $kw && $arg ) {
                     if ( $kw eq "gid" ) {
-                        $gid = $arg;
+                        $gid = trim($arg);
                     }
                     elsif ( $kw eq "reference" ) {
-                        push( @{ $$sidhash{"$k2"}{"refs"} }, $arg ) if $arg;
+                        push( @{ $$sidhash{"$k2"}{"refs"} }, trim($arg) ) if $arg;
                     }
                     elsif ( $kw eq "msg" ) {
                         $arg =~ s/"//g;
-                        $msg = $arg;
+                        $msg = trim($arg);
                     }
                 }
             }
@@ -1071,66 +1071,32 @@ sub sid_msg {
 
 ## write the rules files to unique output files!
 sub rule_category_write {
-    my ( $hashref, $filepath, $gid, $enonly ) = @_;
+    my ( $hashref, $filepath, $enonly ) = @_;
     print "Writing rules to unique destination files....\n" if !$Quiet;
     print "\tWriting rules to $filepath\n"                  if !$Quiet;
 
-    #open( WRITE, ">$file" ) || croak "Unable to write $file - $!\n";
     my %hcategory = ();
     my $file;
-    if ( $gid == 1 ) {
-        foreach my $k ( sort keys %$hashref ) {
-            foreach my $k2 ( sort keys %{ $$hashref{$k} } ) {
-                next unless defined $$hashref{$k}{$k2}{'rule'};
-                next unless defined $$hashref{$k}{$k2}{'category'};
-                $file = $$hashref{$k}{$k2}{'category'} . ".rules";
-                if ( -f "$filepath/$file" && defined $hcategory{$file} ) {
-                    open( WRITE, ">>$filepath$file" );
-                }
-                else {
-                    open( WRITE, ">$filepath$file" );
-                    $hcategory{$file} = 1;
-                    print "\tCreating $filepath$file\n" if !$Quiet && $Verbose;
-                }
-                if (   $enonly
-                    && $$hashref{$k}{$k2}{'rule'} =~ /^\s*(alert|drop|pass)/ )
-                {
-                    print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
-                      if ( $k ne 0 ) && ( $k ne 3 );
-                }
-                elsif ( !$enonly ) {
-                    print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
-                      if ( $k ne 0 ) && ( $k ne 3 );
-                }
-                close(WRITE);
-            }
-        }
+    foreach my $k (sort keys %$categories){
+	my $file = "$k.rules";
+	open( WRITE,'>',"$filepath$file" );
+	print WRITE "\n\n# ----- Begin $k Rules Category ----- #\n";
+	foreach my $k2 (sort keys %{$categories->{$k}}) {
+	    print WRITE "\n# -- Begin GID:$k2 Based Rules -- #\n\n";
+	    foreach my $k3 (sort @{$categories->{$k}{$k2}}){
+		next unless defined $$hashref{$k2}{$k3}{'rule'};
+		if (   $enonly
+		&& $$hashref{$k2}{$k3}{'rule'} =~ /^\s*(alert|drop|pass)/ )
+		{
+		    print WRITE $$hashref{$k2}{$k3}{'rule'} . "\n";
+		}
+		elsif ( !$enonly ) {
+		    print WRITE $$hashref{$k2}{$k3}{'rule'} . "\n";
+		}
+	    }
+	}
+	close(WRITE);
     }
-    elsif ( $gid == 3 ) {
-        foreach my $k2 ( sort keys %{ $$hashref{$gid} } ) {
-            next unless defined $$hashref{$gid}{$k2}{'rule'};
-            $file = $$hashref{$gid}{$k2}{'category'} . "_so.rules";
-            if ( -f "$filepath/$file" && $hcategory{$file} == 1 ) {
-                open( WRITE, ">>$filepath$file" );
-            }
-            else {
-                open( WRITE, ">$filepath$file" );
-                $hcategory{$file} = 1;
-                print "\tCreating $filepath$file\n" if !$Quiet && $Verbose;
-            }
-            if (   $enonly
-                && $$hashref{$gid}{$k2}{'rule'} =~ /^\s*(alert|drop|pass)/ )
-            {
-                print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
-            }
-            elsif ( !$enonly ) {
-                print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
-            }
-            close(WRITE);
-        }
-    }
-
-    #close(WRITE);
     print "\tDone\n" if !$Quiet;
 }
 
@@ -1178,39 +1144,27 @@ sub blacklist_write{
 
 ## write the rules to a single output file!
 sub rule_write {
-    my ( $hashref, $file, $gid, $enonly ) = @_;
+    my ( $hashref, $file, $enonly ) = @_;
     print "Writing $file....\n" if !$Quiet;
-    open( WRITE, ">$file" ) || croak "Unable to write $file - $!\n";
-    if ( $gid == 1 ) {
-        foreach my $k ( sort keys %$hashref ) {
-            foreach my $k2 ( sort keys %{ $$hashref{$k} } ) {
-                next unless defined $$hashref{$k}{$k2}{'rule'};
-                if (   $enonly
-                    && $$hashref{$k}{$k2}{'rule'} =~ /^\s*(alert|drop|pass)/ )
-                {
-                    print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
-                      if ( $k ne 0 ) && ( $k ne 3 );
-                }
-                elsif ( !$enonly ) {
-                    print WRITE $$hashref{$k}{$k2}{'rule'} . "\n"
-                      if ( $k ne 0 ) && ( $k ne 3 );
-                }
-            }
-        }
-    }
-    elsif ( $gid == 3 ) {
-        foreach my $k2 ( sort keys %{ $$hashref{$gid} } ) {
-            next unless defined $$hashref{$gid}{$k2}{'rule'};
-            if (   $enonly
-                && $$hashref{$gid}{$k2}{'rule'} =~ /^\s*(alert|drop|pass)/ )
-            {
-                print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
-            }
-            elsif ( !$enonly ) {
-                print WRITE $$hashref{$gid}{$k2}{'rule'} . "\n";
-            }
-        }
-    }
+    open( WRITE,'>',"$file" ) || croak "Unable to write $file - $!\n";
+    #if ( $gid == 1 ) {
+	foreach my $k (sort keys %$categories){
+	    print WRITE "\n\n# ----- Begin $k Rules Category ----- #\n";
+	    foreach my $k2 (sort keys %{$categories->{$k}}) {
+		print WRITE "\n# -- Begin GID:$k2 Based Rules -- #\n\n";
+		foreach my $k3 (sort @{$categories->{$k}{$k2}}){
+		    next unless defined $$hashref{$k2}{$k3}{'rule'};
+		    if (   $enonly
+                    && $$hashref{$k2}{$k3}{'rule'} =~ /^\s*(alert|drop|pass)/ )
+		    {
+			print WRITE $$hashref{$k2}{$k3}{'rule'} . "\n";
+		    }
+		    elsif ( !$enonly ) {
+			print WRITE $$hashref{$k2}{$k3}{'rule'} . "\n";
+		    }
+		}
+	    }
+	}
     close(WRITE);
     print "\tDone\n" if !$Quiet;
 }
@@ -1236,7 +1190,7 @@ sub sid_write {
 sub flowbit_check {
     my ( $rule, $aref ) = @_;
     my ( $header, $options ) = split( /^[^"]* \(/, $rule );
-    my @optarray = split( /;(\t|\s)?/, $options ) if $options;
+    my @optarray = split( /($<!\\);(\t|\s)*/, $options ) if $options;
     foreach my $option ( reverse(@optarray) ) {
         my ( $kw, $arg ) = split( /:/, $option ) if $option;
         next unless ( $kw && $arg && $kw eq "flowbits" );
@@ -2003,15 +1957,15 @@ if ( !$grabonly && $hmatch ) {
       if ( !$Quiet );
 
     if ($Output) {
-        rule_write( \%rules_hash, $Output, 1, $enonly ) unless $keep_rulefiles;
-        rule_category_write( \%rules_hash, $rule_file_path, 1, $enonly )
+        rule_write( \%rules_hash, $Output, $enonly ) unless $keep_rulefiles;
+        rule_category_write( \%rules_hash, $rule_file_path, $enonly )
           if $keep_rulefiles;
     }
-    if ( $Sostubs && !$Textonly ) {
-        rule_write( \%rules_hash, $Sostubs, 3, $enonly ) unless $keep_rulefiles;
-        rule_category_write( \%rules_hash, $rule_file_path, 3, $enonly )
-          if $keep_rulefiles;
-    }
+    #if ( $Sostubs && !$Textonly ) {
+    #    rule_write( \%rules_hash, $Sostubs, 3, $enonly ) unless $keep_rulefiles;
+    #    rule_category_write( \%rules_hash, $rule_file_path, 3, $enonly )
+    #      if $keep_rulefiles;
+    #}
     
     if ($sid_msg_map) {
         sid_msg( \%rules_hash, \%sid_msg_map, $enonly );
