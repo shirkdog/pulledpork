@@ -585,7 +585,7 @@ sub read_rules {
                             $gid =~ s/gid:\s*//;
                         }
                         else { $gid = 1; }
-                        if ( $rule =~ /flowbits:\s*(un)?set/i ) {
+                        if ( $rule =~ /flowbits:\s*((un)?set(x)?|toggle)/i ) {
 
 # There is a much cleaner way to do this, I just don't have the time to do it right now!
                             my ( $header, $options ) =
@@ -598,7 +598,7 @@ sub read_rules {
                                 next
                                   unless ( $kw && $arg && $kw eq "flowbits" );
                                 my ( $flowact, $flowbit ) = split( /,/, $arg );
-                                next unless $flowact =~ /^\s*(un)?set/i;
+                                next unless $flowact =~ /^\s*((un)?set(x)?|toggle)/i;
                                 $$hashref{ trim($gid) }{ trim($sid) }
                                   { trim($flowbit) } = 1;
                             }
@@ -611,6 +611,7 @@ sub read_rules {
                             $$hashref{ trim($gid) }{ trim($sid) }{'state'} = 1;
                         }
                         $file =~ s/\.rules//;
+			$file = "VRT-SO-$file" if $gid == 3;
 			$$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
                         $$hashref{ trim($gid) }{ trim($sid) }{'category'} =
                           $file;
@@ -636,7 +637,7 @@ sub read_rules {
                         $gid =~ s/gid:\s*//;
                     }
                     else { $gid = 1; }
-                    if ( $rule =~ /flowbits:\s*(un)?set/ ) {
+                    if ( $rule =~ /flowbits:\s*((un)?set(x)?|toggle)/ ) {
                         my ( $header, $options ) = split( /^[^"]* \(/, $rule );
 
 # There is a much cleaner way to do this, I just don't have the time to do it right now!
@@ -646,7 +647,7 @@ sub read_rules {
                             my ( $kw, $arg ) = split( /:/, $option ) if $option;
                             next unless ( $kw && $arg && $kw eq "flowbits" );
                             my ( $flowact, $flowbit ) = split( /,/, $arg );
-                            next unless $flowact =~ /^\s*(un)?set/i;
+                            next unless $flowact =~ /^\s*((un)?set(x)?|toggle)/i;
                             $$hashref{ trim($gid) }{ trim($sid) }
                               { trim($flowbit) } = 1;
                         }
@@ -1187,6 +1188,7 @@ sub sid_write {
 }
 
 ## Pull the flowbits requirements from the currently enabled rules.
+# TODO: add extended functionality for setx, toggle and groups (Q1 of 2013)
 sub flowbit_check {
     my ( $rule, $aref ) = @_;
     my ( $header, $options ) = split( /^[^"]* \(\s*/, $rule );
