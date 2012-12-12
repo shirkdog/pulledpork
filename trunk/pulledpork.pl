@@ -919,8 +919,9 @@ sub modify_state {
                                 }
 
                                 # Return State!
-                                if (   exists $$hashref{$gid}{$sid}
-                                    && $$hashref{$gid}{$sid}{'state'} == 0
+				next unless $$hashref{$gid}{$sid};
+				next unless $$hashref{$gid}{$sid}{rule};
+				if (  $$hashref{$gid}{$sid}{'state'} && $$hashref{$gid}{$sid}{'state'} == 0
                                     && $$hashref{$gid}{$sid}{'rule'} =~
                                     /^\s*(alert|drop|pass)/
                                     && $rstate )
@@ -932,8 +933,7 @@ sub modify_state {
                                         print "\tRe-Disabled $gid:$sid\n";
                                     }
                                 }
-                                elsif (exists $$hashref{$gid}{$sid}
-                                    && $$hashref{$gid}{$sid}{'state'} == 1
+                                elsif ( $$hashref{$gid}{$sid}{'state'} && $$hashref{$gid}{$sid}{'state'} == 1
                                     && $$hashref{$gid}{$sid}{'rule'} =~
                                     /^\s*#+\s*(alert|drop|pass)/
                                     && $rstate )
