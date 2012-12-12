@@ -21,6 +21,7 @@ Bug Fixes:
 - Bug #121 - Update to allow for new etpro.com url and cert!
 - Bug #119 - Fixed regex [^\\], should have been negative look behind (?<!\\)
 - Bug #120 - Updated proxy code for better support and proper runtime load order
+- Unlisted Bug - Account for multiple flowbits that are separated using & (flowbits:isset,flowbit1&flowbit2;)
 
 New Features / changes:
 - Bug #105 - Removed Switch function as it is deprecated in > 5.12 perl
