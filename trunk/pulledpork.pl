@@ -1196,8 +1196,8 @@ sub flowbit_check {
 	next unless ( $kw && $arg && $kw eq "flowbits" );
         my ( $flowact, $flowbit ) = split( /,/, $arg );
         next unless $flowact =~ /is(not)?set/i;
-	push( @$aref, trim($flowbit) ) if $flowbit !~ /&/;
-	push( @$aref, split(/&/,trim($flowbit))) if $flowbit =~ /&/;
+	push( @$aref, trim($flowbit) ) if $flowbit !~ /(&|\|)/;
+	push( @$aref, split(/(&|\|)/,trim($flowbit))) if $flowbit =~ /(&|\|)/;
     }
 }
 
