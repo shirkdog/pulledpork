@@ -21,7 +21,8 @@ Bug Fixes:
 - Bug #121 - Update to allow for new etpro.com url and cert!
 - Bug #119 - Fixed regex [^\\], should have been negative look behind (?<!\\)
 - Bug #120 - Updated proxy code for better support and proper runtime load order
-- Unlisted Bug - Account for multiple flowbits that are separated using & (flowbits:isset,flowbit1&flowbit2;)
+- Unlisted Bug - Account for multiple flowbits that are separated using &| operators
+		(flowbits:isset,flowbit1&flowbit2;)(flowbits:isset,flowbit1|flowbit2;)
 
 New Features / changes:
 - Bug #105 - Removed Switch function as it is deprecated in > 5.12 perl
@@ -35,6 +36,7 @@ New Features / changes:
 		specified at runtime.
 - NEW - Numerous sub rewrites to allow for better performance
 - NEW - New sid-msg.map format for barnyard 2.2+ gid || sid || rev || msg || ref1 || ref2 || etc
+- NEW - SO rule categories are now prepended with VRT-SO
 
 v0.6.1 the Smoking Pig, revisited
 
