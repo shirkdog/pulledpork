@@ -1045,7 +1045,7 @@ sub sid_msg {
                 my ( $kw, $arg ) = split( /:/, $option ) if $option;
 		my $gid = $k;
 		$gid = 1 if $k == 0;
-		next unless ($kw && $arg && $kw =~ /(reference|msg|rev)/);
+		next unless ($kw && $arg && $kw =~ /(reference|msg|rev|classtype|priority)/);
 		if ( $kw eq "reference" ) {
                         push( @{ $$sidhash{$gid}{$k2}{refs} }, trim($arg));
                 } elsif ($kw eq "msg"){
@@ -1053,6 +1053,10 @@ sub sid_msg {
 		    $$sidhash{$gid}{$k2}{msg} = trim($arg);
 		} elsif ($kw eq "rev"){
 		    $$sidhash{$gid}{$k2}{rev} = trim($arg);
+		} elsif ($kw eq "classtype") {
+		    $$sidhash{$gid}{$k2}{classtype} = trim($arg);
+		} elsif ($kw eq "priority") {
+		    $$sidhash{$gid}{$k2}{priority} = trim($arg);
 		}
             }
         }
@@ -1171,6 +1175,14 @@ sub sid_write {
 	foreach my $k2 ( sort keys $$hashref{$k}){
 	    if ($sid_msg_version == 2){
 		print WRITE "$k || $k2 || $hashref->{$k}{$k2}{rev} || ";
+		if ($hashref->{$k}{$k2}{classtype}) {
+		    print WRITE "$hashref->{$k}{$k2}{classtype} || ";
+		}
+		else { print WRITE "NOCLASS || "; }
+		if ($hashref->{$k}{$k2}{priority}) {
+		    print WRITE "$hashref->{$k}{$k2}{priority} || ";
+		}
+		else { print WRITE "0 || "; }
 	    } else {
 		print WRITE "$k2 || ";
 	    }
@@ -1180,13 +1192,6 @@ sub sid_write {
 	    }
 	    print WRITE "\n";
 	}
-	
-        #next unless defined $$hashref{$k}{'msg'};
-        #print WRITE $k . " || " . $$hashref{$k}{'msg'};
-        #foreach ( @{ $$hashref{$k}{'refs'} } ) {
-        #    print WRITE " || " . $_;
-        #}
-        #print WRITE "\n";
     }
     close(WRITE);
     print "\tDone\n" if !$Quiet;

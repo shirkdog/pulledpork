@@ -12,9 +12,10 @@ thoroughly so that you don't overlook something!
  * Capability to include your local.rules in sid-msg.map file
  * Capability to pull rules tarballs from custom urls
  * Complete Shared Object support
+ * Complete IP Reputation List support
  * Capability to download multiple disparate rulesets at once
  * Maintains accurate changelog
- * Capability to HUP processes after rules download
+ * Capability to HUP processes after rules download and process
  * Aids in tuning of rulesets
  * Verbose output so that you know EXACTLY what is happening
  * Minimal Perl Module dependencies
@@ -82,7 +83,7 @@ PulledPork.conf file.  Specifically for minimal function, i.e. NO Shared Object 
 at a minimum the rule_file, oinkcode, temp_path, tar_path, and rule_path values.  Below are some examples of this. 
 
 ./pulledpork.pl -o /usr/local/etc/snort/rules/ -O 12345667778523452344234234  \
--f http://www.snort.org/reg-rules/snortrules-snapshot-2860.tar.gz -i disablesid.conf -T -H
+-u http://www.snort.org/reg-rules/snortrules-snapshot-2860.tar.gz -i disablesid.conf -T -H
 
 The above will fetch the snortrules-snapshot-2860.tar.gz tarball from snort.org using the specified oinkcode of 
 12345667778523452344234234 and put the rules files from that tarball into the output path of 
