@@ -23,6 +23,9 @@ Bug Fixes:
 - Bug #120 - Updated proxy code for better support and proper runtime load order
 - Unlisted Bug - Account for multiple flowbits that are separated using &| operators
 		(flowbits:isset,flowbit1&flowbit2;)(flowbits:isset,flowbit1|flowbit2;)
+- Bug #126 - Removed Switch usage
+- Bug #129 - Fixed to allow for -n usage (in conjunction with -P) when an ip list is used also
+- Unlisted Bug - Fixed to allow for proper -P usage
 
 New Features / changes:
 - Bug #105 - Removed Switch function as it is deprecated in > 5.12 perl
