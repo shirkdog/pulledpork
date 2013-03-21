@@ -386,7 +386,7 @@ sub rulefetch {
           getstore( "https://www.snort.org/reg-rules/$rule_file/$oinkcode",
             $temp_path . $rule_file );
     }
-    elsif ($rule_file eq "IPBLACKLIST"){
+    elsif ($rule_file eq "IPBLACKLIST" && !$NoDownload){
 	my $rand = rand(1000);
 	$getrules_rule =
 	  getstore( $base_url, $temp_path . "$rand-black_list.rules");
@@ -997,6 +997,7 @@ sub iprep_control {
     my ($bin,$path) = @_;
     return unless -f $bin;
     my $cmd = "$bin $path 1361";
+    return unless (-f $bin && -f $path);
     print "Issuing reputation socket reload command\n";
     print "Command: $cmd\n" if $Verbose;
     open(FH,"$cmd 2>&1 |");
@@ -1871,7 +1872,8 @@ if ( @base_url && -d $temp_path ) {
     if ( $NoDownload && !$grabonly ) {
         foreach (@base_url) {
             my ( $base_url, $rule_file ) = split( /\|/, $_ );
-            if ( $base_url =~ /[^labs]\.snort\.org/i ) {
+	    next if $rule_file =~ /IPBLACKLIST/;
+	    if ( $base_url =~ /[^labs]\.snort\.org/i ) {
                 $prefix = "VRT-";
                 unless ( $rule_file =~ /snortrules-snapshot-\d{4}\.tar\.gz/ ) {
                     croak(
@@ -1883,9 +1885,9 @@ if ( @base_url && -d $temp_path ) {
                     $rule_file = "snortrules-snapshot-$Snortv.tar.gz";
                 }
             }
+	    croak "file $temp_path/$rule_file does not exist!\n"
+              unless (-f "$temp_path/$rule_file");
             $prefix = "ET-" if $base_url =~ /(emergingthreats.net|emergingthreatspro.com)/;
-            croak "file $temp_path/$rule_file does not exist!\n"
-              unless -f "$temp_path/$rule_file";
             rule_extract(
                 $rule_file,    $temp_path, $Distro,
                 $arch,         $Snort,     $Sorules,
@@ -1893,7 +1895,7 @@ if ( @base_url && -d $temp_path ) {
             ) if !$grabonly;
         }
     }
-    if ( $Output && !$grabonly && $hmatch) {
+    if ( $Output && !$grabonly && ($hmatch || $Process)) {
         read_rules( \%rules_hash, "$temp_path" . "tha_rules/", $local_rules );
     } 
     if (   $Sorules
@@ -1912,7 +1914,7 @@ if ( @base_url && -d $temp_path ) {
 }
 else { Help("Check your oinkcode, temp path and freespace!"); }
 
-if ( !$grabonly && $hmatch) {
+if ($Output && !$grabonly && ($hmatch || $Process)) {
     if ( $sid_changelog && -f $Output && !$keep_rulefiles ) {
         read_rules( \%oldrules_hash, "$Output", $local_rules );
     }
@@ -1925,12 +1927,12 @@ if ( -d $temp_path ) {
     temp_cleanup();
 }
 
-if ($black_list && %blacklist){
+if ($black_list && %blacklist && !$NoDownload){
    $bmatch = blacklist_write(\%blacklist,$black_list);
    iprep_control($Config_info{'snort_control'},$Config_info{'IPRVersion'}) if $bmatch;
 }
 
-if ( !$grabonly && $hmatch ) {
+if ($Output && !$grabonly && ($hmatch || $Process)) {
     if ( $ips_policy ne "Disabled" ) {
         policy_set( $ips_policy, \%rules_hash );
     }
