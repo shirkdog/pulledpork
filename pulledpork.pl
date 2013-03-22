@@ -542,18 +542,20 @@ sub read_rules {
                         elsif ( $row !~ /\\$/ && $trk == 1 )
                         {    # last line of multiline rule here
                             $record .= $row;
-                            if ( $record =~ /sid:\s*\d+/ ) {
+                            if ( $record =~ /sid:\s*\d+\s*;/i ) {
                                 $sid = $&;
                                 $sid =~ s/sid:\s*//;
+				$sid =~ s/\s*;//;
                                 $$hashref{0}{ trim($sid) }{'rule'} = $record;
                             }
                             $trk = 0;
                             undef $record;
                         }
                         else {
-                            if ( $row =~ /sid:\s*\d+/ ) {
+                            if ( $row =~ /sid:\s*\d+\s*;/i ) {
                                 $sid = $&;
                                 $sid =~ s/sid:\s*//;
+				$sid =~ s/\s*;//;
                                 $$hashref{0}{ trim($sid) }{'rule'} = $row;
                             }
                             $trk = 0;
@@ -576,9 +578,10 @@ sub read_rules {
                 $rule = trim($rule);
                 if ( $rule =~ /^\s*#*\s*(alert|drop|pass)/i ) {
 
-                    if ( $rule =~ /sid:\s*\d+/i ) {
+                    if ( $rule =~ /sid:\s*\d+\s*;/i ) {
                         $sid = $&;
                         $sid =~ s/sid:\s*//;
+			$sid =~ s/\s*;//;
                         if ( $rule =~ /gid:\s*\d+/i ) {
                             $gid = $&;
                             $gid =~ s/gid:\s*//;
@@ -1044,7 +1047,7 @@ sub sid_msg {
               if defined $$ruleshash{$k}{$k2}{'rule'};
             my @optarray = split( /(?<!\\);\s*/, $options ) if $options;
             foreach my $option ( reverse(@optarray) ) {
-                my ( $kw, $arg ) = split( /:/, $option ) if $option;
+                my ( $kw, $arg ) = split( /:\s*/, $option ) if $option;
 		my $gid = $k;
 		$gid = 1 if $k == 0;
 		next unless ($kw && $arg && $kw =~ /(reference|msg|rev|classtype|priority)/);
