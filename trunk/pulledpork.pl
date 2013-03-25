@@ -1807,6 +1807,7 @@ if ( @base_url && -d $temp_path ) {
     if ( !$NoDownload ) {
 
         foreach (@base_url) {
+	    undef $Hash if ($Hash && $Hash == 2);
             my ( $base_url, $rule_file, $oinkcode ) = split( /\|/, $_ );
             croak
 "You need to define an oinkcode, please review the rule_url section of the pulledpork config file!\n"
@@ -1845,8 +1846,8 @@ if ( @base_url && -d $temp_path ) {
 	    
 	    $prefix = "Custom-" unless $prefix;
 
-            $Hash = 1 unless $base_url =~ /(emergingthreats|[^labs]\.snort\.org)/;
-	    $Hash = 1 if $rule_file eq "IPBLACKLIST";
+            $Hash = 2 unless $base_url =~ /(emergingthreats|[^labs]\.snort\.org)/;
+	    $Hash = 2 if $rule_file eq "IPBLACKLIST";
 
             if ( !$Hash ) {
                 $md5 = md5file( $oinkcode, $rule_file, $temp_path, $base_url );
