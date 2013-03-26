@@ -374,7 +374,7 @@ sub rulefetch {
     my ( $oinkcode, $rule_file, $temp_path, $base_url ) = @_;
     print "Rules tarball download of $rule_file....\n" if ( !$Quiet && $rule_file ne "IPBLACKLIST" );
     print "IP Blacklist download of $base_url....\n" if ( !$Quiet && $rule_file eq "IPBLACKLIST" );
-    $Process = 1;
+    $Process = 2;
     $base_url = slash( 0, $base_url );
     my ($getrules_rule);
     if ( $Verbose && !$Quiet ) {
@@ -1808,6 +1808,7 @@ if ( @base_url && -d $temp_path ) {
 
         foreach (@base_url) {
 	    undef $Hash if ($Hash && $Hash == 2);
+	    undef $Process if ($Process && $Process ==2);
             my ( $base_url, $rule_file, $oinkcode ) = split( /\|/, $_ );
             croak
 "You need to define an oinkcode, please review the rule_url section of the pulledpork config file!\n"
