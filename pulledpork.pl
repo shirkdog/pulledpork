@@ -258,9 +258,8 @@ sub rule_extract {
     foreach (@files) {
         my $filename   = $_->name;
         my $singlefile = $filename;
-
-        if ( $filename =~ /^rules\/.*\.rules$/ ) {
-            $singlefile =~ s/^rules\///;
+        if ( $filename =~ /^(community-)?rules\/.*\.rules$/ ) {
+            $singlefile =~ s/^(community-)?rules\///;
             $tar->extract_file( $filename,
                 $temp_path . "/tha_rules/$prefix" . $singlefile );
             print "\tExtracted: /tha_rules/$prefix$singlefile\n"
@@ -460,7 +459,7 @@ sub md5file {
           getstore( "https://www.snort.org/reg-rules/$rule_file.md5/$oinkcode",
             $temp_path . $rule_file . ".md5" );
     }
-    elsif ( $base_url =~ /(emergingthreats\.net|emergingthreatspro\.com)/i ) {
+    elsif ( $base_url =~ /(emergingthreats\.net|emergingthreatspro\.com|snort-org.*community)/i ) {
         $getrules_md5 = getstore(
             "$base_url/$rule_file" . ".md5",
             $temp_path . $rule_file . ".md5"
@@ -1844,10 +1843,13 @@ if ( @base_url && -d $temp_path ) {
 		    $base_url .= "$oinkcode/$Snort/";
 		}
             }
+	    elsif ( $base_url =~ /snort-org.+community/ ){
+		$prefix = "Snort-Community-"
+	    }
 	    
 	    $prefix = "Custom-" unless $prefix;
 
-            $Hash = 2 unless $base_url =~ /(emergingthreats|[^labs]\.snort\.org)/;
+            $Hash = 2 unless $base_url =~ /(emergingthreats|[^labs]\.snort\.org)|snort-org/;
 	    $Hash = 2 if $rule_file eq "IPBLACKLIST";
 
             if ( !$Hash ) {
@@ -1893,6 +1895,7 @@ if ( @base_url && -d $temp_path ) {
 	    croak "file $temp_path/$rule_file does not exist!\n"
               unless (-f "$temp_path/$rule_file");
             $prefix = "ET-" if $base_url =~ /(emergingthreats.net|emergingthreatspro.com)/;
+	    $prefix = "Snort-Community-" if $base_url =~ /snort-org.+community/;
             rule_extract(
                 $rule_file,    $temp_path, $Distro,
                 $arch,         $Snort,     $Sorules,
