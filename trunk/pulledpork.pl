@@ -41,7 +41,7 @@ use Data::Dumper;
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
-my $VERSION = "PulledPork v0.6.2dev the Cigar Pig <////~";
+my $VERSION = "PulledPork v0.7.0 - Swine Flu!";
 my $ua      = LWP::UserAgent->new;
 
 my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
@@ -128,7 +128,7 @@ sub Help {
     if ($msg) { print "\nERROR: $msg\n"; }
 
     print <<__EOT;
-  Usage: $0 [-dEgHklnRTVvv? -help] -c <config filename> -o <rule output path>
+  Usage: $0 [-dEgHklnRTPVvv? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
@@ -191,7 +191,7 @@ sub pulledpork {
      `----,\\    )
       `--==\\\\  /    $VERSION
        `--==\\\\/
-     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2012 JJ Cummings
+     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2013 JJ Cummings
   \@_/        /  66\\_  cummingsj\@gmail.com
     |    \\   \\   _(\")
      \\   /-| ||'--'  Rules give me wings!
@@ -1533,7 +1533,7 @@ if ( $Verbose && !$Quiet ) {
 if ( exists $Config_info{'version'} ) {
     croak "You are not using the current version of pulledpork.conf!\n",
       "Please use the version of pulledpork.conf that shipped with $VERSION!\n\n"
-      if $Config_info{'version'} ne "0.6.1";
+      if $Config_info{'version'} ne "0.7.0";
 }
 else {
     croak
