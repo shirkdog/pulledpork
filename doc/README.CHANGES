@@ -1,6 +1,6 @@
 PulledPork Changelog
 
-V0.6.2 the Cigar Pig
+V0.7.0 Swine Flu
 
 Bug Fixes:
 - Bug #79 - Fixed race condition that did not allow for disabled rules to be modified using modifysid
@@ -45,6 +45,8 @@ New Features / changes:
 - NEW - Rewrote the way that extraction is handled, to properly support a single rules tarball being
 		updated.  This includes how md5 validation is done and in what order.  If a single
 		file is updated then they are all extracted and processed.
+- NEW - Bumped conf version to 7.0 and named this candidate Swine Flu		
+
 
 v0.6.1 the Smoking Pig, revisited
 

@@ -24,8 +24,7 @@ thoroughly so that you don't overlook something!
 
 -=Command Usage Reference=-
 
-  Usage: $ ./pulledpork.pl -c ../pulledpork.conf -vT?
-  Usage: ./pulledpork.pl [-dEgHklnRTVvv? -help] -c <config filename> -o <rule output path>
+  Usage: ./pulledpork.pl [-dEgHklnRTPVvv? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
@@ -40,11 +39,12 @@ thoroughly so that you don't overlook something!
    -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
    -D What Distro are you running on, for the so_rules
       For latest supported options see http://www.snort.org/snort-rules/shared-object-rules
-      Valid Distro Types=Debian-Lenny, Ubuntu-6.01.1, Ubuntu-8.04
-		CentOS-4.6, Centos-4-8, CentOS-5.0, Centos-5-4
-		FC-5, FC-9, FC-11, FC-12, RHEL-5.0
-		FreeBSD-6.3, FreeBSD-7-2, FreeBSD-7-3, FreeBSD-7.0, FreeBSD-8-0, FreeBSD-8-1
-		OpenSUSE-11-3
+      Valid Distro Types:
+		Debian-5-0, Debian-6-0, Ubuntu-8.04, Ubuntu-10-4
+		Centos-4-8, Centos-5-4,	FC-12, FC-14, RHEL-5-5, RHEL-6-0
+		FreeBSD-7-3, FreeBSD-8-1
+		OpenBSD-4-8
+		Slackware-13-1
    -e Where the enablesid config file lives.
    -E Write ONLY the enabled rules to the output files.
    -g grabonly (download tarball rule file(s) and do NOT process)
@@ -61,19 +61,17 @@ thoroughly so that you don't overlook something!
    -n Do everything other than download of new files (disablesid, etc)
    -o Where do you want me to put generic rules file?
    -p Path to your Snort binary
+   -P Process rules even if no new rules were downloaded
    -R When processing enablesid, return the rules to their ORIGINAL state
    -r Where do you want me to put the reference docs (xxxx.txt)
    -S What version of snort are you using (2.8.6 or 2.9.0) are valid values
    -s Where do you want me to put the so_rules?
    -T Process text based rules files only, i.e. DO NOT process so_rules
-   -t Where do you want me to put the so_rule stub files?
-      ** Thus MUST be uniquely different from the -o option value
    -u Where do you want me to pull the rules tarball from
       ** E.g., ET, Snort.org. See pulledpork config rule_url option for value ideas
    -V Print Version and exit
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
-
 
 
 -=Basic Usage Examples=-
