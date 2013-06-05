@@ -1979,7 +1979,7 @@ if ($black_list && %blacklist && !$NoDownload){
 }
 
 # Set our rule states, based on config files and specified base policy, also set our flowbit dependencies
-if ($Output && !$grabonly && ($hmatch || $Process)) {
+if ($Output && !$grabonly && $Process) {
     if ( $ips_policy ne "Disabled" ) {
         policy_set( $ips_policy, \%rules_hash );
     }
