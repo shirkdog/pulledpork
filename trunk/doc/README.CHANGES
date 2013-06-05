@@ -42,6 +42,9 @@ New Features / changes:
 - NEW - SO rule categories are now prepended with VRT-SO
 - NEW - More advanced sid-msg.map structure (for use with by2.2+) and backward compatibility
 		This allows for better mapping of gid:sid:rev in the database!
+- NEW - Rewrote the way that extraction is handled, to properly support a single rules tarball being
+		updated.  This includes how md5 validation is done and in what order.  If a single
+		file is updated then they are all extracted and processed.
 
 v0.6.1 the Smoking Pig, revisited
 
