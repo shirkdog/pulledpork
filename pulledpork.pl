@@ -304,27 +304,16 @@ sub compare_md5 {
         $oinkcode, $rule_file, $temp_path,   $Hash,
         $base_url, $md5,       $rule_digest, $Distro,
         $arch,     $Snort,     $Sorules,     $ignore_files,
-        $docs,     $prefix,    $Process, $hmatch
+        $docs,     $prefix,    $Process,     $hmatch,
+	$fref
     ) = @_;
-    if ( $rule_digest =~ $md5 && !$Hash && $Process) {
+    if ( $rule_digest =~ $md5 && !$Hash) {
         if ( $Verbose && !$Quiet ) {
             print
-"\tThe MD5 for $rule_file matched $md5\n\tso I'm not gonna download the rules file again suckas!\n";
+"\tThe MD5 for $rule_file matched $md5\n\n";
         }
         if ( !$Verbose && !$Quiet ) { print "\tThey Match\n\tDone!\n"; }
-        rule_extract(
-            $rule_file,    $temp_path, $Distro,
-            $arch,         $Snort,     $Sorules,
-            $ignore_files, $docs,      $prefix
-        ) if !$grabonly;
 	return(1);
-    }
-    elsif ($rule_file eq "IPBLACKLIST" ) {
-	return($hmatch);
-    }
-    elsif ( $rule_digest =~ $md5 && !$Hash && !$Process) {
-	print "\tThe MD5 for $rule_file matched....not processing tarball!\n";
-	return($hmatch);
     }
     elsif ( $rule_digest !~ $md5 && !$Hash ) {
         if ( $Verbose && !$Quiet ) {
@@ -334,26 +323,24 @@ sub compare_md5 {
         if ( !$Verbose && !$Quiet ) { print "\tNo Match\n\tDone\n"; }
         rulefetch( $oinkcode, $rule_file, $temp_path, $base_url );
         $rule_digest = md5sum( $rule_file, $temp_path );
+	$fref->{EXTRACT}=1 if !$grabonly;
         return(compare_md5(
             $oinkcode, $rule_file, $temp_path,   $Hash,
             $base_url, $md5,       $rule_digest, $Distro,
             $arch,     $Snort,     $Sorules,     $ignore_files,
-            $docs,     $prefix,    $Process, $hmatch
+            $docs,     $prefix,    $Process,     $hmatch,
+	    $fref
         ));
     }
     elsif ($Hash) {
-        if ( $Verbose && !$Quiet && $rule_file ne "IPBLACKLIST") {
+        if ( $Verbose && !$Quiet) {
             print
 "\tOk, not verifying the digest.. lame, but that's what you specified!\n";
             print
 "\tSo if the rules tarball doesn't extract properly and this script croaks.. it's your fault!\n";
             print "\tNo Verify Set\n\tDone!\n";
         }
-        rule_extract(
-            $rule_file,    $temp_path, $Distro,
-            $arch,         $Snort,     $Sorules,
-            $ignore_files, $docs,      $prefix
-        ) if !$grabonly && $rule_file ne "IPBLACKLIST";
+	$fref->{EXTRACT}=1 if !$grabonly;
 	return(1);
     } else {
 	return($hmatch);
@@ -371,21 +358,20 @@ sub getstore {
 ## time to grab the real 0xb33f
 sub rulefetch {
     my ( $oinkcode, $rule_file, $temp_path, $base_url ) = @_;
-    print "Rules tarball download of $rule_file....\n" if ( !$Quiet && $rule_file ne "IPBLACKLIST" );
-    print "IP Blacklist download of $base_url....\n" if ( !$Quiet && $rule_file eq "IPBLACKLIST" );
-    $Process = 2;
+    print "Rules tarball download of $rule_file....\n" if ( !$Quiet && $rule_file !~/IPBLACKLIST/ );
+    print "IP Blacklist download of $base_url....\n" if ( !$Quiet && $rule_file =~/IPBLACKLIST/ );
     $base_url = slash( 0, $base_url );
     my ($getrules_rule);
     if ( $Verbose && !$Quiet ) {
-        print "\tFetching rules file: $rule_file\n" if $rule_file ne "IPBLACKLIST";
-        if ($Hash && $rule_file ne "IPBLACKLIST") { print "But not verifying MD5\n"; }
+        print "\tFetching rules file: $rule_file\n" if $rule_file !~/IPBLACKLIST/;
+        if ($Hash && $rule_file !~/IPBLACKLIST/) { print "But not verifying MD5\n"; }
     }
     if ( $base_url =~ /[^labs]\.snort\.org/i ) {
         $getrules_rule =
           getstore( "https://www.snort.org/reg-rules/$rule_file/$oinkcode",
             $temp_path . $rule_file );
     }
-    elsif ($rule_file eq "IPBLACKLIST" && !$NoDownload){
+    elsif ($rule_file =~ /IPBLACKLIST/ && !$NoDownload){
 	my $rand = rand(1000);
 	$getrules_rule =
 	  getstore( $base_url, $temp_path . "$rand-black_list.rules");
@@ -422,7 +408,7 @@ sub rulefetch {
         croak "\tError $getrules_rule when fetching " . $rule_file;
     }
 
-    if ( $Verbose && !$Quiet && $rule_file ne "IPBLACKLIST") {
+    if ( $Verbose && !$Quiet && $rule_file !~/IPBLACKLIST/) {
         print("\tstoring file at: $temp_path$rule_file\n\n");
     }
     if ( !$Verbose && !$Quiet ) { "\tDone!\n"; }
@@ -1331,7 +1317,7 @@ sub changelog {
           . " GMT=-\n\n\n";
     }
     print WRITE "\n-=Begin Changes Logged for " . gmtime(time) . " GMT=-\n";
-    if ($hmatch) {
+    if ($Process) {
 	print WRITE "\nNew Rules\n" if @newsids;
 	@newsids = sort(@newsids);
 	@delsids = sort(@delsids);
@@ -1355,7 +1341,7 @@ sub changelog {
 
     if ( !$Quiet ) {
         print "\tDone\n";
-	if ($hmatch) {
+	if ($Process) {
 	    print "Rule Stats...\n";
 	    print "\tNew:-------$rt\n";
 	    print "\tDeleted:---$dt\n";
@@ -1804,10 +1790,13 @@ if ( @base_url && -d $temp_path ) {
     }
 
     if ( !$NoDownload ) {
-
+	# Crate a local hash that we will iterate through later for processing
+	my $filelist = ();
+	my $blk=0;
+	# Iterate through all of our urls and check md5 then process accordingly etc...
         foreach (@base_url) {
 	    undef $Hash if ($Hash && $Hash == 2);
-	    undef $Process if ($Process && $Process ==2);
+	    #undef $Process if ($Process && $Process ==2);
             my ( $base_url, $rule_file, $oinkcode ) = split( /\|/, $_ );
             croak
 "You need to define an oinkcode, please review the rule_url section of the pulledpork config file!\n"
@@ -1850,7 +1839,10 @@ if ( @base_url && -d $temp_path ) {
 	    $prefix = "Custom-" unless $prefix;
 
             $Hash = 2 unless $base_url =~ /(emergingthreats|[^labs]\.snort\.org)|snort-org/;
-	    $Hash = 2 if $rule_file eq "IPBLACKLIST";
+	    if ($rule_file =~/IPBLACKLIST/) {
+		$Hash = 2;
+		$rule_file.=$blk++;
+	    }
 
             if ( !$Hash ) {
                 $md5 = md5file( $oinkcode, $rule_file, $temp_path, $base_url );
@@ -1862,20 +1854,59 @@ if ( @base_url && -d $temp_path ) {
             }
             else {    # the file didn't exsist so lets get it
                 rulefetch( $oinkcode, $rule_file, $temp_path, $base_url );
+		$Process = 1 unless $rule_file =~ /IPBLACKLIST/;
                 if ( -f "$temp_path" . "$rule_file" && !$Hash ) {
                     $rule_digest = md5sum( $rule_file, $temp_path );
                 }
             }
+	    
+	    # Don't need to perform the following on the IP blacklist stuff...
+	    next if $rule_file =~ /IPBLACKLIST/;
+	    
+	    # Stuff it all into a hash for use in a bit...
+	    $filelist->{$rule_file} = {
+		'oinkcode' => $oinkcode,
+		'temp_path' => $temp_path,
+		'Hash' => $Hash,
+		'base_url' => $base_url,
+		'md5' => $md5,
+		'rule_digest' => $rule_digest,
+		'Distro' => $Distro,
+		'arch' => $arch,
+		'Snort' => $Snort,
+		'Sorules' => $Sorules,
+		'ignore_files' => $ignore_files,
+		'docs' => $docs,
+		'prefix' => $prefix,
+		'Process' => $Process,
+		'hmatch' => $hmatch
+	    };
 
 # compare the online current md5 against against the md5 of the rules file on system
             $hmatch = compare_md5(
                 $oinkcode, $rule_file, $temp_path,   $Hash,
                 $base_url, $md5,       $rule_digest, $Distro,
                 $arch,     $Snort,     $Sorules,     $ignore_files,
-                $docs,     $prefix,    $Process, $hmatch
+                $docs,     $prefix,    $Process,     $hmatch,
+		$filelist
             );
         }
+	# If any of our rules tarballs are new or changed then we need to process all of them
+	if (($filelist->{EXTRACT} && $filelist->{EXTRACT} == 1) || $Process) {
+	    foreach (keys %{$filelist}){
+		next if $_ eq "EXTRACT";
+		$Process = 1;
+		rule_extract(
+		    $_,    			   $filelist->{$_}{temp_path},
+		    $filelist->{$_}{Distro},	   $filelist->{$_}{arch},
+		    $filelist->{$_}{Snort},        $filelist->{$_}{Sorules},
+		    $filelist->{$_}{ignore_files}, $filelist->{$_}{docs},
+		    $filelist->{$_}{prefix}
+		);
+	    }
+	}
     }
+    # Only process a local rules tarball
     if ( $NoDownload && !$grabonly ) {
         foreach (@base_url) {
             my ( $base_url, $rule_file ) = split( /\|/, $_ );
@@ -1903,16 +1934,18 @@ if ( @base_url && -d $temp_path ) {
             ) if !$grabonly;
         }
     }
-    if ( $Output && !$grabonly && ($hmatch || $Process)) {
+    # Read our rules and stuff them into a hash
+    if ( $Output && !$grabonly && $Process) {
         read_rules( \%rules_hash, "$temp_path" . "tha_rules/", $local_rules );
-    } 
+    }
+    # If we are using SO rules, generate the stubs and then stuff them into a hash
     if (   $Sorules
         && -e $Sorules
         && $Distro
         && $Snort
         && !$Textonly
         && !$grabonly
-	&& $hmatch)
+	&& $Process)
     {
         gen_stubs( $Snort_path, $Snort_config,
             "$temp_path" . "tha_rules/so_rules/" );
@@ -1922,24 +1955,30 @@ if ( @base_url && -d $temp_path ) {
 }
 else { Help("Check your oinkcode, temp path and freespace!"); }
 
-if ($Output && !$grabonly && ($hmatch || $Process)) {
+# Read our old rules so that we can determine what is new / changed / deleted
+if ($Output && !$grabonly && $Process) {
     if ( $sid_changelog && -f $Output && !$keep_rulefiles ) {
         read_rules( \%oldrules_hash, "$Output", $local_rules );
     }
     if ( $sid_changelog && $keep_rulefiles && -d $rule_file_path ) {
         read_rules( \%oldrules_hash, "$rule_file_path", $local_rules );
     }
+    #print Dumper(%oldrules_hash);
 }
 
+# Clean up temp path
 if ( -d $temp_path ) {
     temp_cleanup();
 }
 
+# Process our blacklist data.. need to add a conditional where if we are not linux, we don't
+# use the control socket (linux only)
 if ($black_list && %blacklist && !$NoDownload){
    $bmatch = blacklist_write(\%blacklist,$black_list);
    iprep_control($Config_info{'snort_control'},$Config_info{'IPRVersion'}) if $bmatch;
 }
 
+# Set our rule states, based on config files and specified base policy, also set our flowbit dependencies
 if ($Output && !$grabonly && ($hmatch || $Process)) {
     if ( $ips_policy ne "Disabled" ) {
         policy_set( $ips_policy, \%rules_hash );
@@ -1968,13 +2007,13 @@ if ($Output && !$grabonly && ($hmatch || $Process)) {
     print "\tDone\n"
       if ( !$Quiet );
 
-    if ($Output) {
+    if ($Output && $Process) {
         rule_write( \%rules_hash, $Output, $enonly ) unless $keep_rulefiles;
         rule_category_write( \%rules_hash, $rule_file_path, $enonly )
           if $keep_rulefiles;
     }
     
-    if ($sid_msg_map) {
+    if ($sid_msg_map && $Process	) {
         sid_msg( \%rules_hash, \%sid_msg_map, $enonly );
         sid_write( \%sid_msg_map, $sid_msg_map, $sid_msg_version );
     }
