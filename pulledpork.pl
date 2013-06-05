@@ -2013,12 +2013,12 @@ if ($Output && !$grabonly && $Process) {
           if $keep_rulefiles;
     }
     
-    if ($sid_msg_map && $Process	) {
+    if ($sid_msg_map && $Process) {
         sid_msg( \%rules_hash, \%sid_msg_map, $enonly );
         sid_write( \%sid_msg_map, $sid_msg_map, $sid_msg_version );
     }
 
-    if ( $SigHup && $pid_path ne "" ) {
+    if ( $SigHup && $pid_path ne "" && $Process) {
         sig_hup($pid_path) unless $Sostubs;
         print "WARNING, cannot send sighup if also processing SO rules\n",
           "\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
