@@ -100,7 +100,7 @@ Usage: ./pulledpork.pl [-dEgHklnRTPVvv? -help] -c <config filename> -o <rule out
    
    -r Where do you want me to put the reference docs (xxxx.txt)
    
-   -S What version of snort are you using (2.8.6 or 2.9.0) are valid values
+   -S What version of snort are you using
    
    -s Where do you want me to put the so_rules?
    
@@ -122,9 +122,9 @@ PulledPork.conf file.  Specifically for minimal function, i.e. NO Shared Object 
 at a minimum the rule_file, oinkcode, temp_path, tar_path, and rule_path values.  Below are some examples of this. 
 
 ./pulledpork.pl -o /usr/local/etc/snort/rules/ -O 12345667778523452344234234  \
--u http://www.snort.org/reg-rules/snortrules-snapshot-2860.tar.gz -i disablesid.conf -T -H
+-u http://www.snort.org/reg-rules/snortrules-snapshot-2972.tar.gz -i disablesid.conf -T -H
 
-The above will fetch the snortrules-snapshot-2860.tar.gz tarball from snort.org using the specified oinkcode of 
+The above will fetch the snortrules-snapshot-2972.tar.gz tarball from snort.org using the specified oinkcode of 
 12345667778523452344234234 and put the rules files from that tarball into the output path of 
 /usr/local/etc/snort/rules/ while the -i option tells pulledpork where the
 disablesid.conf lives, and the -T option tells pulledpork to not process for any shared object rules and the final
