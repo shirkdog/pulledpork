@@ -3,7 +3,7 @@ pulledpork
 
 Pulled Pork for Snort rule management (from Google code)
 
-https://code.google.com/p/pulledpork/
+Find us on Freenode (IRC) #pulledpork
 
 Copyright (C) 2009-2015 JJ Cummings and the PulledPork Team!
 
