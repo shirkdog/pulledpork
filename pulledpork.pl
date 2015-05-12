@@ -1482,6 +1482,25 @@ sub archive_wanted {
     push( @records, $File::Find::name );
 }
 
+## Create ignore_files from conf file
+sub get_ignore_files {
+  my ($ignore_conf_file) = @_;
+  my $ignore_list;
+
+  print "\tReading ignore_file: $ignore_conf_file\n";
+
+  # Read ignore file and exclude comments/blank lines
+  open ( FH, '<', $ignore_conf_file ) || croak "Couldn't read $ignore_conf_file $!\n";
+    while ( <FH> ) {
+      chomp;
+      s/#.*//;
+      if ( ! /^\s*$/ ) { $ignore_list .= "$_," };
+    };
+  close FH;
+  $ignore_list =~ s/,\s*$//g ;
+  return $ignore_list
+}
+
 ###
 ### Main here, let's get on with it already
 ###
@@ -1565,6 +1584,13 @@ else {
 
 $pid_path     = ( $Config_info{'pid_path'} ) if exists $Config_info{'pid_path'};
 $ignore_files = ( $Config_info{'ignore'} )   if exists $Config_info{'ignore'};
+
+# Allow ignores to be specified in a file
+if ( exists $Config_info{'ignore_file'})
+{
+  $ignore_files = get_ignore_files($Config_info{'ignore_file'});
+}
+print "\tignore = $ignore_files\n";
 
 if ($rule_file_path) {
     $keep_rulefiles = 1;
