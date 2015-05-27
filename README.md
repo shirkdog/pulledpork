@@ -55,6 +55,7 @@ Usage: ./pulledpork.pl [-dEgHklnRTPVvv? -help] -c <config filename> -o <rule out
    
    -D What Distro are you running on, for the so_rules
       Valid Distro Types:
+      
 		Debian-5-0, Debian-6-0, Ubuntu-8.04, Ubuntu-10-4
 		Centos-4-8, Centos-5-4,	FC-12, FC-14, RHEL-5-5, RHEL-6-0
 		FreeBSD-7-3, FreeBSD-8-1
