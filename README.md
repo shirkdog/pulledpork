@@ -54,7 +54,6 @@ Usage: ./pulledpork.pl [-dEgHklnRTPVvv? -help] -c <config filename> -o <rule out
    -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
    
    -D What Distro are you running on, for the so_rules
-      For latest supported options see http://www.snort.org/snort-rules/shared-object-rules
       Valid Distro Types:
 		Debian-5-0, Debian-6-0, Ubuntu-8.04, Ubuntu-10-4
 		Centos-4-8, Centos-5-4,	FC-12, FC-14, RHEL-5-5, RHEL-6-0
@@ -122,9 +121,9 @@ PulledPork.conf file.  Specifically for minimal function, i.e. NO Shared Object 
 at a minimum the rule_file, oinkcode, temp_path, tar_path, and rule_path values.  Below are some examples of this. 
 
 ./pulledpork.pl -o /usr/local/etc/snort/rules/ -O 12345667778523452344234234  \
--u http://www.snort.org/reg-rules/snortrules-snapshot-2972.tar.gz -i disablesid.conf -T -H
+-u http://www.snort.org/reg-rules/snortrules-snapshot-2973.tar.gz -i disablesid.conf -T -H
 
-The above will fetch the snortrules-snapshot-2972.tar.gz tarball from snort.org using the specified oinkcode of 
+The above will fetch the snortrules-snapshot-2973.tar.gz tarball from snort.org using the specified oinkcode of 
 12345667778523452344234234 and put the rules files from that tarball into the output path of 
 /usr/local/etc/snort/rules/ while the -i option tells pulledpork where the
 disablesid.conf lives, and the -T option tells pulledpork to not process for any shared object rules and the final
