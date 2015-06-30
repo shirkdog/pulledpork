@@ -3,7 +3,7 @@
 ## pulledpork v(whatever it says below!)
 ## cummingsj@gmail.com
 
-# Copyright (C) 2009-2015 JJ Cummings and the PulledPork Team!
+# Copyright (C) 2009-2015 JJ Cummings, Michael Shirk and the PulledPork Team!
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -41,7 +41,7 @@ use Data::Dumper;
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
-my $VERSION = "PulledPork v0.7.1 - Swine Flu with a side of Ebola!";
+my $VERSION = "PulledPork v0.7.2 - E.Coli in your water bottle!";
 my $ua      = LWP::UserAgent->new;
 
 
@@ -546,9 +546,9 @@ sub read_rules {
                         elsif ( $row !~ /\\$/ && $trk == 1 )
                         {    # last line of multiline rule here
                             $record .= $row;
-                            if ( $record =~ /sid:\s*\d+\s*;/i ) {
+                            if ( $record =~ /\ssid:\s*\d+\s*;/i ) {
                                 $sid = $&;
-                                $sid =~ s/sid:\s*//;
+                                $sid =~ s/\ssid:\s*//;
 				$sid =~ s/\s*;//;
                                 $$hashref{0}{ trim($sid) }{'rule'} = $record;
                             }
@@ -556,9 +556,9 @@ sub read_rules {
                             undef $record;
                         }
                         else {
-                            if ( $row =~ /sid:\s*\d+\s*;/i ) {
+                            if ( $row =~ /\ssid:\s*\d+\s*;/i ) {
                                 $sid = $&;
-                                $sid =~ s/sid:\s*//;
+                                $sid =~ s/\ssid:\s*//;
 				$sid =~ s/\s*;//;
                                 $$hashref{0}{ trim($sid) }{'rule'} = $row;
                             }
@@ -582,13 +582,13 @@ sub read_rules {
                 $rule = trim($rule);
                 if ( $rule =~ /^\s*#*\s*(alert|drop|pass)/i ) {
 
-                    if ( $rule =~ /sid:\s*\d+\s*;/i ) {
+                    if ( $rule =~ /\ssid:\s*\d+\s*;/i ) {
                         $sid = $&;
-                        $sid =~ s/sid:\s*//;
+                        $sid =~ s/\ssid:\s*//;
 			$sid =~ s/\s*;//;
-                        if ( $rule =~ /gid:\s*\d+/i ) {
+                        if ( $rule =~ /\sgid:\s*\d+/i ) {
                             $gid = $&;
-                            $gid =~ s/gid:\s*//;
+                            $gid =~ s/\sgid:\s*//;
                         }
                         else { $gid = 1; }
                         if ( $rule =~ /flowbits:\s*((un)?set(x)?|toggle)/i ) {
@@ -635,12 +635,12 @@ sub read_rules {
 
         foreach my $rule (@elements) {
             if ( $rule =~ /^\s*#*\s*(alert|drop|pass)/i ) {
-                if ( $rule =~ /sid:\s*\d+/ ) {
+                if ( $rule =~ /\ssid:\s*\d+/ ) {
                     $sid = $&;
-                    $sid =~ s/sid:\s*//;
-                    if ( $rule =~ /gid:\s*\d+/i ) {
+                    $sid =~ s/\ssid:\s*//;
+                    if ( $rule =~ /\sgid:\s*\d+/i ) {
                         $gid = $&;
-                        $gid =~ s/gid:\s*//;
+                        $gid =~ s/\sgid:\s*//;
                     }
                     else { $gid = 1; }
                     if ( $rule =~ /flowbits:\s*((un)?set(x)?|toggle)/ ) {
