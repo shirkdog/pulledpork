@@ -1608,12 +1608,11 @@ else {
 $pid_path     = ( $Config_info{'pid_path'} ) if exists $Config_info{'pid_path'};
 $ignore_files = ( $Config_info{'ignore'} )   if exists $Config_info{'ignore'};
 
-# Allow ignores to be specified in a file
+# Allow ignores to be specified in a file, supercedes the regular ignore config option
 if ( exists $Config_info{'ignore_file'})
 {
   $ignore_files = get_ignore_files($Config_info{'ignore_file'});
 }
-print "\tignore = $ignore_files\n";
 
 if ($rule_file_path) {
     $keep_rulefiles = 1;
@@ -1772,6 +1771,7 @@ if ( $Verbose && !$Quiet ) {
     if ( $Verbose == 2 ) { print "\tExtra Verbose Flag is Set\n"; }
     if ($Verbose)        { print "\tVerbose Flag is Set\n"; }
     if ($skipVerify)     { print "\tSSL Hostname Verification disabled\n"; }
+    if ($ignore_files)   { print "\tFile(s) to ignore = $ignore_files\n"; }
     if (@base_url)       { print "\tBase URL is: @base_url\n"; }
 }
 
