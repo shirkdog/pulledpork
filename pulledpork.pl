@@ -44,6 +44,29 @@ my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
 my $VERSION = "PulledPork v0.7.2 - E.Coli in your water bottle!";
 my $ua      = LWP::UserAgent->new;
 
+# for certificate validation, check for the operating system
+# and set the path to the certificate store if required.
+my $oSystem = "$^O";
+my $CAFile = "OS Default";
+if ($oSystem =~ /freebsd/i) {
+    $CAFile = "/etc/ssl/cert.pem";
+    #Check to ensure the cert file exists
+    if ( -e $CAFile) { 
+        if ( -r $CAFile) {
+            $ua->ssl_opts( SSL_ca_file => $CAFile );
+        } else {	
+    	   carp "ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n";
+	   syslogit( 'err|local0', "FATAL: ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n")
+	   if $Syslogging;
+ 	   exit(1);
+        }
+    } else {
+        carp "ERROR: $CAFile does not exist. Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n";
+        syslogit( 'err|local0', "FATAL: $CAFile does not exist. Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n")
+        if $Syslogging;
+        exit(1);
+    }
+}
 
 my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
 my ( $Output, $Distro, $Snort, $sid_changelog, $ignore_files );
@@ -1704,6 +1727,8 @@ if ( $Verbose && !$Quiet ) {
     print "MISC (CLI and Autovar) Variable Debug:\n";
     if ($Process)	 { print "\tProcess flag specified!\n"; }
     if ($arch)           { print "\tarch Def is: $arch\n"; }
+    if ($oSystem)        { print "\tOperating System is: $oSystem\n"; }
+    if ($CAFile)         { print "\tCA Certificate File is: $CAFile\n"; }
     if ($Config_file)    { print "\tConfig Path is: $Config_file\n"; }
     if ($Distro)         { print "\tDistro Def is: $Distro\n"; }
     if ($docs)           { print "\tDocs Reference Location is: $docs\n"; }
