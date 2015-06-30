@@ -186,13 +186,13 @@ __EOT
 sub pulledpork {
 
     print <<__EOT;
-
-    http://code.google.com/p/pulledpork/
+ 
+    https://github.com/shirkdog/pulledpork
       _____ ____
      `----,\\    )
       `--==\\\\  /    $VERSION
        `--==\\\\/
-     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2014 JJ Cummings
+     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2015 JJ Cummings
   \@_/        /  66\\_  cummingsj\@gmail.com
     |    \\   \\   _(\")
      \\   /-| ||'--'  Rules give me wings!
