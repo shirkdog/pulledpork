@@ -1590,7 +1590,7 @@ if ( exists $Config_info{'ignore_file'})
 {
   $ignore_files = get_ignore_files($Config_info{'ignore_file'});
 }
-print "\tignore = $ignore_files\n";
+print "\tignore = $ignore_files\n" if (defined my $ignore);
 
 if ($rule_file_path) {
     $keep_rulefiles = 1;
