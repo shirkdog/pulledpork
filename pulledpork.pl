@@ -228,7 +228,7 @@ sub rule_extract {
     $tar->read( $temp_path . $rule_file );
     $tar->setcwd( cwd() );
     local $Archive::Tar::CHOWN = 0; 
-    my @ignores = split( /,/, $ignore );
+    my @ignores = split( /,/, $ignore ) if (defined $ignore);
 
     foreach (@ignores) {
         if ( $_ =~ /\.rules/ ) {
