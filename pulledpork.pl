@@ -147,7 +147,7 @@ sub Help {
       Valid Distro Types:
 		Debian-6-0, Ubuntu-10-4, Ubuntu-12-04, Centos-5-4
 		FC-12, FC-14, RHEL-5-5, RHEL-6-0
-		FreeBSD-8-1, FreeBSD-10-0, OpenBSD-5-2, OpenBSD-5-3
+		FreeBSD-8-1, FreeBSD-9-0, FreeBSD-10-0, OpenBSD-5-2, OpenBSD-5-3
 		OpenSUSE-11-4, OpenSUSE-12-1, Slackware-13-1
    -e Where the enablesid config file lives.
    -E Write ONLY the enabled rules to the output files.
@@ -1553,7 +1553,7 @@ if ( $Verbose && !$Quiet ) {
 if ( exists $Config_info{'version'} ) {
     croak "You are not using the current version of pulledpork.conf!\n",
       "Please use the version of pulledpork.conf that shipped with $VERSION!\n\n"
-      if $Config_info{'version'} ne "0.7.1";
+      if $Config_info{'version'} ne "0.7.2";
 }
 else {
     croak

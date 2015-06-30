@@ -55,12 +55,10 @@ thoroughly so that you don't overlook something!
 
     -D What Distro are you running on, for the so_rules
        Valid Distro Types:
-
-         Debian-5-0, Debian-6-0, Ubuntu-8.04, Ubuntu-10-4
-         Centos-4-8, Centos-5-4, FC-12, FC-14, RHEL-5-5, RHEL-6-0
-         FreeBSD-7-3, FreeBSD-8-1
-         OpenBSD-4-8
-         Slackware-13-1
+         Debian-6-0, Ubuntu-10-4, Ubuntu-12-04, Centos-5-4
+         FC-12, FC-14, RHEL-5-5, RHEL-6-0
+         FreeBSD-8-1, FreeBSD-9-0, FreeBSD-10-0, OpenBSD-5-2, OpenBSD-5-3
+         OpenSUSE-11-4, OpenSUSE-12-1, Slackware-13-1	
 
     -e Where the enablesid config file lives.
 
