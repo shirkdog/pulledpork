@@ -49,11 +49,22 @@ my $ua      = LWP::UserAgent->new;
 my $oSystem = "$^O";
 my $CAFile = "OS Default";
 if ($oSystem =~ /freebsd/i) {
-    $CAFile = "/etc/ssl/cert.pem";
     #Check to ensure the cert file exists
-    if ( -e $CAFile) { 
+    if ( -e "/etc/ssl/cert.pem" ) { 
+    	$CAFile = "/etc/ssl/cert.pem";
         if ( -r $CAFile) {
-            $ua->ssl_opts( SSL_ca_file => $CAFile );
+           $ua->ssl_opts( SSL_ca_file => $CAFile );
+        } else {	
+    	   carp "ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n";
+	   syslogit( 'err|local0', "FATAL: ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n")
+	   if $Syslogging;
+ 	   exit(1);
+        }
+    #Check for the other location for the cert file
+    } elsif ( -e "/usr/local/etc/ssl/cert.pem" ) {
+    	$CAFile = "/usr/local/etc/ssl/cert.pem";
+        if ( -r $CAFile) {
+           $ua->ssl_opts( SSL_ca_file => $CAFile );
         } else {	
     	   carp "ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n";
 	   syslogit( 'err|local0', "FATAL: ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n")
@@ -61,10 +72,10 @@ if ($oSystem =~ /freebsd/i) {
  	   exit(1);
         }
     } else {
-        carp "ERROR: $CAFile does not exist. Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n";
-        syslogit( 'err|local0', "FATAL: $CAFile does not exist. Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n")
-        if $Syslogging;
-        exit(1);
+           carp "ERROR: cert file does not exist (/etc/ssl/cert.pem or /usr/local/etc/ssl/cert.pem. Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n";
+           syslogit( 'err|local0', "FATAL: cert file does not exist. Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n")
+           if $Syslogging;
+           exit(1);
     }
 }
 
