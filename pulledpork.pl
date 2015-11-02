@@ -655,7 +655,7 @@ sub read_rules {
 			$$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
                         $$hashref{ trim($gid) }{ trim($sid) }{'category'} =
                           $file;
-			push @ {$categories->{$file}{trim($gid)}},($sid);
+			push(@{$categories->{$file}{trim($gid)}},($sid)) if ! grep /$sid/, @{$categories->{$file}{trim($gid)}};
                     }
                 }
             }
@@ -2128,7 +2128,7 @@ if ($Output && !$grabonly && $Process) {
     }
 }
 
-if ( $sid_changelog && -f $Output ) {
+if ( $sid_changelog && -e $Output ) {
     changelog(
         $sid_changelog, \%rules_hash, \%oldrules_hash,
         \%blacklist, $ips_policy, $enonly, $hmatch, $bmatch
