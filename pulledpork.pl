@@ -2128,7 +2128,7 @@ if ($Output && !$grabonly && $Process) {
     }
 }
 
-if ( $sid_changelog && -f $Output ) {
+if ( $sid_changelog && -e $Output ) {
     changelog(
         $sid_changelog, \%rules_hash, \%oldrules_hash,
         \%blacklist, $ips_policy, $enonly, $hmatch, $bmatch
