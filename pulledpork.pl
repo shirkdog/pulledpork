@@ -655,7 +655,7 @@ sub read_rules {
 			$$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
                         $$hashref{ trim($gid) }{ trim($sid) }{'category'} =
                           $file;
-			push @ {$categories->{$file}{trim($gid)}},($sid);
+			push(@{$categories->{$file}{trim($gid)}},($sid)) if ! grep /$sid/, @{$categories->{$file}{trim($gid)}};
                     }
                 }
             }
