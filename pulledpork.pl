@@ -488,7 +488,7 @@ sub md5sum {
 ## subroutine to fetch the latest md5 digest signature file from snort.org
 sub md5file {
     my ( $oinkcode, $rule_file, $temp_path, $base_url ) = @_;
-    my ( $getrules_md5, $md5 );
+    my ( $getrules_md5, $md5 ) = "";
     $base_url = slash( 0, $base_url );
     print "Checking latest MD5 for $rule_file....\n" if !$Quiet;
     print "\tFetching md5sum for: " . $rule_file . ".md5\n"
