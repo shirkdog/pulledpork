@@ -1926,7 +1926,7 @@ if ( @base_url && -d $temp_path ) {
 		$prefix = "Snort-Community-"
 	    }
         elsif ( $base_url =~ /secureworks/ ) {
-            $prefix = "SCWX-";
+            $prefix = "SecureWorks-";
             $base_url .= "$oinkcode/" unless $base_url =~ /\x2F$oinkcode\x2F/;
         }
 	    
