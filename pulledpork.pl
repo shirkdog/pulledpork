@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 ## pulledpork v(whatever it says below!)
 ## cummingsj@gmail.com
