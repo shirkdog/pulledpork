@@ -791,22 +791,29 @@ sub modify_sid {
     open( FH, "<$file" ) || carp "Unable to open $file\n";
     while (<FH>) {
         next if ( ( $_ =~ /^\s*#/ ) || ( $_ eq " " ) );
-        if ( $_ =~ /([\d+|,|\*]*)\s+"(.+)"\s+"(.*)"/ ) {
-            my ( $sids, $from, $to ) = ( $1, $2, $3 );
-            @arry = split( /,/, $sids ) if $sids !~ /\*/;
-            @arry = "*" if $sids =~ /\*/;
-            foreach my $sid (@arry) {
-                $sid = trim($sid);
-                if ( $sid ne "*" && defined $$href{1}{$sid}{'rule'} ) {
-                    print "\tModifying SID:$sid from:$from to:$to\n"
+        if ( $_ =~ /([(\d-)?\d+|,|\*]*)\s+"(.+)"\s+"(.*)"/ ) {
+            my ( $ruleids, $from, $to ) = ( $1, $2, $3 );
+            @arry = split( /,/, $ruleids ) if $ruleids !~ /\*/;
+            @arry = "*" if $ruleids =~ /\*/;
+            foreach my $ruleid (@arry) {
+                $ruleid = trim($ruleid);
+                my @rule_comp;
+                @rule_comp = split(/-/, $ruleid, 2);
+                my $sid = pop @rule_comp;
+                my $gid = pop @rule_comp;
+                if (not defined $gid) {
+                    $gid = 1;
+                }
+                if ( $sid ne "*" && defined $$href{$gid}{$sid}{'rule'} ) {
+                    print "\tModifying GID:$gid,SID:$sid from:$from to:$to\n"
                       if ( $Verbose && !$Quiet );
-                    $$href{1}{$sid}{'rule'} =~ s/$from/$to/;
+                    $$href{$gid}{$sid}{'rule'} =~ s/$from/$to/;
                 }
                 elsif ( $sid eq "*" ) {
-                    print "\tModifying ALL SIDS from:$from to:$to\n"
+                    print "\tModifying ALL SIDS for GID:$gid from:$from to:$to\n"
                       if ( $Verbose && !$Quiet );
-                    foreach my $k ( sort keys %{ $$href{1} } ) {
-                        $$href{1}{$k}{'rule'} =~ s/$from/$to/;
+                    foreach my $k ( sort keys %{ $$href{$gid} } ) {
+                        $$href{$gid}{$k}{'rule'} =~ s/$from/$to/;
                     }
                 }
             }
