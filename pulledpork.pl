@@ -30,6 +30,7 @@ use Sys::Syslog;
 use Digest::MD5;
 use File::Path;
 use File::Find;
+use File::Basename;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use Archive::Tar;
 use POSIX qw(:errno_h);
@@ -560,6 +561,7 @@ sub read_rules {
     my @local_rules = split( /,/, $extra_rules );
     foreach (@local_rules) { #First let's read our local rules and assign a gid of 0
         $extra_rules = slash( 0, $_ );
+	$file = basename($extra_rules);
         if ( $extra_rules && -f $extra_rules ) {
             open( DATA, "$extra_rules" )
               || croak "Couldn't read $extra_rules - $!\n";
@@ -598,6 +600,22 @@ sub read_rules {
                             }
                             $trk = 0;
                         }
+			if ( $trk == 0 )
+			{
+			    my $rule = $$hashref{0}{ trim($sid) }{'rule'};
+			    if ( $rule =~ /^\s*\#+/ ) {
+				$$hashref{0}{ trim($sid) }{'state'} = 0;
+			    }
+			    elsif ( $rule =~ /^\s*(alert|pass|drop)/ ) {
+			        $$hashref{0}{ trim($sid) }{'state'} = 1;
+			    }
+			    $file =~ s/\.rules//;
+			    $$hashref{0}{ trim($sid) }{'rule'} = $rule;
+			    $$hashref{0}{ trim($sid) }{'category'} = $file;
+
+			    push @ {$categories->{$file}{0}},trim($sid)
+				unless ( grep trim($sid), @ {$categories->{$file}{0}} );
+			}
                     }
                 }
             }
@@ -610,7 +628,6 @@ sub read_rules {
             open( DATA, "$path$file" ) || croak "Couldn't read $file - $!\n";
             @elements = <DATA>;
             close(DATA);
-
             foreach my $rule (@elements) {
                 chomp($rule);
                 $rule = trim($rule);
@@ -655,9 +672,9 @@ sub read_rules {
 			$$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
                         $$hashref{ trim($gid) }{ trim($sid) }{'category'} =
                           $file;
-			push @ {$categories->{$file}{trim($gid)}},($sid)
-			    if !exists $categories->{$file}{trim($gid)}[$sid];
-
+			push @ {$categories->{$file}{trim($gid)}},trim($sid)
+			    unless ( grep trim($sid),
+				@ {$categories->{$file}{trim($gid)}} );
                     }
                 }
             }
@@ -793,7 +810,7 @@ sub modify_sid {
     open( FH, "<$file" ) || carp "Unable to open $file\n";
     while (<FH>) {
         next if ( ( $_ =~ /^\s*#/ ) || ( $_ eq " " ) );
-        if ( $_ =~ /([(\d-)?\d+|,|\*]*)\s+"(.+)"\s+"(.*)"/ ) {
+        if ( $_ =~ /(\[(\d-)?\d+|,|\*\]*)\s+"(.+)"\s+"(.*)"/ ) {
             my ( $ruleids, $from, $to ) = ( $1, $2, $3 );
             @arry = split( /,/, $ruleids ) if $ruleids !~ /\*/;
             @arry = "*" if $ruleids =~ /\*/;
@@ -999,12 +1016,10 @@ sub modify_state {
                             elsif ($function eq "drop") {
                                 if ( exists $$hashref{$gid}{$sid}
                                     && $$hashref{$gid}{$sid}{'rule'} =~
-                                    /^\s*#*\s*alert/i )
+                                    /^\s*alert/i )
                                 {
                                     $$hashref{$gid}{$sid}{'rule'} =~
-                                      s/^\s*#*\s*//;
-                                    $$hashref{$gid}{$sid}{'rule'} =~
-                                      s/^alert/drop/;
+                                      s/^\s*alert/drop/;
                                     if ( $Verbose && !$Quiet ) {
                                         print "\tWill drop $gid:$sid\n";
                                     }
