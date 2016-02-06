@@ -30,6 +30,7 @@ use Sys::Syslog;
 use Digest::MD5;
 use File::Path;
 use File::Find;
+use File::Basename;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use Archive::Tar;
 use POSIX qw(:errno_h);
@@ -557,9 +558,11 @@ sub read_rules {
     my ( $file, $sid, $gid, @elements );
     print "\t" if ( $Verbose && !$Quiet );
     print "Reading rules...\n" if !$Quiet;
+    my $reading_old_rules = ( $path eq $rule_file_path );
     my @local_rules = split( /,/, $extra_rules );
     foreach (@local_rules) { #First let's read our local rules and assign a gid of 0
         $extra_rules = slash( 0, $_ );
+	$file = basename($extra_rules);
         if ( $extra_rules && -f $extra_rules ) {
             open( DATA, "$extra_rules" )
               || croak "Couldn't read $extra_rules - $!\n";
@@ -598,6 +601,22 @@ sub read_rules {
                             }
                             $trk = 0;
                         }
+			if ( $trk == 0 )
+			{
+			    $sid = trim($sid);
+			    my $rule = $$hashref{0}{$sid}{'rule'};
+			    if ( $rule =~ /^\s*\#+/ ) {
+				$$hashref{0}{$sid}{'state'} = 0;
+			    }
+			    elsif ( $rule =~ /^\s*(alert|pass|drop)/ ) {
+			        $$hashref{0}{$sid}{'state'} = 1;
+			    }
+			    $file =~ s/\.rules//;
+			    $$hashref{0}{$sid}{'rule'} = $rule;
+			    $$hashref{0}{$sid}{'category'} = $file;
+
+			    $categories->{$file}{0}{$sid} = 1;
+			}
                     }
                 }
             }
@@ -610,7 +629,6 @@ sub read_rules {
             open( DATA, "$path$file" ) || croak "Couldn't read $file - $!\n";
             @elements = <DATA>;
             close(DATA);
-
             foreach my $rule (@elements) {
                 chomp($rule);
                 $rule = trim($rule);
@@ -655,9 +673,10 @@ sub read_rules {
 			$$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
                         $$hashref{ trim($gid) }{ trim($sid) }{'category'} =
                           $file;
-			push @ {$categories->{$file}{trim($gid)}},($sid)
-			    if !exists $categories->{$file}{trim($gid)}[$sid];
 
+			next if $reading_old_rules;
+
+			$categories->{$file}{ trim($gid) }{ trim($sid) } = 1;
                     }
                 }
             }
@@ -793,7 +812,7 @@ sub modify_sid {
     open( FH, "<$file" ) || carp "Unable to open $file\n";
     while (<FH>) {
         next if ( ( $_ =~ /^\s*#/ ) || ( $_ eq " " ) );
-        if ( $_ =~ /([(\d-)?\d+|,|\*]*)\s+"(.+)"\s+"(.*)"/ ) {
+        if ( $_ =~ /(\[(\d-)?\d+|,|\*\]*)\s+"(.+)"\s+"(.*)"/ ) {
             my ( $ruleids, $from, $to ) = ( $1, $2, $3 );
             @arry = split( /,/, $ruleids ) if $ruleids !~ /\*/;
             @arry = "*" if $ruleids =~ /\*/;
@@ -999,12 +1018,10 @@ sub modify_state {
                             elsif ($function eq "drop") {
                                 if ( exists $$hashref{$gid}{$sid}
                                     && $$hashref{$gid}{$sid}{'rule'} =~
-                                    /^\s*#*\s*alert/i )
+                                    /^\s*alert/i )
                                 {
                                     $$hashref{$gid}{$sid}{'rule'} =~
-                                      s/^\s*#*\s*//;
-                                    $$hashref{$gid}{$sid}{'rule'} =~
-                                      s/^alert/drop/;
+                                      s/^\s*alert/drop/;
                                     if ( $Verbose && !$Quiet ) {
                                         print "\tWill drop $gid:$sid\n";
                                     }
@@ -1124,21 +1141,21 @@ sub rule_category_write {
 
     my %hcategory = ();
     my $file;
-    foreach my $k (sort keys %$categories){
-	my $file = "$k.rules";
+    foreach my $fn (sort keys %$categories){
+	my $file = "$fn.rules";
 	open( WRITE,'>',"$filepath$file" );
-	print WRITE "\n\n# ----- Begin $k Rules Category ----- #\n";
-	foreach my $k2 (sort keys %{$categories->{$k}}) {
-	    print WRITE "\n# -- Begin GID:$k2 Based Rules -- #\n\n";
-	    foreach my $k3 (sort @{$categories->{$k}{$k2}}){
-		next unless defined $$hashref{$k2}{$k3}{'rule'};
+	print WRITE "\n\n# ----- Begin $fn Rules Category ----- #\n";
+	foreach my $gid (sort keys %{$categories->{$fn}}) {
+	    print WRITE "\n# -- Begin GID:$gid Based Rules -- #\n\n";
+	    foreach my $sid (sort keys %{$categories->{$fn}{$gid}}){
+		next unless defined $$hashref{$gid}{$sid}{'rule'};
 		if (   $enonly
-		&& $$hashref{$k2}{$k3}{'rule'} =~ /^\s*(alert|drop|pass)/ )
+		&& $$hashref{$gid}{$sid}{'rule'} =~ /^\s*(alert|drop|pass)/ )
 		{
-		    print WRITE $$hashref{$k2}{$k3}{'rule'} . "\n";
+		    print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
 		}
 		elsif ( !$enonly ) {
-		    print WRITE $$hashref{$k2}{$k3}{'rule'} . "\n";
+		    print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
 		}
 	    }
 	}
@@ -1195,19 +1212,19 @@ sub rule_write {
     print "Writing $file....\n" if !$Quiet;
     open( WRITE,'>',"$file" ) || croak "Unable to write $file - $!\n";
     #if ( $gid == 1 ) {
-	foreach my $k (sort keys %$categories){
-	    print WRITE "\n\n# ----- Begin $k Rules Category ----- #\n";
-	    foreach my $k2 (sort keys %{$categories->{$k}}) {
-		print WRITE "\n# -- Begin GID:$k2 Based Rules -- #\n\n";
-		foreach my $k3 (sort @{$categories->{$k}{$k2}}){
-		    next unless defined $$hashref{$k2}{$k3}{'rule'};
+	foreach my $fn (sort keys %$categories){
+	    print WRITE "\n\n# ----- Begin $fn Rules Category ----- #\n";
+	    foreach my $gid (sort keys %{$categories->{$fn}}) {
+		print WRITE "\n# -- Begin GID:$gid Based Rules -- #\n\n";
+		foreach my $sid (sort keys %{$categories->{$fn}{$gid}}){
+		    next unless defined $$hashref{$gid}{$sid}{'rule'};
 		    if (   $enonly
-                    && $$hashref{$k2}{$k3}{'rule'} =~ /^\s*(alert|drop|pass)/ )
+                    && $$hashref{$gid}{$sid}{'rule'} =~ /^\s*(alert|drop|pass)/ )
 		    {
-			print WRITE $$hashref{$k2}{$k3}{'rule'} . "\n";
+			print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
 		    }
 		    elsif ( !$enonly ) {
-			print WRITE $$hashref{$k2}{$k3}{'rule'} . "\n";
+			print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
 		    }
 		}
 	    }
