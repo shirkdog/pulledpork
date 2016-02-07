@@ -558,7 +558,6 @@ sub read_rules {
     my ( $file, $sid, $gid, @elements );
     print "\t" if ( $Verbose && !$Quiet );
     print "Reading rules...\n" if !$Quiet;
-    my $reading_old_rules = ( $path eq $rule_file_path );
     my @local_rules = split( /,/, $extra_rules );
     foreach (@local_rules) { #First let's read our local rules and assign a gid of 0
         $extra_rules = slash( 0, $_ );
@@ -581,7 +580,7 @@ sub read_rules {
                             $trk = 1;
                         }
                         elsif ( $row !~ /\\$/ && $trk == 1 )
-                        {    # last line of multiline rule here
+                        {   # last line of multiline rule here
                             $record .= $row;
                             if ( $record =~ /\ssid:\s*\d+\s*;/i ) {
                                 $sid = $&;
@@ -612,7 +611,6 @@ sub read_rules {
 			        $$hashref{0}{$sid}{'state'} = 1;
 			    }
 			    $file =~ s/\.rules//;
-			    $$hashref{0}{$sid}{'rule'} = $rule;
 			    $$hashref{0}{$sid}{'category'} = $file;
 
 			    $categories->{$file}{0}{$sid} = 1;
@@ -626,6 +624,7 @@ sub read_rules {
     if ( -d $path ) {
         opendir( DIR, "$path" );
         while ( defined( $file = readdir DIR ) ) {
+	    next if grep /^$path$file$/, @local_rules; #don't read local rule files
             open( DATA, "$path$file" ) || croak "Couldn't read $file - $!\n";
             @elements = <DATA>;
             close(DATA);
@@ -1062,9 +1061,8 @@ sub modify_state {
 ## iprep control socket!
 sub iprep_control {
     my ($bin,$path) = @_;
-    return unless -f $bin;
+    return unless ( defined $bin && -f $bin && -f $path );
     my $cmd = "$bin $path 1361";
-    return unless (-f $bin && -f $path);
     print "Issuing reputation socket reload command\n";
     print "Command: $cmd\n" if $Verbose;
     open(FH,"$cmd 2>&1 |");
@@ -1324,7 +1322,7 @@ sub flowbit_set {
 
 ## Make some changelog fun!
 sub changelog {
-    my ( $changelog, $hashref, $hashref2, $hashref3, $ips_policy, $enonly, $hmatch ) = @_;
+    my ( $changelog, $new_hash, $old_hash, $blacklist_hash, $ips_policy, $enonly, $hmatch ) = @_;
 
     print "Writing $changelog....\n" if !$Quiet;
     my ( @newsids, @delsids );
@@ -1337,12 +1335,12 @@ sub changelog {
     my $disabled = 0;
     my $ips	 = 0;
     
-    foreach my $k1 ( keys %rules_hash ) {
+    foreach my $k1 ( keys %$new_hash ) {
 
-        foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
-            next if ( ($enonly) && ( $$hashref{$k1}{$k2}{'rule'} =~ /^\s*#/ ) );
-            if ( !defined $$hashref2{$k1}{$k2}{'rule'} ) {
-                my $msg_holder = $$hashref{$k1}{$k2}{'rule'};
+        foreach my $k2 ( keys %{ $$new_hash{$k1} } ) {
+            next if ( ($enonly) && ( $$new_hash{$k1}{$k2}{'rule'} =~ /^\s*#/ ) );
+            if ( !defined $$old_hash{$k1}{$k2}{'rule'} ) {
+                my $msg_holder = $$new_hash{$k1}{$k2}{'rule'};
                 if ( $msg_holder =~ /msg:"[^"]+";/i ) {
                     $msg_holder = $&;
                     $msg_holder =~ s/msg:"//;
@@ -1351,27 +1349,27 @@ sub changelog {
                 else { $msg_holder = "Unknown MSG" }
                 push( @newsids, "$msg_holder ($k1:$k2)" );
             }
-            $rt++ unless defined $$hashref2{$k1}{$k2}{'rule'};
-            next  unless defined $$hashref{$k1}{$k2}{'rule'};
-            if ( $$hashref{$k1}{$k2}{'rule'} =~ /^\s*(alert|pass)/ ) {
+            $rt++ unless defined $$old_hash{$k1}{$k2}{'rule'};
+            next  unless defined $$new_hash{$k1}{$k2}{'rule'};
+            if ( $$new_hash{$k1}{$k2}{'rule'} =~ /^\s*(alert|pass)/ ) {
                 $enabled++;
             }
-            elsif ( $$hashref{$k1}{$k2}{'rule'} =~ /^\s*drop/ ) {
+            elsif ( $$new_hash{$k1}{$k2}{'rule'} =~ /^\s*drop/ ) {
                 $dropped++;
             }
             elsif (
-                $$hashref{$k1}{$k2}{'rule'} =~ /^\s*#*\s*(alert|drop|pass)/ )
+                $$new_hash{$k1}{$k2}{'rule'} =~ /^\s*#*\s*(alert|drop|pass)/ )
             {
                 $disabled++;
             }
         }
     }
-    foreach my $k1 ( sort keys %$hashref2 ) {
-        for my $k2 ( sort keys %{ $$hashref2{$k1} } ) {
-            next if defined $$hashref{$k1}{$k2}{'rule'};
+    foreach my $k1 ( sort keys %$old_hash ) {
+        for my $k2 ( sort keys %{ $$old_hash{$k1} } ) {
+            next if defined $$new_hash{$k1}{$k2}{'rule'};
             next
-              if ( ($enonly) && ( $$hashref2{$k1}{$k2}{'rule'} =~ /^\s*#/ ) );
-            my $msg_holder = $$hashref2{$k1}{$k2}{'rule'};
+              if ( ($enonly) && ( $$old_hash{$k1}{$k2}{'rule'} =~ /^\s*#/ ) );
+            my $msg_holder = $$old_hash{$k1}{$k2}{'rule'};
             if ( $msg_holder =~ /msg:"[^"]+";/ ) {
                 $msg_holder = $&;
                 $msg_holder =~ s/msg:"//;
@@ -1382,8 +1380,8 @@ sub changelog {
             $dt++;
         }
     }
-    if (%$hashref3){
-        $ips = keys(%$hashref3);
+    if (%$blacklist_hash){
+        $ips = keys(%$blacklist_hash);
     }
     if ( -f $changelog ) {
         open( WRITE,'>>',$changelog ) || croak "$changelog $!\n";
@@ -1706,9 +1704,11 @@ if ( !@base_url ) {
 
 if ( !$Output ) {
     $Output = ( $Config_info{'rule_path'} );
-    if ( !$Output ) { Help("You need to specify an output rules file!"); }
 }
-$Output = slash( 0, $Output );
+
+if ( !$Output && !($keep_rulefiles && $rule_file_path) ) { Help("You need to specify an output rules file or output path!"); }
+
+$Output = slash( 0, $Output ) if $Output;
 
 if ( !$Sorules ) {
     $Sorules = ( $Config_info{'sorule_path'} );
@@ -2055,7 +2055,7 @@ if ( @base_url && -d $temp_path ) {
         }
     }
     # Read our rules and stuff them into a hash
-    if ( $Output && !$grabonly && $Process) {
+    if ( ( $Output || ($keep_rulefiles && $rule_file_path) ) && !$grabonly && $Process) {
         read_rules( \%rules_hash, "$temp_path" . "tha_rules/", $local_rules );
     }
     # If we are using SO rules, generate the stubs and then stuff them into a hash
@@ -2076,8 +2076,8 @@ if ( @base_url && -d $temp_path ) {
 else { Help("Check your oinkcode, temp path and freespace!"); }
 
 # Read our old rules so that we can determine what is new / changed / deleted
-if ($Output && !$grabonly && $Process) {
-    if ( $sid_changelog && -f $Output && !$keep_rulefiles ) {
+if ( ( $Output || ($keep_rulefiles && $rule_file_path ) ) && !$grabonly && $Process) {
+    if ( $sid_changelog && defined $Output && -f $Output && !$keep_rulefiles ) {
         read_rules( \%oldrules_hash, "$Output", $local_rules );
     }
     if ( $sid_changelog && $keep_rulefiles && -d $rule_file_path ) {
@@ -2099,7 +2099,7 @@ if ($black_list && %blacklist && !$NoDownload){
 }
 
 # Set our rule states, based on config files and specified base policy, also set our flowbit dependencies
-if ($Output && !$grabonly && $Process) {
+if ( ( $Output || ($keep_rulefiles && $rule_file_path) ) && !$grabonly && $Process) {
     if ( $ips_policy ne "Disabled" ) {
         policy_set( $ips_policy, \%rules_hash );
     }
@@ -2127,10 +2127,12 @@ if ($Output && !$grabonly && $Process) {
     print "\tDone\n"
       if ( !$Quiet );
 
-    if ($Output && $Process) {
-        rule_write( \%rules_hash, $Output, $enonly ) unless $keep_rulefiles;
-        rule_category_write( \%rules_hash, $rule_file_path, $enonly )
-          if $keep_rulefiles;
+    if ($Output && $Process && !$keep_rulefiles) {
+        rule_write( \%rules_hash, $Output, $enonly );
+    }
+
+    if ($keep_rulefiles && $rule_file_path && $Process) {
+        rule_category_write( \%rules_hash, $rule_file_path, $enonly );
     }
     
     if ($sid_msg_map && $Process) {
@@ -2158,7 +2160,7 @@ if ($Output && !$grabonly && $Process) {
     }
 }
 
-if ( $sid_changelog && -f $Output ) {
+if ( $sid_changelog && ( ( defined $Output && -f $Output ) || ($keep_rulefiles && -d $rule_file_path)) ) {
     changelog(
         $sid_changelog, \%rules_hash, \%oldrules_hash,
         \%blacklist, $ips_policy, $enonly, $hmatch, $bmatch
