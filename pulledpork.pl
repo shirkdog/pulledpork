@@ -1134,12 +1134,13 @@ sub sid_msg {
 
 ## write the rules files to unique output files!
 sub rule_category_write {
-    my ( $hashref, $filepath, $enonly ) = @_;
+    my ( $hashref, $filepath, $enonly, $extra_rules ) = @_;
     print "Writing rules to unique destination files....\n" if !$Quiet;
     print "\tWriting rules to $filepath\n"                  if !$Quiet;
 
     my %hcategory = ();
     my $file;
+    my @local_rules = split( /,/, $extra_rules );
     foreach my $fn (sort keys %$categories){
 	my $file = "$fn.rules";
 	open( WRITE,'>',"$filepath$file" );
@@ -1148,12 +1149,12 @@ sub rule_category_write {
 	    print WRITE "\n# -- Begin GID:$gid Based Rules -- #\n\n";
 	    foreach my $sid (sort keys %{$categories->{$fn}{$gid}}){
 		next unless defined $$hashref{$gid}{$sid}{'rule'};
-		if (   $enonly
+		if ( $enonly
 		&& $$hashref{$gid}{$sid}{'rule'} =~ /^\s*(alert|drop|pass)/ )
 		{
 		    print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
 		}
-		elsif ( !$enonly ) {
+		elsif ( !$enonly || grep /^$filepath$file$/, @local_rules ) {
 		    print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
 		}
 	    }
@@ -2133,7 +2134,7 @@ if ( ( $Output || ($keep_rulefiles && $rule_file_path) ) && !$grabonly && $Proce
     }
 
     if ($keep_rulefiles && $rule_file_path && $Process) {
-        rule_category_write( \%rules_hash, $rule_file_path, $enonly );
+        rule_category_write( \%rules_hash, $rule_file_path, $enonly, $local_rules );
     }
     
     if ($sid_msg_map && $Process) {
