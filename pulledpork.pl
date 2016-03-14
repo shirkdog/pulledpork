@@ -558,7 +558,7 @@ sub read_rules {
     my ( $file, $sid, $gid, @elements );
     print "\t" if ( $Verbose && !$Quiet );
     print "Reading rules...\n" if !$Quiet;
-    my $reading_old_rules = ( $path eq $rule_file_path );
+    my $reading_old_rules = $path eq ( $rule_file_path || '' );
     my @local_rules = split( /,/, $extra_rules );
     foreach (@local_rules) { #First let's read our local rules and assign a gid of 0
         $extra_rules = slash( 0, $_ );
