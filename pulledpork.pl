@@ -386,12 +386,14 @@ sub compare_md5 {
 ## mimic LWP::Simple getstore routine - Thx pkthound!
 sub getstore {
     my ( $url, $file ) = @_;
+    my $method = "GET";
+    $method = "CONNECT" if $ua->proxy("https") and $url =~ /^https:/;
 
     # on the first run, the file may not exist, so check.
     if ( -e $file) { 
         # Check to ensure the user has write access to the file
         if ( -r $file && -w _) {
-    	   my $request = HTTP::Request->new( GET => $url );
+    	   my $request = HTTP::Request->new( $method => $url );
     	   my $response = $ua->request( $request, $file );
     	   $response->code;
         } else {	
@@ -402,7 +404,7 @@ sub getstore {
         }
     } else {
 	   # The file does not exist, any errors refer to permission issues
-    	   my $request = HTTP::Request->new( GET => $url );
+    	   my $request = HTTP::Request->new( $method => $url );
     	   my $response = $ua->request( $request, $file );
     	   $response->code;
     }
