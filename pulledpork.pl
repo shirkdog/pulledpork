@@ -44,6 +44,8 @@ use Data::Dumper;
 my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
 my $VERSION = "PulledPork v0.7.2 - E.Coli in your water bottle!";
 my $ua      = LWP::UserAgent->new;
+#Read in proxy settings from the environment
+$ua->env_proxy;
 
 # for certificate validation, check for the operating system
 # and set the path to the certificate store if required.
