@@ -3,7 +3,7 @@
 ## pulledpork v(whatever it says below!)
 ## cummingsj@gmail.com
 
-# Copyright (C) 2009-2015 JJ Cummings, Michael Shirk and the PulledPork Team!
+# Copyright (C) 2009-2016 JJ Cummings, Michael Shirk and the PulledPork Team!
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -42,10 +42,13 @@ use Data::Dumper;
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
-my $VERSION = "PulledPork v0.7.2 - E.Coli in your water bottle!";
+my $VERSION = "PulledPork v0.7.2";
+my $HUMOR = "E.Coli in your water bottle!";
 my $ua      = LWP::UserAgent->new;
 #Read in proxy settings from the environment
 $ua->env_proxy;
+#Add PulledPork version to the user agent
+$ua->agent("$VERSION ");
 
 # for certificate validation, check for the operating system
 # and set the path to the certificate store if required.
@@ -227,9 +230,9 @@ sub pulledpork {
     https://github.com/shirkdog/pulledpork
       _____ ____
      `----,\\    )
-      `--==\\\\  /    $VERSION
+      `--==\\\\  /    $VERSION - $HUMOR
        `--==\\\\/
-     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2015 JJ Cummings
+     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2016 JJ Cummings
   \@_/        /  66\\_  cummingsj\@gmail.com
     |    \\   \\   _(\")
      \\   /-| ||'--'  Rules give me wings!
@@ -1469,7 +1472,7 @@ sub slash {
 
 ## uh, yeah
 sub Version {
-    print("$VERSION\n\n");
+    print("$VERSION - $HUMOR\n\n");
     exit(0);
 }
 
