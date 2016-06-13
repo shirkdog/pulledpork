@@ -819,7 +819,7 @@ sub modify_sid {
     open( FH, "<$file" ) || carp "Unable to open $file\n";
     while (<FH>) {
         next if ( ( $_ =~ /^\s*#/ ) || ( $_ eq " " ) );
-        if ( $_ =~ /(\[(\d-)?\d+|,|\*\]*)\s+"(.+)"\s+"(.*)"/ ) {
+        if ( $_ =~ /([(\d-)?\d+|,|\*]*)\s+"(.+)"\s+"(.*)"/ ) {
             my ( $ruleids, $from, $to ) = ( $1, $2, $3 );
             @arry = split( /,/, $ruleids ) if $ruleids !~ /\*/;
             @arry = "*" if $ruleids =~ /\*/;
