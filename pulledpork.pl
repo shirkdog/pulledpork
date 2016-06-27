@@ -42,7 +42,7 @@ use Data::Dumper;
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
-my $VERSION = "PulledPork v0.7.2";
+my $VERSION = "PulledPork v0.7.2 - ALPHA";
 my $HUMOR = "E.Coli in your water bottle!";
 my $ua      = LWP::UserAgent->new;
 #Read in proxy settings from the environment
