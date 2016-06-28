@@ -5,7 +5,7 @@ Pulled Pork for Snort rule management (from Google code)
 
 Find us on Freenode (IRC) [`#pulledpork`](https://webchat.freenode.net/?channels=pulledpork)
 
-Copyright (C) 2009-2015 JJ Cummings and the PulledPork Team!
+Copyright (C) 2009-2016 JJ Cummings, Michael Shirk and the PulledPork Team!
 
 
 Thank you for choosing to use PulledPork!  This file provides some basic
