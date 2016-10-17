@@ -832,7 +832,7 @@ sub modify_sid {
                 if (not defined $gid) {
                     $gid = 1;
                 }
-                if ( $sid ne "*" && defined $$href{$gid}{$sid}{'rule'} ) {
+                if ( $sid ne "*" && safe_defined($href, $gid, $sid, 'rule')) {
                     print "\tModifying GID:$gid,SID:$sid from:$from to:$to\n"
                       if ( $Verbose && !$Quiet );
                     $$href{$gid}{$sid}{'rule'} =~ s/$from/$to/;
@@ -1468,6 +1468,17 @@ sub slash {
         $string = $string . "/";
     }
     return $string;
+}
+
+## Test the intermediate levels with exists to prevent unintended autovivification
+sub safe_defined {
+    my ($h, @keys) = @_;
+    foreach my $k (@keys) {
+        return unless ref $h eq 'HASH';
+        return unless exists $h->{$k};
+        $h = $h->{$k};
+    }
+    return defined $h;
 }
 
 ## uh, yeah
