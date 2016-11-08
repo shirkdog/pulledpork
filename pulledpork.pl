@@ -516,7 +516,7 @@ sub md5file {
           getstore( "https://www.snort.org/reg-rules/$rule_file.md5/$oinkcode",
             $temp_path . $rule_file . ".md5" );
     }
-    elsif ( $base_url =~ /(secureworks|emergingthreats\.net|emergingthreatspro\.com|snort-org.*community)/i ) {
+    elsif ( $base_url =~ /(secureworks|emergingthreats\.net|emergingthreatspro\.com|snort\.org.+community)/i ) {
         $getrules_md5 = getstore(
             "$base_url/$rule_file" . ".md5",
             $temp_path . $rule_file . ".md5"
@@ -1987,7 +1987,7 @@ if ( @base_url && -d $temp_path ) {
 		    $base_url .= "$oinkcode/$Snort/";
 		}
             }
-	    elsif ( $base_url =~ /snort-org.+community/ ){
+	    elsif ( $base_url =~ /snort\.org.+community/ ){
 		$prefix = "Snort-Community-"
 	    }
         elsif ( $base_url =~ /secureworks/ ) {
@@ -1997,7 +1997,7 @@ if ( @base_url && -d $temp_path ) {
 	    
 	    $prefix = "Custom-" unless $prefix;
 
-            $Hash = 2 unless $base_url =~ /(secureworks|emergingthreats|[^labs]\.snort\.org)|snort-org/;
+            $Hash = 2 unless $base_url =~ /(secureworks|emergingthreats|[^labs]\.snort\.org)|snort\.org.+community/;
 	    if ($rule_file =~/IPBLACKLIST/) {
 		$Hash = 2;
 		$rule_file.=$blk++;
@@ -2085,7 +2085,7 @@ if ( @base_url && -d $temp_path ) {
 	    croak "file $temp_path/$rule_file does not exist!\n"
               unless (-f "$temp_path/$rule_file");
             $prefix = "ET-" if $base_url =~ /(emergingthreats.net|emergingthreatspro.com)/;
-	    $prefix = "Snort-Community-" if $base_url =~ /snort-org.+community/;
+	    $prefix = "Snort-Community-" if $base_url =~ /snort\.org.+community/;
             rule_extract(
                 $rule_file,    $temp_path, $Distro,
                 $arch,         $Snort,     $Sorules,
