@@ -1,7 +1,7 @@
 pulledpork
 ==========
 
-Pulled Pork for Snort rule management (from Google code)
+Pulled Pork for Snort and Suricata rule management (from Google code)
 
 Find us on Freenode (IRC) [`#pulledpork`](https://webchat.freenode.net/?channels=pulledpork)
 
@@ -29,6 +29,7 @@ thoroughly so that you don't overlook something!
  * Aids in tuning of rulesets
  * Verbose output so that you know EXACTLY what is happening
  * Minimal Perl Module dependencies
+ * Support for Suricata, and ETOpen/ETPro rulesets
  * A sweet smokey flavor throughout the pork!
 
 
@@ -155,6 +156,11 @@ and write them to `/usr/local/etc/snort/rules/`
 
     ./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -e enablesid.conf -m /usr/local/etc/snort/sid-msg.map \
       -h /var/log/sid_changes.log -I security -H -K /usr/local/etc/snort/rules/
+
+For users of Suricata, the same steps are necessary for where your installation files reside, but all that pulledpork needs to process
+rule files is the `-S` flag being set to `suricata-3.1.3` or whatever version of suricata you are using
+
+    ./pulledpork.pl -c pulledpork.conf -S suricata-3.1.3
 
 
 ##Special Notes Section

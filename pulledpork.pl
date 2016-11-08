@@ -42,7 +42,7 @@ use Data::Dumper;
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
-my $VERSION = "PulledPork v0.7.2 - ALPHA";
+my $VERSION = "PulledPork v0.7.2";
 my $HUMOR = "E.Coli in your water bottle!";
 my $ua      = LWP::UserAgent->new;
 #Read in proxy settings from the environment
@@ -91,7 +91,7 @@ my ( $Snort_config, $Snort_path, $Textonly,   $grabonly,    $ips_policy, );
 my ( $pid_path,     $SigHup,     $NoDownload, $sid_msg_map, @base_url );
 my ( $local_rules,  $arch,       $docs,       @records,     $enonly );
 my ( $rstate, $keep_rulefiles, $rule_file_path, $prefix, $black_list );
-my ( $Process, $hmatch, $bmatch , $sid_msg_version, $skipVerify);
+my ( $Process, $hmatch, $bmatch , $sid_msg_version, $skip_verify, $proxy_workaround);
 my $Sostubs = 1;
 
 # verbose and quiet control print()
@@ -217,6 +217,7 @@ sub Help {
    -v Verbose mode, you know.. for troubleshooting and such nonsense.
    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
    -w Skip the SSL verification (if there are issues pulling down rule files)
+   -W Where you want to work around the issue where some implementations of LWP do not work with pulledpork's proxy configuration.
 __EOT
 
     exit(0);
@@ -391,9 +392,18 @@ sub compare_md5 {
 ## mimic LWP::Simple getstore routine - Thx pkthound!
 sub getstore {
     my ( $url, $file ) = @_;
+	
     my $method = "GET";
-    $method = "CONNECT" if $ua->proxy("https") and $url =~ /^https:/;
 
+    #Workaround proxy issues, depends on version of LWP
+    #May need to be addressed in the future
+    if ($ua->proxy("https") && $url =~ /^https:/ && ! $proxy_workaround) {
+        $method = "CONNECT";
+    } else {
+        $method = "GET";
+    }
+
+	
     # on the first run, the file may not exist, so check.
     if ( -e $file) { 
         # Check to ensure the user has write access to the file
@@ -1613,7 +1623,8 @@ GetOptions(
     "V!"     => sub { Version() },
     "v+"     => \$Verbose,
     "help|?" => sub { Help() },
-    "w" => \$skipVerify
+    "w" => \$skip_verify,
+    "W" => \$proxy_workaround
 );
 
 ## Fly piggy fly!
@@ -1816,7 +1827,8 @@ if ( $Verbose && !$Quiet ) {
     if ($Textonly)     { print "\tText Rules only Flag is Set\n"; }
     if ( $Verbose == 2 ) { print "\tExtra Verbose Flag is Set\n"; }
     if ($Verbose)        { print "\tVerbose Flag is Set\n"; }
-    if ($skipVerify)     { print "\tSSL Hostname Verification disabled\n"; }
+    if ($skip_verify)     { print "\tSSL Hostname Verification disabled\n"; }
+    if ($proxy_workaround)     { print "\tLWP Workaround is set for Proxy connections\n"; }
     if ($ignore_files)   { print "\tFile(s) to ignore = $ignore_files\n"; }
     if (@base_url)       { print "\tBase URL is: @base_url\n"; }
 }
@@ -1841,7 +1853,7 @@ $ua->agent("$VERSION");
 $ua->show_progress(1) if ( $Verbose && !$Quiet );
 
 # check to see if SSL verfication is disabled
-if ($skipVerify) {
+if ($skip_verify) {
     $ua->ssl_opts( verify_hostname => 0 )
 }
 
