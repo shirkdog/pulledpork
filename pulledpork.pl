@@ -42,8 +42,8 @@ use Data::Dumper;
 
 # we are gonna need these!
 my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
-my $VERSION = "PulledPork v0.7.2";
-my $HUMOR = "E.Coli in your water bottle!";
+my $VERSION = "PulledPork v0.7.3";
+my $HUMOR = "Making signature updates great again!";
 my $ua      = LWP::UserAgent->new;
 #Read in proxy settings from the environment
 $ua->env_proxy;
@@ -1668,7 +1668,7 @@ if ( $Verbose && !$Quiet ) {
 if ( exists $Config_info{'version'} ) {
     croak "You are not using the current version of pulledpork.conf!\n",
       "Please use the version of pulledpork.conf that shipped with $VERSION!\n\n"
-      if $Config_info{'version'} ne "0.7.2";
+      if $Config_info{'version'} ne "0.7.3";
 }
 else {
     croak
