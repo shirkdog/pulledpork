@@ -889,6 +889,7 @@ sub modify_state {
         close(DATA);
         if ($hashref) {
             my $sidcount = 0;
+            my $skipcount = 0;
             foreach (@sid_mod) {
 
                 # ranges
@@ -982,6 +983,7 @@ sub modify_state {
                 $sidcount++;
             }
             $sidcount = 0;
+            $skipcount = 0;
             foreach (@sid_mod) {
                 if ( $_ =~ /^\d+:\d+/ ) {
                     my $gid = $&;
@@ -1063,6 +1065,10 @@ sub modify_state {
                                     /^\s*#*\s*(alert|drop|pass)/i )
                                 {
                                     $$hashref{$gid}{$sid}{'disabled'} = 1;
+                                    if ( $Verbose && !$Quiet ) {
+                                        print "\tAlready Disabled $gid:$sid\n";
+                                    }
+                                    $skipcount++;
                                 }
                             }
                         }
@@ -1070,6 +1076,7 @@ sub modify_state {
                 }
             }
             print "\tModified $sidcount rules\n" if !$Quiet;
+            print "\tSkipped $sidcount rules (already disabled)\n" if !$Quiet;
         }
     }
     print "\tDone\n" if !$Quiet;
