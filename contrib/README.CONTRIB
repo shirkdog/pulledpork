@@ -1,4 +1,7 @@
 This file is essentially a manifest of the contrib directory.
 
+Unless a license is specified, anything in this contrib directory is governed
+by the GPLv2 license.
+
 oink-conv.pl - tool that converts oinkmaster config files to pulledpork config files
  * Author: Russell Fulton
