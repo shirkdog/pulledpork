@@ -3,7 +3,7 @@ pulledpork
 
 PulledPork for Snort and Suricata rule management (from Google code)
 
-Find us on Freenode (IRC) [`#ppork`](https://webchat.freenode.net/?channels=pulledpork)
+Find us on Freenode (IRC) [`#ppork`](https://webchat.freenode.net/?channels=ppork)
 
 Copyright (C) 2009-2016 JJ Cummings, Michael Shirk and the PulledPork Team!
 
