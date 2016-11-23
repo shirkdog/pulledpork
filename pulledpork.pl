@@ -456,7 +456,7 @@ sub rulefetch {
     if ( $getrules_rule == 403 ) {
         print
 "\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
-"\tYou may also wish to verfiy your oinkcode, tarball name, and other configuration options\n";
+"\tYou may also wish to verify your oinkcode, tarball name, and other configuration options\n";
         syslogit( 'emerg|local0', "FATAL: 403 error occured" ) if $Syslogging;
         exit(1);    # For you shirkdog
     }
@@ -525,7 +525,7 @@ sub md5file {
     if ( $getrules_md5 == 403 ) {
         print
 "\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
-"\tYou may also wish to verfiy your oinkcode, tarball name, and other configuration options\n";
+"\tYou may also wish to verify your oinkcode, tarball name, and other configuration options\n";
     }
     elsif ( $getrules_md5 == 404 ) {
         print
