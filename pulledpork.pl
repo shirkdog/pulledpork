@@ -62,8 +62,7 @@ if ($oSystem =~ /freebsd/i) {
            $ua->ssl_opts( SSL_ca_file => $CAFile );
         } else {	
     	   carp "ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n";
-	   syslogit( 'err|local0', "FATAL: ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n")
-	   if $Syslogging;
+	   syslogit( 'err|local0', "FATAL: ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n");
  	   exit(1);
         }
     #Check for the other location for the cert file
@@ -73,14 +72,12 @@ if ($oSystem =~ /freebsd/i) {
            $ua->ssl_opts( SSL_ca_file => $CAFile );
         } else {	
     	   carp "ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n";
-	   syslogit( 'err|local0', "FATAL: ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n")
-	   if $Syslogging;
+	   syslogit( 'err|local0', "FATAL: ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n");
  	   exit(1);
         }
     } else {
            carp "ERROR: cert file does not exist (/etc/ssl/cert.pem or /usr/local/etc/ssl/cert.pem) Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n";
-           syslogit( 'err|local0', "FATAL: cert file does not exist. Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n")
-           if $Syslogging;
+           syslogit( 'err|local0', "FATAL: cert file does not exist. Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n");
            exit(1);
     }
 }
@@ -135,8 +132,7 @@ sub parse_config_file {
 
     if ( !open( CONFIG, "$FileConf" ) ) {
         carp "ERROR: Config file not found : $FileConf\n";
-        syslogit( 'err|local0', "FATAL: Config file not found: $FileConf" )
-          if $Syslogging;
+        syslogit( 'err|local0', "FATAL: Config file not found: $FileConf" );
         exit(1);
     }
     open( CONFIG, "$FileConf" );
@@ -413,8 +409,7 @@ sub getstore {
     	   $response->code;
         } else {	
     	   carp "ERROR: $file is not writable by ".(getpwuid($<))[0]."\n";
-	   syslogit( 'err|local0', "FATAL: $file is not writable by ".(getpwuid($<))[0]."\n" )
-	   if $Syslogging;
+	   syslogit( 'err|local0', "FATAL: $file is not writable by ".(getpwuid($<))[0]."\n" );
  	   exit(1);
         }
     } else {
@@ -457,25 +452,23 @@ sub rulefetch {
         print
 "\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
 "\tYou may also wish to verfiy your oinkcode, tarball name, and other configuration options\n";
-        syslogit( 'emerg|local0', "FATAL: 403 error occured" ) if $Syslogging;
+        syslogit( 'emerg|local0', "FATAL: 403 error occured" );
         exit(1);    # For you shirkdog
     }
     elsif ( $getrules_rule == 404 ) {
         print
 "\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";
-        syslogit( 'emerg|local0', "FATAL: 404 error occured" ) if $Syslogging;
+        syslogit( 'emerg|local0', "FATAL: 404 error occured" );
         exit(1);    # For you shirkdog
     }
     elsif ( $getrules_rule == 500 ) {
         print
 "\tA 500 error occurred, please verify that you have recently updated your root certificates!\n";
-        syslogit( 'emerg|local0', "FATAL: 500 error occured" ) if $Syslogging;
+        syslogit( 'emerg|local0', "FATAL: 500 error occured" );
         exit(1);    # Certs bitches!
     }
     unless ( is_success($getrules_rule) ) {
-        syslogit( 'emerg|local0',
-            "FATAL: Error $getrules_rule when fetching $rule_file" )
-          if $Syslogging;
+        syslogit( 'emerg|local0', "FATAL: Error $getrules_rule when fetching $rule_file" );
         croak "\tError $getrules_rule when fetching " . $rule_file;
     }
 
@@ -758,8 +751,7 @@ sub gen_stubs {
         while (<FH>) {
             print "\t$_" if $_ =~ /Dumping/i && ( $Verbose && !$Quiet );
             next unless $_ =~ /(err|warn|fail)/i;
-            syslogit( 'warning|local0', "FATAL: An error occured: $_" )
-              if $Syslogging;
+            syslogit( 'warning|local0', "FATAL: An error occured: $_" );
             print "\tAn error occurred: $_\n";
 
             # Yes, this is lame error reporting to stdout ...
@@ -1542,7 +1534,7 @@ sub get_arch {
 ## log to syslog
 sub syslogit {
     my ( $level, $msg ) = @_;
-
+    return if !$Syslogging;
     openlog( 'pulledpork', 'ndelay,pid', 'local0' );
     syslog( $level, $msg );
     closelog;
@@ -2207,6 +2199,6 @@ if ( $sid_changelog && ( ( defined $Output && -f $Output ) || ($keep_rulefiles &
 }
 
 print("Fly Piggy Fly!\n") if !$Quiet;
-syslogit( 'warning|local0', "INFO: Finished Cleanly" ) if $Syslogging;
+syslogit( 'warning|local0', "INFO: Finished Cleanly" );
 
 __END__
