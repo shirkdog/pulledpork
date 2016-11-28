@@ -114,6 +114,11 @@ thoroughly so that you don't overlook something!
 
     -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
 
+    -w Skip the SSL verification (if there are issues pulling down rule files)
+
+    -W Where you want to work around the issue where some implementations of LWP do not work with pulledpork's proxy configuration.
+
+
 ## Basic Usage Examples
 
 A simple example of how to use PulledPork would be to specify all of your configuration directives inside of the
