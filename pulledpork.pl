@@ -1770,7 +1770,7 @@ if ( !$Snort ) {
 
 if ( !$Snort_path ) {
     $Snort_path = ( $Config_info{'snort_path'} );
-    $Snort      = snort_version($Snort_path) if ( -B $Snort_path && !$Snort );
+    $Snort      = snort_version($Snort_path) if ( !$Snort && -B $Snort_path );
     $arch       = get_arch();
     $Textonly   = 1 unless $Snort;
 }
