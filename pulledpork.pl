@@ -1086,7 +1086,7 @@ sub modify_state {
 ## iprep control socket!
 sub iprep_control {
     my ($bin,$path) = @_;
-    return unless ( defined $bin && -f $bin && -f $path );
+    return unless ( defined $bin && -f $bin && -d $path );
     my $cmd = "$bin $path 1361";
     print "Issuing reputation socket reload command\n";
     print "Command: $cmd\n" if $Verbose;
