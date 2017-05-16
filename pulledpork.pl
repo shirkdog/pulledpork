@@ -439,7 +439,7 @@ sub rulefetch {
     }
     if ( $base_url =~ /[^labs]\.snort\.org/i ) {
         $getrules_rule =
-          getstore( "https://www.snort.org/reg-rules/$rule_file/$oinkcode",
+          getstore( "https://www.snort.org/rules/$rule_file\?oinkcode=$oinkcode",
             $temp_path . $rule_file );
     }
     elsif ($rule_file =~ /IPBLACKLIST/ && !$NoDownload){
@@ -513,7 +513,7 @@ sub md5file {
       if ( $Verbose && !$Quiet );
     if ( $base_url =~ /[^labs]\.snort\.org/i ) {
         $getrules_md5 =
-          getstore( "https://www.snort.org/reg-rules/$rule_file.md5/$oinkcode",
+          getstore( "https://www.snort.org/rules/$rule_file.md5\?oinkcode=$oinkcode",
             $temp_path . $rule_file . ".md5" );
     }
     elsif ( $base_url =~ /(secureworks|emergingthreats\.net|emergingthreatspro\.com|snort\.org.+community)/i ) {
