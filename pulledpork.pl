@@ -1965,7 +1965,7 @@ if ( @base_url && -d $temp_path ) {
 
             if ( $base_url =~ /[^labs]\.snort\.org/i ) {
                 $prefix = "VRT-";
-                unless ( $rule_file =~ /snortrules-snapshot-\d{4}\.tar\.gz/
+                unless ( $rule_file =~ /snortrules-snapshot-\d{4,6}\.tar\.gz/
                     || $rule_file =~ /opensource\.gz/ )
                 {
                     croak(
@@ -2072,7 +2072,7 @@ if ( @base_url && -d $temp_path ) {
 	    next if $rule_file =~ /IPBLACKLIST/;
 	    if ( $base_url =~ /[^labs]\.snort\.org/i ) {
                 $prefix = "VRT-";
-                unless ( $rule_file =~ /snortrules-snapshot-\d{4}\.tar\.gz/ ) {
+                unless ( $rule_file =~ /snortrules-snapshot-\d{4,6}\.tar\.gz/ ) {
                     croak(
 "The specified Snort rules tarball does not exist!\nPlease correct the value or specify the FULL",
                         " rules tarball name in the pulledpork.conf!\n"
