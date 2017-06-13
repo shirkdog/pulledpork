@@ -429,13 +429,14 @@ sub getstore {
 ## time to grab the real 0xb33f
 sub rulefetch {
     my ( $oinkcode, $rule_file, $temp_path, $base_url ) = @_;
-    print "Rules tarball download of $rule_file....\n" if ( !$Quiet && $rule_file !~/IPBLACKLIST/ );
-    print "IP Blacklist download of $base_url....\n" if ( !$Quiet && $rule_file =~/IPBLACKLIST/ );
+    print "Rules tarball download of $rule_file....\n" if ( !$Quiet && $rule_file !~/IPBLACKLIST/ && $oinkcode !~/RULEFILE/);
+    print "Rule file download of $rule_file....\n" if ( !$Quiet && $rule_file !~/IPBLACKLIST/ && $oinkcode =~/RULEFILE/ );
+    print "IP Blacklist download of $base_url....\n" if ( !$Quiet && $rule_file =~/IPBLACKLIST/ && $oinkcode !~/RULEFILE/ );
     $base_url = slash( 0, $base_url );
     my ($getrules_rule);
     if ( $Verbose && !$Quiet ) {
-        print "\tFetching rules file: $rule_file\n" if $rule_file !~/IPBLACKLIST/;
-        if ($Hash && $rule_file !~/IPBLACKLIST/) { print "But not verifying MD5\n"; }
+        print "\tFetching rules file: $rule_file\n" if ($rule_file !~/IPBLACKLIST/ && $oinkcode !~/RULEFILE/);
+        if ($Hash && $rule_file !~/IPBLACKLIST/ && $oinkcode !~/RULEFILE/) { print "But not verifying MD5\n"; }
     }
     if ( $base_url =~ /[^labs]\.snort\.org/i ) {
         $getrules_rule =
@@ -448,6 +449,12 @@ sub rulefetch {
 	  getstore( $base_url, $temp_path . "$rand-black_list.rules");
 	read_iplist(\%blacklist,$temp_path . "$rand-black_list.rules");
 	unlink ($temp_path . "$rand-black_list.rules");
+    }
+    elsif ($oinkcode =~ /RULEFILE/ && !$NoDownload){
+	my $rand = rand(1000);
+	mkpath( $temp_path . "/tha_rules" );
+	$getrules_rule =
+	  getstore( $base_url . "/" . $rule_file, $temp_path . "/tha_rules/" . $rule_file );
     }
     else {
         $getrules_rule =
@@ -2002,6 +2009,10 @@ if ( @base_url && -d $temp_path ) {
 		$Hash = 2;
 		$rule_file.=$blk++;
 	    }
+	    
+	    if ($rule_file =~/RULEFILE/) {
+		$Hash = 2;
+	    }
 
             if ( !$Hash ) {
                 $md5 = md5file( $oinkcode, $rule_file, $temp_path, $base_url );
@@ -2055,13 +2066,16 @@ if ( @base_url && -d $temp_path ) {
 	    foreach (keys %{$filelist}){
 		next if $_ eq "EXTRACT";
 		$Process = 1;
-		rule_extract(
-		    $_,    			   $filelist->{$_}{temp_path},
-		    $filelist->{$_}{Distro},	   $filelist->{$_}{arch},
-		    $filelist->{$_}{Snort},        $filelist->{$_}{Sorules},
-		    $filelist->{$_}{ignore_files}, $filelist->{$_}{docs},
-		    $filelist->{$_}{prefix}
-		);
+		
+		if ($filelist->{$_}{oinkcode} !~ "RULEFILE") {
+			rule_extract(
+				$_,    			   $filelist->{$_}{temp_path},
+				$filelist->{$_}{Distro},	   $filelist->{$_}{arch},
+				$filelist->{$_}{Snort},        $filelist->{$_}{Sorules},
+				$filelist->{$_}{ignore_files}, $filelist->{$_}{docs},
+				$filelist->{$_}{prefix}
+			);
+		}
 	    }
 	}
     }
