@@ -534,16 +534,21 @@ sub md5file {
 "\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
 "\tYou may also wish to verify your oinkcode, tarball name, and other configuration options\n";
     }
+    elsif ( $getrules_md5 == 429 ) {
+        print
+"\tA 429 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
+"\tYou may also wish to verify your oinkcode, tarball name, and other configuration options\n";
+    }
     elsif ( $getrules_md5 == 404 ) {
         print
 "\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";
     }
-    croak "\tError $getrules_md5 when fetching "
+    warn "\tError $getrules_md5 when fetching "
       . $base_url . "/"
       . $rule_file . ".md5"
       unless is_success($getrules_md5);
     open( FILE, "$temp_path$rule_file.md5" )
-      or croak $!;
+      or warn $!;
     $md5 = <FILE>;
     chomp($md5);
     close(FILE);
