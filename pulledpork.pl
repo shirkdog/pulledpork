@@ -233,8 +233,8 @@ sub pulledpork {
      `----,\\    )
       `--==\\\\  /    $VERSION - $HUMOR
        `--==\\\\/
-     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2016 JJ Cummings
-  \@_/        /  66\\_  cummingsj\@gmail.com
+     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2017 JJ Cummings, Michael Shirk
+  \@_/        /  66\\_  and the PulledPork Team!
     |    \\   \\   _(\")
      \\   /-| ||'--'  Rules give me wings!
       \\_\\  \\_\\\\
@@ -1524,10 +1524,10 @@ sub snort_version {
     open( FH, "$cmd 2>&1 |" );
     while (<FH>) {
         next unless $_ =~ /Version/;
-        if ( $_ =~ /\d\.\d\.\d\.\d/ ) {
+        if ( $_ =~ /\d+\.\d+\.\d+\.(\d|\d+)/ ) {
             $version = $&;
         }
-        elsif ( $_ =~ /\d\.\d\.\d/ ) {
+        elsif ( $_ =~ /\d+\.\d+\.\d+(?!\.)/ ) {
             $version = $& . ".0";
         }
     }
