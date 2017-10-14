@@ -1524,7 +1524,7 @@ sub snort_version {
     open( FH, "$cmd 2>&1 |" );
     while (<FH>) {
         next unless $_ =~ /Version/;
-        if ( $_ =~ /\d+\.\d+\.\d+\.(\d|\d+)/ ) {
+        if ( $_ =~ /\d+\.\d+\.\d+\.\d+/ ) {
             $version = $&;
         }
         elsif ( $_ =~ /\d+\.\d+\.\d+(?!\.)/ ) {
