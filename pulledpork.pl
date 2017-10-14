@@ -204,6 +204,7 @@ sub Help {
    -M where the modifysid config file lives.
    -n Do everything other than download of new files (disablesid, etc)
    -o Where do you want me to put generic rules file?
+   -O Define the oinkcode on the command line (necessary for some users)
    -p Path to your Snort binary
    -P Process rules even if no new rules were downloaded
    -R When processing enablesid, return the rules to their ORIGINAL state
@@ -1641,6 +1642,7 @@ GetOptions(
     "m=s"    => \$sid_msg_map,
     "n!"     => \$NoDownload,
     "o=s"    => \$Output,
+    "O=s"    => \$oinkcode,
     "p=s"    => \$Snort_path,
     "P!"     => \$Process,
     "q"      => \$Quiet,
