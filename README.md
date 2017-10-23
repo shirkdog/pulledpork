@@ -168,7 +168,7 @@ rule files is the `-S` flag being set to `suricata-3.1.3` or whatever version of
     ./pulledpork.pl -c pulledpork.conf -S suricata-3.1.3
 
 
-##Special Notes Section
+## Special Notes Section
 
 Please note that pulledpork runs rule modification (enable, drop, disable, modify) in that order by default..
 
