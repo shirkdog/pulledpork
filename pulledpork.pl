@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 
 ## pulledpork v(whatever it says below!)
-## cummingsj@gmail.com
 
 # Copyright (C) 2009-2017 JJ Cummings, Michael Shirk and the PulledPork Team!
 
@@ -1962,6 +1961,7 @@ if ( @base_url && -d $temp_path ) {
 	# Crate a local hash that we will iterate through later for processing
 	my $filelist = ();
 	my $blk=0;
+	my $Snortv = "";
 	# Iterate through all of our urls and check md5 then process accordingly etc...
         foreach (@base_url) {
 	    undef $Hash if ($Hash && $Hash == 2);
@@ -1986,19 +1986,45 @@ if ( @base_url && -d $temp_path ) {
 "The specified Snort binary does not exist!\nPlease correct the value or specify the FULL",
                         " rules tarball name in the pulledpork.conf!\n"
                     ) unless $Snort;
-                    my $Snortv = $Snort;
+                    $Snortv = $Snort;
                     $Snortv =~ s/\.//g;
                     $rule_file = "snortrules-snapshot-$Snortv.tar.gz";
                 }
             }
-            elsif ( $base_url =~ /(emergingthreats.net|emergingthreatspro.com)/ ) {
+            elsif ( $base_url =~ /(emergingthreats.net)/ ) {
                 $prefix = "ET-";
-		if ($Snort =~ /(?<=\d\.\d\.\d)\.\d/) {
-		    my $Snortv = $Snort;
-		    $Snortv =~ s/(?<=\d\.\d\.\d)\.\d//;
-		    $base_url .= "$oinkcode/snort-$Snortv/";
+		# These have to be handled separately, as emerginthreatspro will
+		# support a full version, but emergingthreats only supports the
+		# major and minor version.
+		# Currently this is a check that the version
+		# is in fact a Snort version, where Suricata
+		# will require suricata to be included in the version
+		# to work with suricata rules. Current open set uses
+		# only the first part of the version.
+		if ($Snort =~ /^\d+\.\d+\.\d+\.\d+/) {
+		 	$Snortv = $Snort;
+		   	$Snortv =~ s/^(\d+\.\d+)\.\d+\.\d/$1.0/;
+		   	$base_url .= "$oinkcode/snort-$Snortv/";
 		} elsif ($Snort =~ /suricata/i) {
-		    $base_url .= "$oinkcode/$Snort/";
+			# Assumption here, this will need to be fixed
+			# as the open ruleset does not handle suricata
+			# versions
+		    	$base_url .= "$oinkcode/$Snort/";
+		}
+	    } 
+            elsif ( $base_url =~ /emergingthreatspro.com/ ) {
+		# These have to be handled separately, as emerginthreatspro will
+		# support a full version, but emergingthreats only supports the
+		# major and minor version
+		if ($Snort =~ /^\d+\.\d+\.\d+\.\d+/) {
+		 	$Snortv = $Snort;
+		   	$Snortv =~ s/^(\d+\.\d+)\.\d+\.\d/$1.0/;
+		   	$base_url .= "$oinkcode/snort-$Snortv/";
+		} elsif ($Snort =~ /suricata/i) {
+			# Assumption here, this will need to be fixed
+			# as the open ruleset does not handle suricata
+			# versions
+		    	$base_url .= "$oinkcode/$Snort/";
 		}
             }
 	    elsif ( $base_url =~ /snort\.org.+community/ ){
