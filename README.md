@@ -38,7 +38,7 @@ thoroughly so that you don't overlook something!
     Usage: ./pulledpork.pl [-dEgHklnRTPVvv? -help] -c <config filename> -o <rule output path>
        -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
        -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
-       -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
+       -h <changelog path> -H <signal_name> -I (security|connectivity|balanced) -i <path to disablesid.conf>
        -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
        -r <path to docs folder> -K <directory for separate rules files>
 
@@ -69,7 +69,7 @@ thoroughly so that you don't overlook something!
 
     -h path to the sid_changelog if you want to keep one?
 
-    -H Send a SIGHUP to the pids listed in the config file
+    -H Send signal_name to the pids listed in the config file (SIGHUP or SIGUSR2)
 
     -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
 
