@@ -87,7 +87,7 @@ if ($oSystem =~ /freebsd/i) {
 my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
 my ( $Output, $Distro, $Snort, $sid_changelog, $ignore_files );
 my ( $Snort_config, $Snort_path, $Textonly,   $grabonly,    $ips_policy, );
-my ( $pid_path,     $SigHup,     $NoDownload, $sid_msg_map, @base_url );
+my ( $pid_path,     $SigName,     $NoDownload, $sid_msg_map, @base_url );
 my ( $local_rules,  $arch,       $docs,       @records,     $enonly );
 my ( $rstate, $keep_rulefiles, $rule_file_path, $prefix, $black_list );
 my ( $Process, $hmatch, $bmatch , $sid_msg_version, $skip_verify, $proxy_workaround);
@@ -168,7 +168,7 @@ sub Help {
     if ($msg) { print "\nERROR: $msg\n"; }
 
     print <<__EOT;
-  Usage: $0 [-dEgHklnRTPVvv? -help] -c <config filename> -o <rule output path>
+  Usage: $0 [-dEgklnRTPVvv? -H <signal_name> -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
@@ -192,7 +192,7 @@ sub Help {
    -E Write ONLY the enabled rules to the output files.
    -g grabonly (download tarball rule file(s) and do NOT process)
    -h path to the sid_changelog if you want to keep one?
-   -H Send a SIGHUP to the pids listed in the config file
+   -H Send signal_name to the pids listed in the config file
    -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
    -i Where the disablesid config file lives.
    -k Keep the rules in separate files (using same file names as found when reading)
@@ -1112,21 +1112,21 @@ sub iprep_control {
 }
 
 ## goodbye
-sub sig_hup {
-    my ($pidlist) = @_;
+sub send_signal {
+    my ($signal_name, $pidlist) = @_;
     my @pids = split( /,/, $pidlist );
     my $pid;
-    print "HangUP Time....\n";
+    print "Signaling Time....\n";
     foreach $pid (@pids) {
         open( FILE, "$pid" )
           or croak $!;
         my $realpid = <FILE>;
         chomp($realpid);
         close(FILE);
-        my $hupres = kill 1, $realpid;
+        my $kill_ret = kill "$signal_name", $realpid;
         if ( $Verbose && !$Quiet ) {
             print
-              "\tSent kill signal to $realpid from $pid with result $hupres\n";
+              "\tSent $signal_name signal to $realpid from $pid with result $kill_ret\n";
         }
     }
     if ( !$Verbose && !$Quiet ) { print "\tDone!\n"; }
@@ -1629,7 +1629,7 @@ GetOptions(
     "E!"     => \$enonly,
     "e=s"    => \$sidmod{enable},
     "g!"     => \$grabonly,
-    "H!"     => \$SigHup,
+    "H=s"    => \$SigName,
     "h=s"    => \$sid_changelog,
     "i=s"    => \$sidmod{disable},
     "I=s"    => \$ips_policy,
@@ -1848,7 +1848,7 @@ if ( $Verbose && !$Quiet ) {
         print "\tsid changes will be logged to: $sid_changelog\n";
     }
     if ($sid_msg_map)  { print "\tsid-msg.map Output Path is: $sid_msg_map\n"; }
-    if ($SigHup)       { print "\tSIGHUP Flag is Set\n"; }
+    if ($SigName)      { print "\tSending signal Flag is Set\n"; }
     if ($Snort)        { print "\tSnort Version is: $Snort\n"; }
     if ($Snort_config) { print "\tSnort Config File: $Snort_config\n"; }
     if ($Snort_path)   { print "\tSnort Path is: $Snort_path\n"; }
@@ -2226,9 +2226,9 @@ if ( ( $Output || ($keep_rulefiles && $rule_file_path) ) && !$grabonly && $Proce
         sid_write( \%sid_msg_map, $sid_msg_map, $sid_msg_version );
     }
 
-    if ( $SigHup && $pid_path ne "" && $Process) {
-        sig_hup($pid_path) unless $Sostubs;
-        print "WARNING, cannot send sighup if also processing SO rules\n",
+    if ( $SigName && $pid_path ne "" && $Process) {
+        send_signal( $SigName, $pid_path) unless $Sostubs;
+        print "WARNING, cannot send signal if also processing SO rules\n",
           "\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
           if ( $Sostubs && !$Quiet );
     }
