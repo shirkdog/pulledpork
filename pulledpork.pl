@@ -1088,7 +1088,7 @@ sub modify_state {
                 }
             }
             print "\tModified $sidcount rules\n" if !$Quiet;
-            print "\tSkipped $sidcount rules (already disabled)\n" if !$Quiet;
+            print "\tSkipped $skipcount rules (already disabled)\n" if !$Quiet;
         }
     }
     print "\tDone\n" if !$Quiet;
