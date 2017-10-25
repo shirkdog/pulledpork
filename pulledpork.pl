@@ -168,10 +168,10 @@ sub Help {
     if ($msg) { print "\nERROR: $msg\n"; }
 
     print <<__EOT;
-  Usage: $0 [-dEgklnRTPVvv? -H <signal_name> -help] -c <config filename> -o <rule output path>
+  Usage: $0 [-dEgklnRTPVvv? -help] -c <config filename> -o <rule output path>
    -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
-   -h <changelog path> -I (security|connectivity|balanced) -i <path to disablesid.conf>
+   -h <changelog path> -H <signal_name> -I (security|connectivity|balanced) -i <path to disablesid.conf>
    -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
    -r <path to docs folder> -K <directory for separate rules files>
   
@@ -192,7 +192,7 @@ sub Help {
    -E Write ONLY the enabled rules to the output files.
    -g grabonly (download tarball rule file(s) and do NOT process)
    -h path to the sid_changelog if you want to keep one?
-   -H Send signal_name to the pids listed in the config file
+   -H Send signal_name to the pids listed in the config file (SIGHUP or SIGUSR2)
    -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
    -i Where the disablesid config file lives.
    -k Keep the rules in separate files (using same file names as found when reading)
@@ -1848,7 +1848,7 @@ if ( $Verbose && !$Quiet ) {
         print "\tsid changes will be logged to: $sid_changelog\n";
     }
     if ($sid_msg_map)  { print "\tsid-msg.map Output Path is: $sid_msg_map\n"; }
-    if ($SigName)      { print "\tSending signal Flag is Set\n"; }
+    if ($SigName)      { print "\tSending signal Flag is Set: $SigName\n"; }
     if ($Snort)        { print "\tSnort Version is: $Snort\n"; }
     if ($Snort_config) { print "\tSnort Config File: $Snort_config\n"; }
     if ($Snort_path)   { print "\tSnort Path is: $Snort_path\n"; }
@@ -2227,10 +2227,16 @@ if ( ( $Output || ($keep_rulefiles && $rule_file_path) ) && !$grabonly && $Proce
     }
 
     if ( $SigName && $pid_path ne "" && $Process) {
-        send_signal( $SigName, $pid_path) unless $Sostubs;
-        print "WARNING, cannot send signal if also processing SO rules\n",
-          "\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
-          if ( $Sostubs && !$Quiet );
+	# This may need to be changed, but for now, error out
+	# if the signal name is not SIGHUP or SIGUSR2
+	if ( $SigName == "SIGHUP" || $SigName == "SIGUSR2" ) { 
+        	send_signal( $SigName, $pid_path) unless $Sostubs;
+        	print "WARNING, cannot send signal if also processing SO rules\n",
+          	"\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
+          	if ( $Sostubs && !$Quiet );
+	} else {
+            carp "Bad signal name used: $SigName - $!\n";
+	}
     }
 
     if ( $Config_info{backup} ) {
