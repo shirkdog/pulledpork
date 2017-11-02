@@ -389,10 +389,22 @@ sub compare_md5 {
     }
 }
 
+sub _get_ua_request {
+    my ($ua, $method, $url, $file) = @_;
+    my $request = HTTP::Request->new( $method => $url );
+    my $response = $ua->request( $request, $file );
+    if ($response->is_success) {
+        return $response->code;
+    }
+    # TODO: 4XX catching
+    my $msg = sprintf("Error downloading %s: %s [ %d ]", $url, $response->status_line, $response->code);
+    syslogit('err|local0', $msg) if $Syslogging;
+    die $msg, $/;
+}
+
 ## mimic LWP::Simple getstore routine - Thx pkthound!
 sub getstore {
     my ( $url, $file ) = @_;
-	
     my $method = "GET";
 
     #Workaround proxy issues, depends on version of LWP
@@ -403,27 +415,24 @@ sub getstore {
         $method = "GET";
     }
 
-	
     # on the first run, the file may not exist, so check.
-    if ( -e $file) { 
+    if (-e $file) {
         # Check to ensure the user has write access to the file
-        if ( -r $file && -w _) {
-    	   my $request = HTTP::Request->new( $method => $url );
-    	   my $response = $ua->request( $request, $file );
-    	   $response->code;
-        } else {	
-    	   carp "ERROR: $file is not writable by ".(getpwuid($<))[0]."\n";
-	   syslogit( 'err|local0', "FATAL: $file is not writable by ".(getpwuid($<))[0]."\n" )
-	   if $Syslogging;
- 	   exit(1);
+        if (-r $file && -w _) {
+            return _get_ua_request($ua, $method, $url, $file);
         }
-    } else {
-	   # The file does not exist, any errors refer to permission issues
-    	   my $request = HTTP::Request->new( $method => $url );
-    	   my $response = $ua->request( $request, $file );
-    	   $response->code;
+        else {
+            carp "ERROR: $file is not writable by "
+                . (getpwuid($<))[0] . "\n";
+            syslogit('err|local0',
+                "FATAL: $file is not writable by " . (getpwuid($<))[0] . "\n")
+                if $Syslogging;
+            exit(1);
+        }
     }
-
+    else {
+        return _get_ua_request($ua, $method, $url, $file);
+    }
 }
 
 ## time to grab the real 0xb33f
@@ -543,10 +552,7 @@ sub md5file {
         print
 "\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";
     }
-    warn "\tError $getrules_md5 when fetching "
-      . $base_url . "/"
-      . $rule_file . ".md5"
-      unless is_success($getrules_md5);
+
     open( FILE, "$temp_path$rule_file.md5" )
       or warn $!;
     $md5 = <FILE>;
