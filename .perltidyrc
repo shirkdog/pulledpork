@@ -1,0 +1,64 @@
+# Line length
+--maximum-line-length=78
+
+# Indentation
+--indent-columns=4
+--continuation-indentation=4
+--closing-token-indentation=0
+--noindent-closing-brace
+--noline-up-parentheses
+--nooutdent-keywords
+--nooutdent-labels
+
+# Whitespace
+--paren-tightness=2
+--square-bracket-tightness=2
+--brace-tightness=1
+--nospace-terminal-semicolon
+--nospace-for-semicolon
+--add-semicolons
+--delete-semicolons
+--add-whitespace
+--delete-old-whitespace
+--delete-old-newlines
+--add-newlines
+--notabs
+
+# TODO: Whitespace around tokens, etc.  Defaults are sane, though
+
+# Comments
+--indent-block-comments
+--minimum-space-to-comment=4
+--hanging-side-comments
+--delete-closing-side-comments
+--static-block-comments
+
+# Line breaks
+--nocuddled-else
+--noopening-brace-on-new-line
+--noopening-sub-brace-on-new-line
+
+# Vertical tightness
+--want-break-before="% + - * / x != == >= <= =~ !~ < > | & >= < = **= += *= &= <<= &&= -= /= |= >>= ||= .= %= ^= x="
+--noopening-brace-on-new-line
+--noopening-sub-brace-on-new-line
+--square-bracket-tightness=2
+--brace-tightness=1
+--block-brace-tightness=0
+
+--nospace-terminal-semicolon
+--nospace-for-semicolon
+--nooutdent-long-lines
+
+# List formatting
+--comma-arrow-breakpoints=1
+
+# Blank lines
+--blanks-before-comments
+--blanks-before-subs
+--blanks-before-blocks
+--long-block-line-count=8
+--maximum-consecutive-blank-lines=2
+
+# perltidy.ERR
+#--standard-error-output
