@@ -40,57 +40,74 @@ use Data::Dumper;
 ### Vars here
 
 # we are gonna need these!
-my ( $oinkcode, $temp_path, $rule_file, $Syslogging );
+my ($oinkcode, $temp_path, $rule_file, $Syslogging);
 my $VERSION = "PulledPork v0.7.3";
-my $HUMOR = "Making signature updates great again!";
+my $HUMOR   = "Making signature updates great again!";
 my $ua      = LWP::UserAgent->new;
+
 #Read in proxy settings from the environment
 $ua->env_proxy;
+
 #Add PulledPork version to the user agent
 $ua->agent("$VERSION ");
 
 # for certificate validation, check for the operating system
 # and set the path to the certificate store if required.
 my $oSystem = "$^O";
-my $CAFile = "OS Default";
+my $CAFile  = "OS Default";
 if ($oSystem =~ /freebsd/i) {
+
     #Check to ensure the cert file exists
-    if ( -e "/etc/ssl/cert.pem" ) { 
-    	$CAFile = "/etc/ssl/cert.pem";
-        if ( -r $CAFile) {
-           $ua->ssl_opts( SSL_ca_file => $CAFile );
-        } else {	
-    	   carp "ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n";
-	   syslogit( 'err|local0', "FATAL: ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n")
-	   if $Syslogging;
- 	   exit(1);
+    if (-e "/etc/ssl/cert.pem") {
+        $CAFile = "/etc/ssl/cert.pem";
+        if (-r $CAFile) {
+            $ua->ssl_opts(SSL_ca_file => $CAFile);
         }
-    #Check for the other location for the cert file
-    } elsif ( -e "/usr/local/etc/ssl/cert.pem" ) {
-    	$CAFile = "/usr/local/etc/ssl/cert.pem";
-        if ( -r $CAFile) {
-           $ua->ssl_opts( SSL_ca_file => $CAFile );
-        } else {	
-    	   carp "ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n";
-	   syslogit( 'err|local0', "FATAL: ERROR: $CAFile is not readable by ".(getpwuid($<))[0]."\n")
-	   if $Syslogging;
- 	   exit(1);
+        else {
+            carp "ERROR: $CAFile is not readable by "
+                . (getpwuid($<))[0] . "\n";
+            syslogit('err|local0',
+                "FATAL: ERROR: $CAFile is not readable by "
+                    . (getpwuid($<))[0] . "\n")
+                if $Syslogging;
+            exit(1);
         }
-    } else {
-           carp "ERROR: cert file does not exist (/etc/ssl/cert.pem or /usr/local/etc/ssl/cert.pem) Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n";
-           syslogit( 'err|local0', "FATAL: cert file does not exist. Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n")
-           if $Syslogging;
-           exit(1);
+
+        #Check for the other location for the cert file
+    }
+    elsif (-e "/usr/local/etc/ssl/cert.pem") {
+        $CAFile = "/usr/local/etc/ssl/cert.pem";
+        if (-r $CAFile) {
+            $ua->ssl_opts(SSL_ca_file => $CAFile);
+        }
+        else {
+            carp "ERROR: $CAFile is not readable by "
+                . (getpwuid($<))[0] . "\n";
+            syslogit('err|local0',
+                "FATAL: ERROR: $CAFile is not readable by "
+                    . (getpwuid($<))[0] . "\n")
+                if $Syslogging;
+            exit(1);
+        }
+    }
+    else {
+        carp
+            "ERROR: cert file does not exist (/etc/ssl/cert.pem or /usr/local/etc/ssl/cert.pem) Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n";
+        syslogit('err|local0',
+            "FATAL: cert file does not exist. Ensure that the ca_root_nss port/pkg is installed, or use -w to skip SSL verification\n"
+        ) if $Syslogging;
+        exit(1);
     }
 }
 
-my ( $Hash, $ALogger, $Config_file, $Sorules, $Auto );
-my ( $Output, $Distro, $Snort, $sid_changelog, $ignore_files );
-my ( $Snort_config, $Snort_path, $Textonly,   $grabonly,    $ips_policy, );
-my ( $pid_path,     $SigName,     $NoDownload, $sid_msg_map, @base_url );
-my ( $local_rules,  $arch,       $docs,       @records,     $enonly );
-my ( $rstate, $keep_rulefiles, $rule_file_path, $prefix, $black_list );
-my ( $Process, $hmatch, $bmatch , $sid_msg_version, $skip_verify, $proxy_workaround);
+my ($Hash,         $ALogger,    $Config_file, $Sorules,       $Auto);
+my ($Output,       $Distro,     $Snort,       $sid_changelog, $ignore_files);
+my ($Snort_config, $Snort_path, $Textonly,    $grabonly,      $ips_policy,);
+my ($pid_path,     $SigName,    $NoDownload,  $sid_msg_map,   @base_url);
+my ($local_rules,  $arch,       $docs,        @records,       $enonly);
+my ($rstate, $keep_rulefiles, $rule_file_path, $prefix, $black_list);
+my ($Process, $hmatch, $bmatch, $sid_msg_version, $skip_verify,
+    $proxy_workaround);
 my $Sostubs = 1;
 
 # verbose and quiet control print()
@@ -108,11 +125,11 @@ undef($Hash);
 undef($ALogger);
 
 my %rules_hash    = ();
-my %blacklist	  = ();
+my %blacklist     = ();
 my %oldrules_hash = ();
 my %sid_msg_map   = ();
 my %sidmod        = ();
-my $categories 	  = ();
+my $categories    = ();
 undef %rules_hash;
 undef %oldrules_hash;
 undef %sid_msg_map;
@@ -129,28 +146,28 @@ my %Config_info = ();
 
 ## routine to grab our config from the defined config file
 sub parse_config_file {
-    my ( $FileConf, $Config_val ) = @_;
-    my ( $config_line, $Name, $Value );
+    my ($FileConf, $Config_val) = @_;
+    my ($config_line, $Name, $Value);
 
-    if ( !open( CONFIG, "$FileConf" ) ) {
+    if (!open(CONFIG, "$FileConf")) {
         carp "ERROR: Config file not found : $FileConf\n";
-        syslogit( 'err|local0', "FATAL: Config file not found: $FileConf" )
-          if $Syslogging;
+        syslogit('err|local0', "FATAL: Config file not found: $FileConf")
+            if $Syslogging;
         exit(1);
     }
-    open( CONFIG, "$FileConf" );
+    open(CONFIG, "$FileConf");
     while (<CONFIG>) {
         $config_line = $_;
         chomp($config_line);
         $config_line = trim($config_line);
-        if ( ( $config_line !~ /^#/ ) && ( $config_line ne "" ) ) {
-            ( $Name, $Value ) = split( /=/, $config_line );
-            if ( $Value =~ /,/ && $Name eq "rule_url" ) {
-                push( @{ $$Config_val{$Name} }, split( /,/, $Value ) );
+        if (($config_line !~ /^#/) && ($config_line ne "")) {
+            ($Name, $Value) = split(/=/, $config_line);
+            if ($Value =~ /,/ && $Name eq "rule_url") {
+                push(@{ $$Config_val{$Name} }, split(/,/, $Value));
             }
-            elsif ( $Name eq "rule_url" ) {
-                push( @{ $$Config_val{$Name} }, split( /,/, $Value ) )
-                  if $Value;
+            elsif ($Name eq "rule_url") {
+                push(@{ $$Config_val{$Name} }, split(/,/, $Value))
+                    if $Value;
             }
             else {
                 $$Config_val{$Name} = $Value;
@@ -174,7 +191,7 @@ sub Help {
    -h <changelog path> -H <signal_name> -I (security|connectivity|balanced) -i <path to disablesid.conf>
    -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
    -r <path to docs folder> -K <directory for separate rules files>
-  
+
    Options:
    -help/? Print this help info.
    -b Where the dropsid config file lives.
@@ -184,10 +201,10 @@ sub Help {
    -D What Distro are you running on, for the so_rules
       For latest supported options see http://www.snort.org/snort-rules/shared-object-rules
       Valid Distro Types:
-		Debian-6-0, Ubuntu-10-4, Ubuntu-12-04, Centos-5-4
-		FC-12, FC-14, RHEL-5-5, RHEL-6-0
-		FreeBSD-8-1, FreeBSD-9-0, FreeBSD-10-0, OpenBSD-5-2, OpenBSD-5-3
-		OpenSUSE-11-4, OpenSUSE-12-1, Slackware-13-1
+        Debian-6-0, Ubuntu-10-4, Ubuntu-12-04, Centos-5-4
+        FC-12, FC-14, RHEL-5-5, RHEL-6-0
+        FreeBSD-8-1, FreeBSD-9-0, FreeBSD-10-0, OpenBSD-5-2, OpenBSD-5-3
+        OpenSUSE-11-4, OpenSUSE-12-1, Slackware-13-1
    -e Where the enablesid config file lives.
    -E Write ONLY the enabled rules to the output files.
    -g grabonly (download tarball rule file(s) and do NOT process)
@@ -197,7 +214,7 @@ sub Help {
    -i Where the disablesid config file lives.
    -k Keep the rules in separate files (using same file names as found when reading)
    -K Where (what directory) do you want me to put the separate rules files?
-   -l Log Important Info to Syslog (Errors, Successful run etc, all items logged as WARN or higher) 
+   -l Log Important Info to Syslog (Errors, Successful run etc, all items logged as WARN or higher)
    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
    -m where do you want me to put the sid-msg.map file?
    -M where the modifysid config file lives.
@@ -227,7 +244,7 @@ __EOT
 sub pulledpork {
 
     print <<__EOT;
- 
+
     https://github.com/shirkdog/pulledpork
       _____ ____
      `----,\\    )
@@ -245,12 +262,12 @@ __EOT
 
 ## subroutine to cleanup the temp rubbish!!!
 sub temp_cleanup {
-    my $remove = rmtree( $temp_path . "tha_rules" );
-    if ( $Verbose && !$Quiet ) {
+    my $remove = rmtree($temp_path . "tha_rules");
+    if ($Verbose && !$Quiet) {
         print "Cleanup....\n";
         print
-"\tremoved $remove temporary snort files or directories from $temp_path"
-          . "tha_rules!\n";
+            "\tremoved $remove temporary snort files or directories from $temp_path"
+            . "tha_rules!\n";
     }
 }
 
@@ -262,35 +279,35 @@ sub rule_extract {
     ) = @_;
     print "Prepping rules from $rule_file for work....\n" if !$Quiet;
     print "\textracting contents of $temp_path$rule_file...\n"
-      if ( $Verbose && !$Quiet );
-    mkpath( $temp_path . "tha_rules" );
-    mkpath( $temp_path . "tha_rules/so_rules" );
+        if ($Verbose && !$Quiet);
+    mkpath($temp_path . "tha_rules");
+    mkpath($temp_path . "tha_rules/so_rules");
     my $tar = Archive::Tar->new();
-    $tar->read( $temp_path . $rule_file );
-    $tar->setcwd( cwd() );
-    local $Archive::Tar::CHOWN = 0; 
-    my @ignores = split( /,/, $ignore ) if (defined $ignore);
+    $tar->read($temp_path . $rule_file);
+    $tar->setcwd(cwd());
+    local $Archive::Tar::CHOWN = 0;
+    my @ignores = split(/,/, $ignore) if (defined $ignore);
 
     foreach (@ignores) {
-        if ( $_ =~ /\.rules/ ) {
-            print "\tIgnoring plaintext rules: $_\n" if ( $Verbose && !$Quiet );
+        if ($_ =~ /\.rules/) {
+            print "\tIgnoring plaintext rules: $_\n" if ($Verbose && !$Quiet);
             $tar->remove("rules/$_");
         }
-        elsif ( $_ =~ /\.preproc/ ) {
+        elsif ($_ =~ /\.preproc/) {
             print "\tIgnoring preprocessor rules: $_\n"
-              if ( $Verbose && !$Quiet );
+                if ($Verbose && !$Quiet);
             my $preprocfile = $_;
             $preprocfile =~ s/\.preproc/\.rules/;
             $tar->remove("preproc_rules/$preprocfile");
         }
-        elsif ( $_ =~ /\.so/ ) {
+        elsif ($_ =~ /\.so/) {
             print "\tIgnoring shared object rules: $_\n"
-              if ( $Verbose && !$Quiet );
+                if ($Verbose && !$Quiet);
             $tar->remove("so_rules/precompiled/$Distro/$arch/$Snort/$_");
         }
         else {
             print "\tIgnoring all rule types in $_ category!\n"
-              if ( $Verbose && !$Quiet );
+                if ($Verbose && !$Quiet);
             $tar->remove("rules/$_.rules");
             $tar->remove("preproc_rules/$_.rules");
             $tar->remove("so_rules/precompiled/$Distro/$arch/$Snort/$_");
@@ -300,44 +317,44 @@ sub rule_extract {
     foreach (@files) {
         my $filename   = $_->name;
         my $singlefile = $filename;
-        if ( $filename =~ /^(community-)?rules\/.*\.rules$/ ) {
+        if ($filename =~ /^(community-)?rules\/.*\.rules$/) {
             $singlefile =~ s/^(community-)?rules\///;
-            $tar->extract_file( $filename,
-                $temp_path . "/tha_rules/$prefix" . $singlefile );
+            $tar->extract_file($filename,
+                $temp_path . "/tha_rules/$prefix" . $singlefile);
             print "\tExtracted: /tha_rules/$prefix$singlefile\n"
-              if ( $Verbose && !$Quiet );
+                if ($Verbose && !$Quiet);
         }
-        elsif ( $filename =~ /^preproc_rules\/.*\.rules$/ ) {
+        elsif ($filename =~ /^preproc_rules\/.*\.rules$/) {
             $singlefile =~ s/^preproc_rules\///;
-            $tar->extract_file( $filename,
-                $temp_path . "/tha_rules/$prefix" . $singlefile );
+            $tar->extract_file($filename,
+                $temp_path . "/tha_rules/$prefix" . $singlefile);
             print "\tExtracted: /tha_rules/$prefix$singlefile\n"
-              if ( $Verbose && !$Quiet );
+                if ($Verbose && !$Quiet);
         }
         elsif ($Sorules
-            && $filename =~
-            /^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\/.*\.so/
+            && $filename
+            =~ /^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\/.*\.so/
             && -d $Sorules
-            && !$Textonly )
+            && !$Textonly)
         {
-            $singlefile =~
-              s/^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\///;
-            $tar->extract_file( $filename, $Sorules . $singlefile );
+            $singlefile
+                =~ s/^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\///;
+            $tar->extract_file($filename, $Sorules . $singlefile);
             print "\tExtracted: $Sorules$singlefile\n"
-              if ( $Verbose && !$Quiet );
+                if ($Verbose && !$Quiet);
         }
         elsif ($docs
             && $filename =~ /^(doc\/signatures\/)?.*\.txt/
-            && -d $docs )
+            && -d $docs)
         {
             $singlefile =~ s/^doc\/signatures\///;
-            $tar->extract_file( "doc/signatures/$filename",
-                $docs . $singlefile );
+            $tar->extract_file("doc/signatures/$filename",
+                $docs . $singlefile);
             print "\tExtracted: $docs$singlefile\n"
-              if ( $Verbose == 2 && !$Quiet );
+                if ($Verbose == 2 && !$Quiet);
         }
     }
-    print "\tDone!\n" if ( !$Verbose && !$Quiet );
+    print "\tDone!\n" if (!$Verbose && !$Quiet);
 }
 
 ## subroutine to actually check the md5 values, if they match we move onto file manipulation routines
@@ -347,76 +364,82 @@ sub compare_md5 {
         $base_url, $md5,       $rule_digest, $Distro,
         $arch,     $Snort,     $Sorules,     $ignore_files,
         $docs,     $prefix,    $Process,     $hmatch,
-	$fref
+        $fref
     ) = @_;
-    if ( $rule_digest =~ $md5 && !$Hash) {
-        if ( $Verbose && !$Quiet ) {
-            print
-"\tThe MD5 for $rule_file matched $md5\n\n";
+    if ($rule_digest =~ $md5 && !$Hash) {
+        if ($Verbose && !$Quiet) {
+            print "\tThe MD5 for $rule_file matched $md5\n\n";
         }
-        if ( !$Verbose && !$Quiet ) { print "\tThey Match\n\tDone!\n"; }
-	return(1);
+        if (!$Verbose && !$Quiet) { print "\tThey Match\n\tDone!\n"; }
+        return (1);
     }
-    elsif ( $rule_digest !~ $md5 && !$Hash ) {
-        if ( $Verbose && !$Quiet ) {
+    elsif ($rule_digest !~ $md5 && !$Hash) {
+        if ($Verbose && !$Quiet) {
             print
-"\tThe MD5 for $rule_file did not match the latest digest... so I am gonna fetch the latest rules file!\n";
+                "\tThe MD5 for $rule_file did not match the latest digest... so I am gonna fetch the latest rules file!\n";
         }
-        if ( !$Verbose && !$Quiet ) { print "\tNo Match\n\tDone\n"; }
-        rulefetch( $oinkcode, $rule_file, $temp_path, $base_url );
-        $rule_digest = md5sum( $rule_file, $temp_path );
-	$fref->{EXTRACT}=1 if !$grabonly;
-        return(compare_md5(
-            $oinkcode, $rule_file, $temp_path,   $Hash,
-            $base_url, $md5,       $rule_digest, $Distro,
-            $arch,     $Snort,     $Sorules,     $ignore_files,
-            $docs,     $prefix,    $Process,     $hmatch,
-	    $fref
-        ));
+        if (!$Verbose && !$Quiet) { print "\tNo Match\n\tDone\n"; }
+        rulefetch($oinkcode, $rule_file, $temp_path, $base_url);
+        $rule_digest = md5sum($rule_file, $temp_path);
+        $fref->{EXTRACT} = 1 if !$grabonly;
+        return (
+            compare_md5(
+                $oinkcode, $rule_file, $temp_path,   $Hash,
+                $base_url, $md5,       $rule_digest, $Distro,
+                $arch,     $Snort,     $Sorules,     $ignore_files,
+                $docs,     $prefix,    $Process,     $hmatch,
+                $fref
+            )
+        );
     }
     elsif ($Hash) {
-        if ( $Verbose && !$Quiet) {
+        if ($Verbose && !$Quiet) {
             print
-"\tOk, not verifying the digest.. lame, but that's what you specified!\n";
+                "\tOk, not verifying the digest.. lame, but that's what you specified!\n";
             print
-"\tSo if the rules tarball doesn't extract properly and this script croaks.. it's your fault!\n";
+                "\tSo if the rules tarball doesn't extract properly and this script croaks.. it's your fault!\n";
             print "\tNo Verify Set\n\tDone!\n";
         }
-	$fref->{EXTRACT}=1 if !$grabonly;
-	return(1);
-    } else {
-	return($hmatch);
+        $fref->{EXTRACT} = 1 if !$grabonly;
+        return (1);
+    }
+    else {
+        return ($hmatch);
     }
 }
 
 sub _get_ua_request {
     my ($ua, $method, $url, $file) = @_;
-    my $request = HTTP::Request->new( $method => $url );
-    my $response = $ua->request( $request, $file );
+    my $request = HTTP::Request->new($method => $url);
+    my $response = $ua->request($request, $file);
     if ($response->is_success) {
         return $response->code;
     }
+
     # TODO: 4XX catching
-    my $msg = sprintf("Error downloading %s: %s [ %d ]", $url, $response->status_line, $response->code);
+    my $msg = sprintf("Error downloading %s: %s [ %d ]",
+        $url, $response->status_line, $response->code);
     syslogit('err|local0', $msg) if $Syslogging;
     die $msg, $/;
 }
 
 ## mimic LWP::Simple getstore routine - Thx pkthound!
 sub getstore {
-    my ( $url, $file ) = @_;
+    my ($url, $file) = @_;
     my $method = "GET";
 
     #Workaround proxy issues, depends on version of LWP
     #May need to be addressed in the future
-    if ($ua->proxy("https") && $url =~ /^https:/ && ! $proxy_workaround) {
+    if ($ua->proxy("https") && $url =~ /^https:/ && !$proxy_workaround) {
         $method = "CONNECT";
-    } else {
+    }
+    else {
         $method = "GET";
     }
 
     # on the first run, the file may not exist, so check.
     if (-e $file) {
+
         # Check to ensure the user has write access to the file
         if (-r $file && -w _) {
             return _get_ua_request($ua, $method, $url, $file);
@@ -437,75 +460,88 @@ sub getstore {
 
 ## time to grab the real 0xb33f
 sub rulefetch {
-    my ( $oinkcode, $rule_file, $temp_path, $base_url ) = @_;
-    print "Rules tarball download of $rule_file....\n" if ( !$Quiet && $rule_file !~/IPBLACKLIST/ && $oinkcode !~/RULEFILE/);
-    print "Rule file download of $rule_file....\n" if ( !$Quiet && $rule_file !~/IPBLACKLIST/ && $oinkcode =~/RULEFILE/ );
-    print "IP Blacklist download of $base_url....\n" if ( !$Quiet && $rule_file =~/IPBLACKLIST/ && $oinkcode !~/RULEFILE/ );
-    $base_url = slash( 0, $base_url );
+    my ($oinkcode, $rule_file, $temp_path, $base_url) = @_;
+    print "Rules tarball download of $rule_file....\n"
+        if (!$Quiet
+        && $rule_file !~ /IPBLACKLIST/
+        && $oinkcode !~ /RULEFILE/);
+    print "Rule file download of $rule_file....\n"
+        if (!$Quiet
+        && $rule_file !~ /IPBLACKLIST/
+        && $oinkcode =~ /RULEFILE/);
+    print "IP Blacklist download of $base_url....\n"
+        if (!$Quiet
+        && $rule_file =~ /IPBLACKLIST/
+        && $oinkcode !~ /RULEFILE/);
+    $base_url = slash(0, $base_url);
     my ($getrules_rule);
-    if ( $Verbose && !$Quiet ) {
-        print "\tFetching rules file: $rule_file\n" if ($rule_file !~/IPBLACKLIST/ && $oinkcode !~/RULEFILE/);
-        if ($Hash && $rule_file !~/IPBLACKLIST/ && $oinkcode !~/RULEFILE/) { print "But not verifying MD5\n"; }
+    if ($Verbose && !$Quiet) {
+        print "\tFetching rules file: $rule_file\n"
+            if ($rule_file !~ /IPBLACKLIST/ && $oinkcode !~ /RULEFILE/);
+        if ($Hash && $rule_file !~ /IPBLACKLIST/ && $oinkcode !~ /RULEFILE/) {
+            print "But not verifying MD5\n";
+        }
     }
-    if ( $base_url =~ /[^labs]\.snort\.org/i ) {
-        $getrules_rule =
-          getstore( "https://www.snort.org/rules/$rule_file\?oinkcode=$oinkcode",
-            $temp_path . $rule_file );
+    if ($base_url =~ /[^labs]\.snort\.org/i) {
+        $getrules_rule
+            = getstore(
+            "https://www.snort.org/rules/$rule_file\?oinkcode=$oinkcode",
+            $temp_path . $rule_file);
     }
-    elsif ($rule_file =~ /IPBLACKLIST/ && !$NoDownload){
-	my $rand = rand(1000);
-	$getrules_rule =
-	  getstore( $base_url, $temp_path . "$rand-black_list.rules");
-	read_iplist(\%blacklist,$temp_path . "$rand-black_list.rules");
-	unlink ($temp_path . "$rand-black_list.rules");
+    elsif ($rule_file =~ /IPBLACKLIST/ && !$NoDownload) {
+        my $rand = rand(1000);
+        $getrules_rule
+            = getstore($base_url, $temp_path . "$rand-black_list.rules");
+        read_iplist(\%blacklist, $temp_path . "$rand-black_list.rules");
+        unlink($temp_path . "$rand-black_list.rules");
     }
-    elsif ($oinkcode =~ /RULEFILE/ && !$NoDownload){
-	my $rand = rand(1000);
-	mkpath( $temp_path . "/tha_rules" );
-	$getrules_rule =
-	  getstore( $base_url . "/" . $rule_file, $temp_path . "/tha_rules/" . $rule_file );
+    elsif ($oinkcode =~ /RULEFILE/ && !$NoDownload) {
+        my $rand = rand(1000);
+        mkpath($temp_path . "/tha_rules");
+        $getrules_rule = getstore($base_url . "/" . $rule_file,
+            $temp_path . "/tha_rules/" . $rule_file);
     }
     else {
-        $getrules_rule =
-          getstore( $base_url . "/" . $rule_file, $temp_path . $rule_file );
+        $getrules_rule
+            = getstore($base_url . "/" . $rule_file, $temp_path . $rule_file);
     }
-    if ( $getrules_rule == 403 ) {
+    if ($getrules_rule == 403) {
         print
-"\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
-"\tYou may also wish to verify your oinkcode, tarball name, and other configuration options\n";
-        syslogit( 'emerg|local0', "FATAL: 403 error occured" ) if $Syslogging;
+            "\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
+            "\tYou may also wish to verify your oinkcode, tarball name, and other configuration options\n";
+        syslogit('emerg|local0', "FATAL: 403 error occured") if $Syslogging;
         exit(1);    # For you shirkdog
     }
-    elsif ( $getrules_rule == 404 ) {
+    elsif ($getrules_rule == 404) {
         print
-"\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";
-        syslogit( 'emerg|local0', "FATAL: 404 error occured" ) if $Syslogging;
+            "\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";
+        syslogit('emerg|local0', "FATAL: 404 error occured") if $Syslogging;
         exit(1);    # For you shirkdog
     }
-    elsif ( $getrules_rule == 500 ) {
+    elsif ($getrules_rule == 500) {
         print
-"\tA 500 error occurred, please verify that you have recently updated your root certificates!\n";
-        syslogit( 'emerg|local0', "FATAL: 500 error occured" ) if $Syslogging;
+            "\tA 500 error occurred, please verify that you have recently updated your root certificates!\n";
+        syslogit('emerg|local0', "FATAL: 500 error occured") if $Syslogging;
         exit(1);    # Certs bitches!
     }
-    unless ( is_success($getrules_rule) ) {
-        syslogit( 'emerg|local0',
-            "FATAL: Error $getrules_rule when fetching $rule_file" )
-          if $Syslogging;
+    unless (is_success($getrules_rule)) {
+        syslogit('emerg|local0',
+            "FATAL: Error $getrules_rule when fetching $rule_file")
+            if $Syslogging;
         croak "\tError $getrules_rule when fetching " . $rule_file;
     }
 
-    if ( $Verbose && !$Quiet && $rule_file !~/IPBLACKLIST/) {
+    if ($Verbose && !$Quiet && $rule_file !~ /IPBLACKLIST/) {
         print("\tstoring file at: $temp_path$rule_file\n\n");
     }
-    if ( !$Verbose && !$Quiet ) { "\tDone!\n"; }
+    if (!$Verbose && !$Quiet) { "\tDone!\n"; }
 }
 
 ## subroutine to deterine the md5 digest of the current rules file
 sub md5sum {
-    my ( $rule_file, $temp_path ) = @_;
-    open( MD5FILE, "$temp_path$rule_file" )
-      or croak $!;
+    my ($rule_file, $temp_path) = @_;
+    open(MD5FILE, "$temp_path$rule_file")
+        or croak $!;
     binmode(MD5FILE);
     $rule_digest = Digest::MD5->new->addfile(*MD5FILE)->hexdigest;
     close(MD5FILE);
@@ -513,7 +549,7 @@ sub md5sum {
         print $@;
         return "";
     }
-    if ( $Verbose && !$Quiet ) {
+    if ($Verbose && !$Quiet) {
         print "\tcurrent local rules file  digest: $rule_digest\n";
     }
     return $rule_digest;
@@ -521,48 +557,52 @@ sub md5sum {
 
 ## subroutine to fetch the latest md5 digest signature file from snort.org
 sub md5file {
-    my ( $oinkcode, $rule_file, $temp_path, $base_url ) = @_;
-    my ( $getrules_md5, $md5 ) = "";
-    $base_url = slash( 0, $base_url );
+    my ($oinkcode, $rule_file, $temp_path, $base_url) = @_;
+    my ($getrules_md5, $md5) = "";
+    $base_url = slash(0, $base_url);
     print "Checking latest MD5 for $rule_file....\n" if !$Quiet;
     print "\tFetching md5sum for: " . $rule_file . ".md5\n"
-      if ( $Verbose && !$Quiet );
-    if ( $base_url =~ /[^labs]\.snort\.org/i ) {
-        $getrules_md5 =
-          getstore( "https://www.snort.org/rules/$rule_file.md5\?oinkcode=$oinkcode",
-            $temp_path . $rule_file . ".md5" );
+        if ($Verbose && !$Quiet);
+    if ($base_url =~ /[^labs]\.snort\.org/i) {
+        $getrules_md5 = getstore(
+            "https://www.snort.org/rules/$rule_file.md5\?oinkcode=$oinkcode",
+            $temp_path . $rule_file . ".md5"
+        );
     }
-    elsif ( $base_url =~ /(secureworks|emergingthreats\.net|emergingthreatspro\.com|snort\.org.+community)/i ) {
+    elsif ($base_url
+        =~ /(secureworks|emergingthreats\.net|emergingthreatspro\.com|snort\.org.+community)/i
+        )
+    {
         $getrules_md5 = getstore(
             "$base_url/$rule_file" . ".md5",
             $temp_path . $rule_file . ".md5"
         );
     }
-    if ( $getrules_md5 == 403 ) {
+    if ($getrules_md5 == 403) {
         print
-"\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
-"\tYou may also wish to verify your oinkcode, tarball name, and other configuration options\n";
+            "\tA 403 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
+            "\tYou may also wish to verify your oinkcode, tarball name, and other configuration options\n";
     }
-    elsif ( $getrules_md5 == 429 ) {
+    elsif ($getrules_md5 == 429) {
         print
-"\tA 429 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
-"\tYou may also wish to verify your oinkcode, tarball name, and other configuration options\n";
+            "\tA 429 error occurred, please wait for the 15 minute timeout\n\tto expire before trying again or specify the -n runtime switch\n",
+            "\tYou may also wish to verify your oinkcode, tarball name, and other configuration options\n";
     }
-    elsif ( $getrules_md5 == 404 ) {
+    elsif ($getrules_md5 == 404) {
         print
-"\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";
+            "\tA 404 error occurred, please verify your filenames and urls for your tarball!\n";
     }
 
-    open( FILE, "$temp_path$rule_file.md5" )
-      or warn $!;
+    open(FILE, "$temp_path$rule_file.md5")
+        or warn $!;
     $md5 = <FILE>;
     chomp($md5);
     close(FILE);
     $md5 =~ /\w{32}/
-      ; ## Lets just grab the hash out of the string.. don't care about the rest!
+        ; ## Lets just grab the hash out of the string.. don't care about the rest!
     $md5 = $&;
 
-    if ( $Verbose && !$Quiet ) {
+    if ($Verbose && !$Quiet) {
         print "\tmost recent rules file digest: $md5\n";
     }
     return $md5;
@@ -570,17 +610,20 @@ sub md5file {
 
 ## This sub allows for ip-reputation list de-duplication and processing:
 sub read_iplist {
-    my ($href,$path) = @_;
-    print "\t" if ( $Verbose && !$Quiet );
+    my ($href, $path) = @_;
+    print "\t" if ($Verbose && !$Quiet);
     print "Reading IP List...\n" if !$Quiet;
-    open (FH,'<',$path) || croak "Couldn't read $path - $!\n";
+    open(FH, '<', $path) || croak "Couldn't read $path - $!\n";
     while (<FH>) {
-	chomp();
-	# we only want valid IP addresses, otherwise shiz melts!
-	next unless $_ =~ /(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/;
-	$_ = trim($_);
-	$_ =~ s/,*//;
-	$href->{$_}=1;
+        chomp();
+
+        # we only want valid IP addresses, otherwise shiz melts!
+        next
+            unless $_
+            =~ /(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/;
+        $_ = trim($_);
+        $_ =~ s/,*//;
+        $href->{$_} = 1;
     }
     close(FH);
 }
@@ -589,18 +632,19 @@ sub read_iplist {
 # of disablesid, enablesid, dropsid and other sid functions.. here we place
 # all of the rules values into a hash as {$gid}{$sid}=$rule
 sub read_rules {
-    my ( $hashref, $path, $extra_rules ) = @_;
-    my ( $file, $sid, $gid, @elements );
-    print "\t" if ( $Verbose && !$Quiet );
+    my ($hashref, $path, $extra_rules) = @_;
+    my ($file, $sid, $gid, @elements);
+    print "\t" if ($Verbose && !$Quiet);
     print "Reading rules...\n" if !$Quiet;
-    my $reading_old_rules = $path eq ( $rule_file_path || '' );
-    my @local_rules = split( /,/, $extra_rules );
-    foreach (@local_rules) { #First let's read our local rules and assign a gid of 0
-        $extra_rules = slash( 0, $_ );
-	$file = basename($extra_rules);
-        if ( $extra_rules && -f $extra_rules ) {
-            open( DATA, "$extra_rules" )
-              || croak "Couldn't read $extra_rules - $!\n";
+    my $reading_old_rules = $path eq ($rule_file_path || '');
+    my @local_rules = split(/,/, $extra_rules);
+    foreach (@local_rules)
+    {    #First let's read our local rules and assign a gid of 0
+        $extra_rules = slash(0, $_);
+        $file = basename($extra_rules);
+        if ($extra_rules && -f $extra_rules) {
+            open(DATA, "$extra_rules")
+                || croak "Couldn't read $extra_rules - $!\n";
             my @extra_raw = <DATA>;
             close(DATA);
             my $trk = 0;
@@ -608,144 +652,152 @@ sub read_rules {
             foreach my $row (@extra_raw) {
                 $row = trim($row);
                 chomp($row);
-                if ( $row =~ /^\s*#*\s*(alert|drop|pass)/i || $trk == 1 ) {
-                    if ( ( $row !~ /^#/ ) && ( $row ne "" ) ) {
-                        if ( $row =~ /\\$/ ) {    # handle multiline rules here
+                if ($row =~ /^\s*#*\s*(alert|drop|pass)/i || $trk == 1) {
+                    if (($row !~ /^#/) && ($row ne "")) {
+                        if ($row =~ /\\$/) {    # handle multiline rules here
                             $row =~ s/\\$//;
                             $record .= $row;
                             $trk = 1;
                         }
-                        elsif ( $row !~ /\\$/ && $trk == 1 )
-                        {   # last line of multiline rule here
+                        elsif ($row !~ /\\$/ && $trk == 1)
+                        {    # last line of multiline rule here
                             $record .= $row;
-                            if ( $record =~ /\ssid:\s*\d+\s*;/i ) {
+                            if ($record =~ /\ssid:\s*\d+\s*;/i) {
                                 $sid = $&;
                                 $sid =~ s/\ssid:\s*//;
-				$sid =~ s/\s*;//;
+                                $sid =~ s/\s*;//;
                                 $$hashref{0}{ trim($sid) }{'rule'} = $record;
                             }
                             $trk = 0;
                             undef $record;
                         }
                         else {
-                            if ( $row =~ /\ssid:\s*\d+\s*;/i ) {
+                            if ($row =~ /\ssid:\s*\d+\s*;/i) {
                                 $sid = $&;
                                 $sid =~ s/\ssid:\s*//;
-				$sid =~ s/\s*;//;
+                                $sid =~ s/\s*;//;
                                 $$hashref{0}{ trim($sid) }{'rule'} = $row;
                             }
                             $trk = 0;
                         }
-			if ( $trk == 0 )
-			{
-			    $sid = trim($sid);
-			    my $rule = $$hashref{0}{$sid}{'rule'};
-			    if ( $rule =~ /^\s*\#+/ ) {
-				$$hashref{0}{$sid}{'state'} = 0;
-			    }
-			    elsif ( $rule =~ /^\s*(alert|pass|drop)/ ) {
-			        $$hashref{0}{$sid}{'state'} = 1;
-			    }
-			    $file =~ s/\.rules//;
-			    $$hashref{0}{$sid}{'category'} = $file;
+                        if ($trk == 0) {
+                            $sid = trim($sid);
+                            my $rule = $$hashref{0}{$sid}{'rule'};
+                            if ($rule =~ /^\s*\#+/) {
+                                $$hashref{0}{$sid}{'state'} = 0;
+                            }
+                            elsif ($rule =~ /^\s*(alert|pass|drop)/) {
+                                $$hashref{0}{$sid}{'state'} = 1;
+                            }
+                            $file =~ s/\.rules//;
+                            $$hashref{0}{$sid}{'category'} = $file;
 
-			    $categories->{$file}{0}{$sid} = 1;
-			}
+                            $categories->{$file}{0}{$sid} = 1;
+                        }
                     }
                 }
             }
             undef @extra_raw;
         }
     }
-    if ( -d $path ) {
-        opendir( DIR, "$path" );
-        while ( defined( $file = readdir DIR ) ) {
-	    next if grep /^$path$file$/, @local_rules; #don't read local rule files
-            open( DATA, "$path$file" ) || croak "Couldn't read $file - $!\n";
+    if (-d $path) {
+        opendir(DIR, "$path");
+        while (defined($file = readdir DIR)) {
+            next
+                if grep /^$path$file$/,
+                @local_rules;    #don't read local rule files
+            open(DATA, "$path$file") || croak "Couldn't read $file - $!\n";
             @elements = <DATA>;
             close(DATA);
             foreach my $rule (@elements) {
                 chomp($rule);
                 $rule = trim($rule);
-                if ( $rule =~ /^\s*#*\s*(alert|drop|pass)/i ) {
+                if ($rule =~ /^\s*#*\s*(alert|drop|pass)/i) {
 
-                    if ( $rule =~ /\ssid:\s*\d+\s*;/i ) {
+                    if ($rule =~ /\ssid:\s*\d+\s*;/i) {
                         $sid = $&;
                         $sid =~ s/\ssid:\s*//;
-			$sid =~ s/\s*;//;
-                        if ( $rule =~ /\sgid:\s*\d+/i ) {
+                        $sid =~ s/\s*;//;
+                        if ($rule =~ /\sgid:\s*\d+/i) {
                             $gid = $&;
                             $gid =~ s/\sgid:\s*//;
                         }
                         else { $gid = 1; }
-                        if ( $rule =~ /flowbits:\s*((un)?set(x)?|toggle)/i ) {
+                        if ($rule =~ /flowbits:\s*((un)?set(x)?|toggle)/i) {
 
-# There is a much cleaner way to do this, I just don't have the time to do it right now!
-                            my ( $header, $options ) =
-                              split( /^[^"]* \(/, $rule );
-                            my @optarray = split( /(?<!\\);(\t|\s)*/, $options )
-                              if $options;
-                            foreach my $option ( reverse(@optarray) ) {
-                                my ( $kw, $arg ) = split( /:/, $option )
-                                  if $option;
+                            # There is a much cleaner way to do this, I just don't have the time to do it right now!
+                            my ($header, $options)
+                                = split(/^[^"]* \(/, $rule);
+                            my @optarray = split(/(?<!\\);(\t|\s)*/, $options)
+                                if $options;
+                            foreach my $option (reverse(@optarray)) {
+                                my ($kw, $arg) = split(/:/, $option)
+                                    if $option;
                                 next
-                                  unless ( $kw && $arg && $kw eq "flowbits" );
-                                my ( $flowact, $flowbit ) = split( /,/, $arg );
-                                next unless $flowact =~ /^\s*((un)?set(x)?|toggle)/i;
+                                    unless ($kw && $arg && $kw eq "flowbits");
+                                my ($flowact, $flowbit) = split(/,/, $arg);
+                                next
+                                    unless $flowact
+                                    =~ /^\s*((un)?set(x)?|toggle)/i;
                                 $$hashref{ trim($gid) }{ trim($sid) }
-                                  { trim($flowbit) } = 1;
+                                    { trim($flowbit) } = 1;
                             }
 
                         }
-                        if ( $rule =~ /^\s*\#+/ ) {
-                            $$hashref{ trim($gid) }{ trim($sid) }{'state'} = 0;
+                        if ($rule =~ /^\s*\#+/) {
+                            $$hashref{ trim($gid) }{ trim($sid) }{'state'}
+                                = 0;
                         }
-                        elsif ( $rule =~ /^\s*(alert|pass|drop)/ ) {
-                            $$hashref{ trim($gid) }{ trim($sid) }{'state'} = 1;
+                        elsif ($rule =~ /^\s*(alert|pass|drop)/) {
+                            $$hashref{ trim($gid) }{ trim($sid) }{'state'}
+                                = 1;
                         }
                         $file =~ s/\.rules//;
-			$file = "VRT-SO-$file" if ($gid == 3 && $file !~ /VRT-SO/);
-			$$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
-                        $$hashref{ trim($gid) }{ trim($sid) }{'category'} =
-                          $file;
+                        $file = "VRT-SO-$file"
+                            if ($gid == 3 && $file !~ /VRT-SO/);
+                        $$hashref{ trim($gid) }{ trim($sid) }{'rule'} = $rule;
+                        $$hashref{ trim($gid) }{ trim($sid) }{'category'}
+                            = $file;
 
-			next if $reading_old_rules;
+                        next if $reading_old_rules;
 
-			$categories->{$file}{ trim($gid) }{ trim($sid) } = 1;
+                        $categories->{$file}{ trim($gid) }{ trim($sid) } = 1;
                     }
                 }
             }
         }
         close(DIR);
     }
-    elsif ( -f $path ) {
-        open( DATA, "$path" ) || croak "Couldn't read $path - $!";
+    elsif (-f $path) {
+        open(DATA, "$path") || croak "Couldn't read $path - $!";
         @elements = <DATA>;
         close(DATA);
 
         foreach my $rule (@elements) {
-            if ( $rule =~ /^\s*#*\s*(alert|drop|pass)/i ) {
-                if ( $rule =~ /\ssid:\s*\d+/ ) {
+            if ($rule =~ /^\s*#*\s*(alert|drop|pass)/i) {
+                if ($rule =~ /\ssid:\s*\d+/) {
                     $sid = $&;
                     $sid =~ s/\ssid:\s*//;
-                    if ( $rule =~ /\sgid:\s*\d+/i ) {
+                    if ($rule =~ /\sgid:\s*\d+/i) {
                         $gid = $&;
                         $gid =~ s/\sgid:\s*//;
                     }
                     else { $gid = 1; }
-                    if ( $rule =~ /flowbits:\s*((un)?set(x)?|toggle)/ ) {
-                        my ( $header, $options ) = split( /^[^"]* \(/, $rule );
+                    if ($rule =~ /flowbits:\s*((un)?set(x)?|toggle)/) {
+                        my ($header, $options) = split(/^[^"]* \(/, $rule);
 
-# There is a much cleaner way to do this, I just don't have the time to do it right now!
-                        my @optarray = split( /(?<!\\);(\t|\s)*/, $options )
-                          if $options;
-                        foreach my $option ( reverse(@optarray) ) {
-                            my ( $kw, $arg ) = split( /:/, $option ) if $option;
-                            next unless ( $kw && $arg && $kw eq "flowbits" );
-                            my ( $flowact, $flowbit ) = split( /,/, $arg );
-                            next unless $flowact =~ /^\s*((un)?set(x)?|toggle)/i;
+                        # There is a much cleaner way to do this, I just don't have the time to do it right now!
+                        my @optarray = split(/(?<!\\);(\t|\s)*/, $options)
+                            if $options;
+                        foreach my $option (reverse(@optarray)) {
+                            my ($kw, $arg) = split(/:/, $option) if $option;
+                            next unless ($kw && $arg && $kw eq "flowbits");
+                            my ($flowact, $flowbit) = split(/,/, $arg);
+                            next
+                                unless $flowact
+                                =~ /^\s*((un)?set(x)?|toggle)/i;
                             $$hashref{ trim($gid) }{ trim($sid) }
-                              { trim($flowbit) } = 1;
+                                { trim($flowbit) } = 1;
                         }
 
                     }
@@ -759,25 +811,25 @@ sub read_rules {
 
 ## sub to generate stub files using the snort --dump-dynamic-rules option
 sub gen_stubs {
-    my ( $Snort_path, $Snort_config, $Sostubs ) = @_;
+    my ($Snort_path, $Snort_config, $Sostubs) = @_;
     print "Generating Stub Rules....\n" if !$Quiet;
-    unless ( -B $Snort_path ) {
+    unless (-B $Snort_path) {
         Help("$Snort_path is not a valid binary file");
     }
-    if ( -d $Sostubs && -B $Snort_path && -f $Snort_config ) {
-        if ( $Verbose && !$Quiet ) {
+    if (-d $Sostubs && -B $Snort_path && -f $Snort_config) {
+        if ($Verbose && !$Quiet) {
             print(
-"\tGenerating shared object stubs via:$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs\n"
+                "\tGenerating shared object stubs via:$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs\n"
             );
         }
-        open( FH,
+        open(FH,
             "$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs 2>&1|"
         );
         while (<FH>) {
-            print "\t$_" if $_ =~ /Dumping/i && ( $Verbose && !$Quiet );
+            print "\t$_" if $_ =~ /Dumping/i && ($Verbose && !$Quiet);
             next unless $_ =~ /(err|warn|fail)/i;
-            syslogit( 'warning|local0', "FATAL: An error occured: $_" )
-              if $Syslogging;
+            syslogit('warning|local0', "FATAL: An error occured: $_")
+                if $Syslogging;
             print "\tAn error occurred: $_\n";
 
             # Yes, this is lame error reporting to stdout ...
@@ -786,22 +838,22 @@ sub gen_stubs {
     }
     else {
         print(
-"Something failed in the gen_stubs sub, please verify your shared object config!\n"
+            "Something failed in the gen_stubs sub, please verify your shared object config!\n"
         );
-        if ( $Verbose && !$Quiet ) {
-            unless ( -d $Sostubs ) {
+        if ($Verbose && !$Quiet) {
+            unless (-d $Sostubs) {
                 Help(
-"The path that you specified: $Sostubs does not exist! Please verify your configuration.\n"
+                    "The path that you specified: $Sostubs does not exist! Please verify your configuration.\n"
                 );
             }
-            unless ( -f $Snort_path ) {
+            unless (-f $Snort_path) {
                 Help(
-"The file that you specified: $Snort_path does not exist! Please verify your configuration.\n"
+                    "The file that you specified: $Snort_path does not exist! Please verify your configuration.\n"
                 );
             }
-            unless ( -f $Snort_config ) {
+            unless (-f $Snort_config) {
                 Help(
-"The file that you specified: $Snort_config does not exist! Please verify your configuration.\n"
+                    "The file that you specified: $Snort_config does not exist! Please verify your configuration.\n"
                 );
             }
         }
@@ -810,27 +862,27 @@ sub gen_stubs {
 }
 
 sub vrt_policy {
-    my ( $ids_policy, $rule ) = @_;
-    my ( $gid, $sid );
-    if ( $rule =~ /policy\s$ids_policy/i && $rule !~ /flowbits\s*:\s*noalert/i )
+    my ($ids_policy, $rule) = @_;
+    my ($gid, $sid);
+    if ($rule =~ /policy\s$ids_policy/i && $rule !~ /flowbits\s*:\s*noalert/i)
     {
         $rule =~ s/^#*\s*//;
     }
-    elsif ( $rule !~ /^\s*#/ ) {
+    elsif ($rule !~ /^\s*#/) {
         $rule = "# $rule";
     }
     return $rule;
 }
 
 sub policy_set {
-    my ( $ids_policy, $hashref ) = @_;
+    my ($ids_policy, $hashref) = @_;
     if ($hashref) {
-        if ( $ids_policy ne "Disabled" && $ids_policy ne "" ) {
+        if ($ids_policy ne "Disabled" && $ids_policy ne "") {
             print "Activating $ids_policy rulesets....\n" if !$Quiet;
-            foreach my $k ( sort keys %$hashref ) {
-                foreach my $k2 ( keys %{ $$hashref{$k} } ) {
-                    $$hashref{$k}{$k2}{'rule'} =
-                      vrt_policy( $ids_policy, $$hashref{$k}{$k2}{'rule'} );
+            foreach my $k (sort keys %$hashref) {
+                foreach my $k2 (keys %{ $$hashref{$k} }) {
+                    $$hashref{$k}{$k2}{'rule'}
+                        = vrt_policy($ids_policy, $$hashref{$k}{$k2}{'rule'});
                 }
             }
 
@@ -841,15 +893,15 @@ sub policy_set {
 
 ## this allows the user to use regular expressions to modify rule contents
 sub modify_sid {
-    my ( $href, $file ) = @_;
+    my ($href, $file) = @_;
     my @arry;
     print "Modifying Sids....\n" if !$Quiet;
-    open( FH, "<$file" ) || carp "Unable to open $file\n";
+    open(FH, "<$file") || carp "Unable to open $file\n";
     while (<FH>) {
-        next if ( ( $_ =~ /^\s*#/ ) || ( $_ eq " " ) );
-        if ( $_ =~ /([(\d+)?\d+|,|\*]*)\s+"(.+)"\s+"(.*)"/ ) {
-            my ( $ruleids, $from, $to ) = ( $1, $2, $3 );
-            @arry = split( /,/, $ruleids ) if $ruleids !~ /\*/;
+        next if (($_ =~ /^\s*#/) || ($_ eq " "));
+        if ($_ =~ /([(\d+)?\d+|,|\*]*)\s+"(.+)"\s+"(.*)"/) {
+            my ($ruleids, $from, $to) = ($1, $2, $3);
+            @arry = split(/,/, $ruleids) if $ruleids !~ /\*/;
             @arry = "*" if $ruleids =~ /\*/;
             foreach my $ruleid (@arry) {
                 $ruleid = trim($ruleid);
@@ -860,15 +912,16 @@ sub modify_sid {
                 if (not defined $gid) {
                     $gid = 1;
                 }
-                if ( $sid ne "*" && safe_defined($href, $gid, $sid, 'rule')) {
+                if ($sid ne "*" && safe_defined($href, $gid, $sid, 'rule')) {
                     print "\tModifying GID:$gid,SID:$sid from:$from to:$to\n"
-                      if ( $Verbose && !$Quiet );
+                        if ($Verbose && !$Quiet);
                     $$href{$gid}{$sid}{'rule'} =~ s/$from/$to/;
                 }
-                elsif ( $sid eq "*" ) {
-                    print "\tModifying ALL SIDS for GID:$gid from:$from to:$to\n"
-                      if ( $Verbose && !$Quiet );
-                    foreach my $k ( sort keys %{ $$href{$gid} } ) {
+                elsif ($sid eq "*") {
+                    print
+                        "\tModifying ALL SIDS for GID:$gid from:$from to:$to\n"
+                        if ($Verbose && !$Quiet);
+                    foreach my $k (sort keys %{ $$href{$gid} }) {
                         $$href{$gid}{$k}{'rule'} =~ s/$from/$to/;
                     }
                 }
@@ -883,208 +936,210 @@ sub modify_sid {
 ## this relaces the enablesid, disablesid and dropsid functions..
 # speed ftw!
 sub modify_state {
-    my ( $function, $SID_conf, $hashref, $rstate ) = @_;
-    my ( @sid_mod, $sidlist);
+    my ($function, $SID_conf, $hashref, $rstate) = @_;
+    my (@sid_mod, $sidlist);
     print "Processing $SID_conf....\n" if !$Quiet;
     print "\tSetting rules specified in $SID_conf to their default state!\n"
-      if ( !$Quiet && $function eq 'enable' && $rstate );
-    if ( -f $SID_conf ) {
-        open( DATA, "$SID_conf" ) or carp "unable to open $SID_conf $!";
+        if (!$Quiet && $function eq 'enable' && $rstate);
+    if (-f $SID_conf) {
+        open(DATA, "$SID_conf") or carp "unable to open $SID_conf $!";
         while (<DATA>) {
-	    next unless ($_ !~ /^\s*#/ && $_ ne "");
-	    $sidlist = (split '#',$_)[0];
+            next unless ($_ !~ /^\s*#/ && $_ ne "");
+            $sidlist = (split '#', $_)[0];
             chomp($sidlist);
             $sidlist = trim($sidlist);
-            if (!@sid_mod )
-            {
-                @sid_mod = split( /,/, $sidlist );
+            if (!@sid_mod) {
+                @sid_mod = split(/,/, $sidlist);
             }
-            elsif (@sid_mod)
-            {
-                push( @sid_mod, split( /,/, $sidlist ) );
+            elsif (@sid_mod) {
+                push(@sid_mod, split(/,/, $sidlist));
             }
         }
         close(DATA);
         if ($hashref) {
-            my $sidcount = 0;
+            my $sidcount  = 0;
             my $skipcount = 0;
             foreach (@sid_mod) {
 
                 # ranges
-                if ( $_ =~ /^(\d+):\d+-\1:\d+/ ) {
-                    my ( $lsid, $usid ) = split( /-/, $& );
+                if ($_ =~ /^(\d+):\d+-\1:\d+/) {
+                    my ($lsid, $usid) = split(/-/, $&);
                     my $gid = $lsid;
                     $sid_mod[$sidcount] = $lsid;
-                    $gid  =~ s/:\d+//;
+                    $gid =~ s/:\d+//;
                     $lsid =~ s/\d+://;
                     $usid =~ s/\d+://;
-                    while ( $lsid < $usid ) {
+                    while ($lsid < $usid) {
                         $lsid++;
-                        push( @sid_mod, $gid . ':' . $lsid );
+                        push(@sid_mod, $gid . ':' . $lsid);
                     }
                 }
 
                 # pcres
-                elsif ( $_ =~ /^pcre\:.+/i ) {
-                    my ( $pcre, $regex ) = split( /\:/, $& );
-                    foreach my $k1 ( keys %$hashref ) {
-                        foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
+                elsif ($_ =~ /^pcre\:.+/i) {
+                    my ($pcre, $regex) = split(/\:/, $&);
+                    foreach my $k1 (keys %$hashref) {
+                        foreach my $k2 (keys %{ $$hashref{$k1} }) {
                             next unless defined $$hashref{$k1}{$k2}{'rule'};
                             $sid_mod[$sidcount] = $k1 . ":" . $k2
-                              if (
-                                ( $$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i )
-                                && ( $sid_mod[$sidcount] =~ /[a-xA-X](\w|\W)*/ )
-                              );
-                            push( @sid_mod, $k1 . ":" . $k2 )
-                              if (
-                                ( $$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i )
-                                && ( $sid_mod[$sidcount] =~ /\d+:\d+/ ) );
+                                if (
+                                ($$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i)
+                                && ($sid_mod[$sidcount] =~ /[a-xA-X](\w|\W)*/)
+                                );
+                            push(@sid_mod, $k1 . ":" . $k2)
+                                if (
+                                ($$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i)
+                                && ($sid_mod[$sidcount] =~ /\d+:\d+/));
                         }
                     }
                 }
 
                 # specific sid
-                elsif ( $_ =~ /^[a-xA-X]+\:.+/ ) {
+                elsif ($_ =~ /^[a-xA-X]+\:.+/) {
                     my $regex = $&;
                     $regex =~ s/\:/,/;
-                    foreach my $k1 ( keys %$hashref ) {
-                        foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
+                    foreach my $k1 (keys %$hashref) {
+                        foreach my $k2 (keys %{ $$hashref{$k1} }) {
                             next unless defined $$hashref{$k1}{$k2}{'rule'};
                             $sid_mod[$sidcount] = $k1 . ":" . $k2
-                              if (
-                                ( $$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i )
-                                && ( $sid_mod[$sidcount] =~ /[a-xA-X](\w|\W)*/ )
-                              );
-                            push( @sid_mod, $k1 . ":" . $k2 )
-                              if (
-                                ( $$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i )
-                                && ( $sid_mod[$sidcount] =~ /\d+:\d+/ ) );
+                                if (
+                                ($$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i)
+                                && ($sid_mod[$sidcount] =~ /[a-xA-X](\w|\W)*/)
+                                );
+                            push(@sid_mod, $k1 . ":" . $k2)
+                                if (
+                                ($$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i)
+                                && ($sid_mod[$sidcount] =~ /\d+:\d+/));
                         }
                     }
                 }
 
                 # MS reference
-                elsif ( $_ =~ /^MS\d+-.+/i ) {
+                elsif ($_ =~ /^MS\d+-.+/i) {
                     my $regex = $&;
-                    foreach my $k1 ( keys %$hashref ) {
-                        foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
+                    foreach my $k1 (keys %$hashref) {
+                        foreach my $k2 (keys %{ $$hashref{$k1} }) {
                             next unless defined $$hashref{$k1}{$k2}{'rule'};
                             $sid_mod[$sidcount] = $k1 . ":" . $k2
-                              if (
-                                ( $$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i )
-                                && ( $sid_mod[$sidcount] =~ /[a-xA-X](\w|\W)*/ )
-                              );
-                            push( @sid_mod, $k1 . ":" . $k2 )
-                              if (
-                                ( $$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i )
-                                && ( $sid_mod[$sidcount] =~ /\d+:\d+/ ) );
+                                if (
+                                ($$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i)
+                                && ($sid_mod[$sidcount] =~ /[a-xA-X](\w|\W)*/)
+                                );
+                            push(@sid_mod, $k1 . ":" . $k2)
+                                if (
+                                ($$hashref{$k1}{$k2}{'rule'} =~ /($regex)/i)
+                                && ($sid_mod[$sidcount] =~ /\d+:\d+/));
                         }
                     }
                 }
 
                 # Category
-                elsif ( $_ =~ /[a-xA-X]+(-|\w)*/ ) {
+                elsif ($_ =~ /[a-xA-X]+(-|\w)*/) {
                     my $category = $&;
-                    foreach my $k1 ( keys %$hashref ) {
-                        foreach my $k2 ( keys %{ $$hashref{$k1} } ) {
-			    next
-			      unless defined $$hashref{$k1}{$k2}{'category'};
+                    foreach my $k1 (keys %$hashref) {
+                        foreach my $k2 (keys %{ $$hashref{$k1} }) {
                             next
-                              unless $$hashref{$k1}{$k2}{'category'} =~
-                                  /($category)/;
+                                unless
+                                defined $$hashref{$k1}{$k2}{'category'};
+                            next
+                                unless $$hashref{$k1}{$k2}{'category'}
+                                =~ /($category)/;
                             $sid_mod[$sidcount] = $k1 . ":" . $k2;
-                            push( @sid_mod, $k1 . ":" . $k2 )
-                              if $sid_mod[$sidcount] =~ /\d+:\d+/;
+                            push(@sid_mod, $k1 . ":" . $k2)
+                                if $sid_mod[$sidcount] =~ /\d+:\d+/;
                         }
                     }
                 }
                 $sidcount++;
             }
-            $sidcount = 0;
+            $sidcount  = 0;
             $skipcount = 0;
             foreach (@sid_mod) {
-                if ( $_ =~ /^\d+:\d+/ ) {
+                if ($_ =~ /^\d+:\d+/) {
                     my $gid = $&;
                     my $sid = $gid;
-                    if ( $gid && $sid ) {
+                    if ($gid && $sid) {
                         $gid =~ s/:\d+//;
                         $sid =~ s/\d+://;
                         if ($function) {
                             if ($function eq "enable") {
-                                if ( exists $$hashref{$gid}{$sid}
-                                    && $$hashref{$gid}{$sid}{'rule'} =~
-                                    /^\s*#\s*(alert|drop|pass)/i
-                                    && !$rstate )
+                                if (exists $$hashref{$gid}{$sid}
+                                    && $$hashref{$gid}{$sid}{'rule'}
+                                    =~ /^\s*#\s*(alert|drop|pass)/i
+                                    && !$rstate)
                                 {
-                                    $$hashref{$gid}{$sid}{'rule'} =~
-                                      s/^\s*#+\s*//;
-                                    if ( $Verbose && !$Quiet ) {
+                                    $$hashref{$gid}{$sid}{'rule'}
+                                        =~ s/^\s*#+\s*//;
+                                    if ($Verbose && !$Quiet) {
                                         print "\tEnabled $gid:$sid\n";
                                     }
                                     $sidcount++;
                                 }
 
                                 # Return State!
-				next unless $$hashref{$gid}{$sid};
-				next unless $$hashref{$gid}{$sid}{rule};
-				if (  $$hashref{$gid}{$sid}{'state'} && $$hashref{$gid}{$sid}{'state'} == 0
-                                    && $$hashref{$gid}{$sid}{'rule'} =~
-                                    /^\s*(alert|drop|pass)/
-                                    && $rstate )
+                                next unless $$hashref{$gid}{$sid};
+                                next unless $$hashref{$gid}{$sid}{rule};
+                                if (   $$hashref{$gid}{$sid}{'state'}
+                                    && $$hashref{$gid}{$sid}{'state'} == 0
+                                    && $$hashref{$gid}{$sid}{'rule'}
+                                    =~ /^\s*(alert|drop|pass)/
+                                    && $rstate)
                                 {
-                                    $$hashref{$gid}{$sid}{'rule'} =
-                                      "# " . $$hashref{$gid}{$sid}{'rule'};
+                                    $$hashref{$gid}{$sid}{'rule'} = "# "
+                                        . $$hashref{$gid}{$sid}{'rule'};
                                     $sidcount++;
-                                    if ( $Verbose && !$Quiet ) {
+                                    if ($Verbose && !$Quiet) {
                                         print "\tRe-Disabled $gid:$sid\n";
                                     }
                                 }
-                                elsif ( $$hashref{$gid}{$sid}{'state'} && $$hashref{$gid}{$sid}{'state'} == 1
-                                    && $$hashref{$gid}{$sid}{'rule'} =~
-                                    /^\s*#+\s*(alert|drop|pass)/
-                                    && $rstate )
+                                elsif ($$hashref{$gid}{$sid}{'state'}
+                                    && $$hashref{$gid}{$sid}{'state'} == 1
+                                    && $$hashref{$gid}{$sid}{'rule'}
+                                    =~ /^\s*#+\s*(alert|drop|pass)/
+                                    && $rstate)
                                 {
-                                    $$hashref{$gid}{$sid}{'rule'} =~
-                                      s/^\s*#+\s*//;
+                                    $$hashref{$gid}{$sid}{'rule'}
+                                        =~ s/^\s*#+\s*//;
                                     $sidcount++;
-                                    if ( $Verbose && !$Quiet ) {
+                                    if ($Verbose && !$Quiet) {
                                         print "\tRe-Enabled $gid:$sid\n";
                                     }
                                 }
                             }
                             elsif ($function eq "drop") {
-                                if ( exists $$hashref{$gid}{$sid}
-                                    && $$hashref{$gid}{$sid}{'rule'} =~
-                                    /^\s*alert/i )
+                                if (exists $$hashref{$gid}{$sid}
+                                    && $$hashref{$gid}{$sid}{'rule'}
+                                    =~ /^\s*alert/i)
                                 {
-                                    $$hashref{$gid}{$sid}{'rule'} =~
-                                      s/^\s*alert/drop/;
-                                    if ( $Verbose && !$Quiet ) {
+                                    $$hashref{$gid}{$sid}{'rule'}
+                                        =~ s/^\s*alert/drop/;
+                                    if ($Verbose && !$Quiet) {
                                         print "\tWill drop $gid:$sid\n";
                                     }
                                     $sidcount++;
                                 }
                             }
                             elsif ($function eq "disable") {
-                                if ( exists $$hashref{$gid}{$sid}
-                                    && $$hashref{$gid}{$sid}{'rule'} =~
-                                    /^\s*(alert|drop|pass)/i )
+                                if (exists $$hashref{$gid}{$sid}
+                                    && $$hashref{$gid}{$sid}{'rule'}
+                                    =~ /^\s*(alert|drop|pass)/i)
                                 {
-                                    $$hashref{$gid}{$sid}{'rule'} =
-                                      "# " . $$hashref{$gid}{$sid}{'rule'};
+                                    $$hashref{$gid}{$sid}{'rule'} = "# "
+                                        . $$hashref{$gid}{$sid}{'rule'};
                                     $$hashref{$gid}{$sid}{'disabled'} = 1;
-                                    if ( $Verbose && !$Quiet ) {
+                                    if ($Verbose && !$Quiet) {
                                         print "\tDisabled $gid:$sid\n";
                                     }
                                     $sidcount++;
                                 }
-                                elsif ( exists $$hashref{$gid}{$sid}
-                                    && $$hashref{$gid}{$sid}{'rule'} =~
-                                    /^\s*#*\s*(alert|drop|pass)/i )
+                                elsif (exists $$hashref{$gid}{$sid}
+                                    && $$hashref{$gid}{$sid}{'rule'}
+                                    =~ /^\s*#*\s*(alert|drop|pass)/i)
                                 {
                                     $$hashref{$gid}{$sid}{'disabled'} = 1;
-                                    if ( $Verbose && !$Quiet ) {
-                                        print "\tAlready Disabled $gid:$sid\n";
+                                    if ($Verbose && !$Quiet) {
+                                        print
+                                            "\tAlready Disabled $gid:$sid\n";
                                     }
                                     $skipcount++;
                                 }
@@ -1094,7 +1149,8 @@ sub modify_state {
                 }
             }
             print "\tModified $sidcount rules\n" if !$Quiet;
-            print "\tSkipped $skipcount rules (already disabled)\n" if !$Quiet;
+            print "\tSkipped $skipcount rules (already disabled)\n"
+                if !$Quiet;
         }
     }
     print "\tDone\n" if !$Quiet;
@@ -1103,16 +1159,16 @@ sub modify_state {
 
 ## iprep control socket!
 sub iprep_control {
-    my ($bin,$path) = @_;
-    return unless ( defined $bin && -f $bin && -d $path );
+    my ($bin, $path) = @_;
+    return unless (defined $bin && -f $bin && -d $path);
     my $cmd = "$bin $path 1361";
     print "Issuing reputation socket reload command\n";
     print "Command: $cmd\n" if $Verbose;
-    open(FH,"$cmd 2>&1 |");
-    while(<FH>){
-	chomp();
-	next unless $_ =~ /(warn|err|unable)/i;
-	print "$_\n";
+    open(FH, "$cmd 2>&1 |");
+    while (<FH>) {
+        chomp();
+        next unless $_ =~ /(warn|err|unable)/i;
+        print "$_\n";
     }
     close(FH);
 }
@@ -1120,54 +1176,63 @@ sub iprep_control {
 ## goodbye
 sub send_signal {
     my ($signal_name, $pidlist) = @_;
-    my @pids = split( /,/, $pidlist );
+    my @pids = split(/,/, $pidlist);
     my $pid;
     print "Signaling Time....\n";
     foreach $pid (@pids) {
-        open( FILE, "$pid" )
-          or croak $!;
+        open(FILE, "$pid")
+            or croak $!;
         my $realpid = <FILE>;
         chomp($realpid);
         close(FILE);
         my $kill_ret = kill "$signal_name", $realpid;
-        if ( $Verbose && !$Quiet ) {
+        if ($Verbose && !$Quiet) {
             print
-              "\tSent $signal_name signal to $realpid from $pid with result $kill_ret\n";
+                "\tSent $signal_name signal to $realpid from $pid with result $kill_ret\n";
         }
     }
-    if ( !$Verbose && !$Quiet ) { print "\tDone!\n"; }
+    if (!$Verbose && !$Quiet) { print "\tDone!\n"; }
     undef @pids;
 }
 
 ## make the sid-msg.map
 sub sid_msg {
-    my ( $ruleshash, $sidhash, $enonly ) = @_;
-    my ( $gid, $arg, $msg );
+    my ($ruleshash, $sidhash, $enonly) = @_;
+    my ($gid, $arg, $msg);
     print "Generating sid-msg.map....\n" if !$Quiet;
-    foreach my $k ( sort keys %$ruleshash ) {
-        foreach my $k2 ( sort keys %{ $$ruleshash{$k} } ) {
-	    next if ((defined $enonly) && $$ruleshash{$k}{$k2}{'rule'} !~ /^\s*(alert|drop|pass)/);
-            ( my $header, my $options ) =
-              split( /^[^"]* \(\s*/, $$ruleshash{$k}{$k2}{'rule'} )
-              if defined $$ruleshash{$k}{$k2}{'rule'};
-            my @optarray = split( /(?<!\\);\s*/, $options ) if $options;
-            foreach my $option ( reverse(@optarray) ) {
-                my ( $kw, $arg ) = split( /:\s*/, $option ) if $option;
-		my $gid = $k;
-		$gid = 1 if $k == 0;
-		next unless ($kw && $arg && $kw =~ /(reference|msg|rev|classtype|priority)/);
-		if ( $kw eq "reference" ) {
-                        push( @{ $$sidhash{$gid}{$k2}{refs} }, trim($arg));
-                } elsif ($kw eq "msg"){
-		    $arg =~ s/"//g;
-		    $$sidhash{$gid}{$k2}{msg} = trim($arg);
-		} elsif ($kw eq "rev"){
-		    $$sidhash{$gid}{$k2}{rev} = trim($arg);
-		} elsif ($kw eq "classtype") {
-		    $$sidhash{$gid}{$k2}{classtype} = trim($arg);
-		} elsif ($kw eq "priority") {
-		    $$sidhash{$gid}{$k2}{priority} = trim($arg);
-		}
+    foreach my $k (sort keys %$ruleshash) {
+        foreach my $k2 (sort keys %{ $$ruleshash{$k} }) {
+            next
+                if ((defined $enonly)
+                && $$ruleshash{$k}{$k2}{'rule'} !~ /^\s*(alert|drop|pass)/);
+            (my $header, my $options)
+                = split(/^[^"]* \(\s*/, $$ruleshash{$k}{$k2}{'rule'})
+                if defined $$ruleshash{$k}{$k2}{'rule'};
+            my @optarray = split(/(?<!\\);\s*/, $options) if $options;
+            foreach my $option (reverse(@optarray)) {
+                my ($kw, $arg) = split(/:\s*/, $option) if $option;
+                my $gid = $k;
+                $gid = 1 if $k == 0;
+                next
+                    unless ($kw
+                    && $arg
+                    && $kw =~ /(reference|msg|rev|classtype|priority)/);
+                if ($kw eq "reference") {
+                    push(@{ $$sidhash{$gid}{$k2}{refs} }, trim($arg));
+                }
+                elsif ($kw eq "msg") {
+                    $arg =~ s/"//g;
+                    $$sidhash{$gid}{$k2}{msg} = trim($arg);
+                }
+                elsif ($kw eq "rev") {
+                    $$sidhash{$gid}{$k2}{rev} = trim($arg);
+                }
+                elsif ($kw eq "classtype") {
+                    $$sidhash{$gid}{$k2}{classtype} = trim($arg);
+                }
+                elsif ($kw eq "priority") {
+                    $$sidhash{$gid}{$k2}{priority} = trim($arg);
+                }
             }
         }
     }
@@ -1176,40 +1241,41 @@ sub sid_msg {
 
 ## write the rules files to unique output files!
 sub rule_category_write {
-    my ( $hashref, $filepath, $enonly, $extra_rules ) = @_;
+    my ($hashref, $filepath, $enonly, $extra_rules) = @_;
     print "Writing rules to unique destination files....\n" if !$Quiet;
     print "\tWriting rules to $filepath\n"                  if !$Quiet;
 
     my %hcategory = ();
     my $file;
-    my @local_rules = split( /,/, $extra_rules );
-    foreach my $fn (sort keys %$categories){
-	my $file = "$fn.rules";
-	open( WRITE,'>',"$filepath$file" );
-	print WRITE "\n\n# ----- Begin $fn Rules Category ----- #\n";
-	foreach my $gid (sort keys %{$categories->{$fn}}) {
-	    print WRITE "\n# -- Begin GID:$gid Based Rules -- #\n\n";
-	    foreach my $sid (sort keys %{$categories->{$fn}{$gid}}){
-		next unless defined $$hashref{$gid}{$sid}{'rule'};
-		if ( $enonly
-		&& $$hashref{$gid}{$sid}{'rule'} =~ /^\s*(alert|drop|pass)/ )
-		{
-		    print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
-		}
-		elsif ( !$enonly || grep /^$filepath$file$/, @local_rules ) {
-		    print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
-		}
-	    }
-	}
-	close(WRITE);
+    my @local_rules = split(/,/, $extra_rules);
+    foreach my $fn (sort keys %$categories) {
+        my $file = "$fn.rules";
+        open(WRITE, '>', "$filepath$file");
+        print WRITE "\n\n# ----- Begin $fn Rules Category ----- #\n";
+        foreach my $gid (sort keys %{ $categories->{$fn} }) {
+            print WRITE "\n# -- Begin GID:$gid Based Rules -- #\n\n";
+            foreach my $sid (sort keys %{ $categories->{$fn}{$gid} }) {
+                next unless defined $$hashref{$gid}{$sid}{'rule'};
+                if (   $enonly
+                    && $$hashref{$gid}{$sid}{'rule'}
+                    =~ /^\s*(alert|drop|pass)/)
+                {
+                    print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
+                }
+                elsif (!$enonly || grep /^$filepath$file$/, @local_rules) {
+                    print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
+                }
+            }
+        }
+        close(WRITE);
     }
     print "\tDone\n" if !$Quiet;
 }
 
 ## write our blacklist and blacklist version file!
-sub blacklist_write{
-    my ($href,$path) = @_;
-    my $blv = $Config_info{'IPRVersion'}."IPRVersion.dat";
+sub blacklist_write {
+    my ($href, $path) = @_;
+    my $blv   = $Config_info{'IPRVersion'} . "IPRVersion.dat";
     my $blver = 0;
 
     # First lets be sure that our data is new, if not skip the rest of it!
@@ -1217,92 +1283,99 @@ sub blacklist_write{
     my $hobj = Digest::MD5->new;
     $hobj->add(%$href);
     my $hash = $hobj->hexdigest;
-    my $ver = unpack ("i",$hash);
-    
-    if (-f $blv){
-	open(FH,'<',$blv);
-	while(<FH>){
-	    next unless $_ =~ /\d+/;
-	    $blver = $_;
-	}
-	close(FH);	
+    my $ver = unpack("i", $hash);
+
+    if (-f $blv) {
+        open(FH, '<', $blv);
+        while (<FH>) {
+            next unless $_ =~ /\d+/;
+            $blver = $_;
+        }
+        close(FH);
     }
-    
-    if ($blver != $ver){
-	print "Writing Blacklist File $path....\n" if !$Quiet;
-	open (FH,'>',$path) || croak("Unable to open $path for writing! - $!\n");
-	foreach (sort keys %$href){
-	    print FH "$_\n";
-	}
-	close(FH);
-	
-	print "Writing Blacklist Version $ver to $blv....\n" if !$Quiet;
-	open (FH,'>',$blv) || croak("Unable to open $blv for writing! - $!\n");
-	print FH $ver;
-	close(FH);
-	return(1);
-    } else {
-	print "Blacklist version is unchanged, not updating!\n" if !$Quiet;
-	return(0);
+
+    if ($blver != $ver) {
+        print "Writing Blacklist File $path....\n" if !$Quiet;
+        open(FH, '>', $path)
+            || croak("Unable to open $path for writing! - $!\n");
+        foreach (sort keys %$href) {
+            print FH "$_\n";
+        }
+        close(FH);
+
+        print "Writing Blacklist Version $ver to $blv....\n" if !$Quiet;
+        open(FH, '>', $blv)
+            || croak("Unable to open $blv for writing! - $!\n");
+        print FH $ver;
+        close(FH);
+        return (1);
+    }
+    else {
+        print "Blacklist version is unchanged, not updating!\n" if !$Quiet;
+        return (0);
     }
 
 }
 
 ## write the rules to a single output file!
 sub rule_write {
-    my ( $hashref, $file, $enonly ) = @_;
+    my ($hashref, $file, $enonly) = @_;
     print "Writing $file....\n" if !$Quiet;
-    open( WRITE,'>',"$file" ) || croak "Unable to write $file - $!\n";
+    open(WRITE, '>', "$file") || croak "Unable to write $file - $!\n";
+
     #if ( $gid == 1 ) {
-	foreach my $fn (sort keys %$categories){
-	    print WRITE "\n\n# ----- Begin $fn Rules Category ----- #\n";
-	    foreach my $gid (sort keys %{$categories->{$fn}}) {
-		print WRITE "\n# -- Begin GID:$gid Based Rules -- #\n\n";
-		foreach my $sid (sort keys %{$categories->{$fn}{$gid}}){
-		    next unless defined $$hashref{$gid}{$sid}{'rule'};
-		    if (   $enonly
-                    && $$hashref{$gid}{$sid}{'rule'} =~ /^\s*(alert|drop|pass)/ )
-		    {
-			print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
-		    }
-		    elsif ( !$enonly ) {
-			print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
-		    }
-		}
-	    }
-	}
+    foreach my $fn (sort keys %$categories) {
+        print WRITE "\n\n# ----- Begin $fn Rules Category ----- #\n";
+        foreach my $gid (sort keys %{ $categories->{$fn} }) {
+            print WRITE "\n# -- Begin GID:$gid Based Rules -- #\n\n";
+            foreach my $sid (sort keys %{ $categories->{$fn}{$gid} }) {
+                next unless defined $$hashref{$gid}{$sid}{'rule'};
+                if (   $enonly
+                    && $$hashref{$gid}{$sid}{'rule'}
+                    =~ /^\s*(alert|drop|pass)/)
+                {
+                    print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
+                }
+                elsif (!$enonly) {
+                    print WRITE $$hashref{$gid}{$sid}{'rule'} . "\n";
+                }
+            }
+        }
+    }
     close(WRITE);
     print "\tDone\n" if !$Quiet;
 }
 
 ## sid file time!
 sub sid_write {
-    my ( $hashref, $file, $sid_msg_version ) = @_;
+    my ($hashref, $file, $sid_msg_version) = @_;
     print "Writing v$sid_msg_version $file....\n" if !$Quiet;
-    open( WRITE, ">$file" ) || croak "Unable to write $file -$!";
-    print WRITE "#v$sid_msg_version\n";  # Version biznits!
-    print WRITE "# sid-msg.map autogenerated by PulledPork - DO NOT MODIFY BY HAND!\n";
-    foreach my $k ( sort keys %$hashref ) {
-	foreach my $k2 ( sort keys %{$$hashref{$k}}){
-	    if ($sid_msg_version == 2){
-		print WRITE "$k || $k2 || $hashref->{$k}{$k2}{rev} || ";
-		if ($hashref->{$k}{$k2}{classtype}) {
-		    print WRITE "$hashref->{$k}{$k2}{classtype} || ";
-		}
-		else { print WRITE "NOCLASS || "; }
-		if ($hashref->{$k}{$k2}{priority}) {
-		    print WRITE "$hashref->{$k}{$k2}{priority} || ";
-		}
-		else { print WRITE "0 || "; }
-	    } else {
-		print WRITE "$k2 || ";
-	    }
-	    print WRITE "$hashref->{$k}{$k2}{msg}";
-	    foreach (@{$hashref->{$k}{$k2}{refs}}) {
-		print WRITE " || $_";
-	    }
-	    print WRITE "\n";
-	}
+    open(WRITE, ">$file") || croak "Unable to write $file -$!";
+    print WRITE "#v$sid_msg_version\n";    # Version biznits!
+    print WRITE
+        "# sid-msg.map autogenerated by PulledPork - DO NOT MODIFY BY HAND!\n";
+    foreach my $k (sort keys %$hashref) {
+        foreach my $k2 (sort keys %{ $$hashref{$k} }) {
+            if ($sid_msg_version == 2) {
+                print WRITE "$k || $k2 || $hashref->{$k}{$k2}{rev} || ";
+                if ($hashref->{$k}{$k2}{classtype}) {
+                    print WRITE "$hashref->{$k}{$k2}{classtype} || ";
+                }
+                else { print WRITE "NOCLASS || "; }
+                if ($hashref->{$k}{$k2}{priority}) {
+                    print WRITE "$hashref->{$k}{$k2}{priority} || ";
+                }
+                else { print WRITE "0 || "; }
+            }
+            else {
+                print WRITE "$k2 || ";
+            }
+            print WRITE "$hashref->{$k}{$k2}{msg}";
+            foreach (@{ $hashref->{$k}{$k2}{refs} }) {
+                print WRITE " || $_";
+            }
+            print WRITE "\n";
+        }
     }
     close(WRITE);
     print "\tDone\n" if !$Quiet;
@@ -1311,16 +1384,16 @@ sub sid_write {
 ## Pull the flowbits requirements from the currently enabled rules.
 # TODO: add extended functionality for setx, toggle and groups (Q1 of 2013)
 sub flowbit_check {
-    my ( $rule, $aref ) = @_;
-    my ( $header, $options ) = split( /^[^"]* \(\s*/, $rule );
-    my @optarray = split( /(?<!\\);\s*/, $options ) if $options;
-    foreach my $option ( reverse(@optarray) ) {
-	my ( $kw, $arg ) = split( /:/, $option ) if $option;
-	next unless ( $kw && $arg && $kw eq "flowbits" );
-        my ( $flowact, $flowbit ) = split( /,/, $arg );
+    my ($rule, $aref) = @_;
+    my ($header, $options) = split(/^[^"]* \(\s*/, $rule);
+    my @optarray = split(/(?<!\\);\s*/, $options) if $options;
+    foreach my $option (reverse(@optarray)) {
+        my ($kw, $arg) = split(/:/, $option) if $option;
+        next unless ($kw && $arg && $kw eq "flowbits");
+        my ($flowact, $flowbit) = split(/,/, $arg);
         next unless $flowact =~ /is(not)?set/i;
-	push( @$aref, trim($flowbit) ) if $flowbit !~ /(&|\|)/;
-	push( @$aref, split(/(&|\|)/,trim($flowbit))) if $flowbit =~ /(&|\|)/;
+        push(@$aref, trim($flowbit)) if $flowbit !~ /(&|\|)/;
+        push(@$aref, split(/(&|\|)/, trim($flowbit))) if $flowbit =~ /(&|\|)/;
     }
 }
 
@@ -1329,47 +1402,49 @@ sub flowbit_set {
     my $href    = shift;
     my $counter = 0;
     my @flowbits;
-    foreach my $k1 ( keys %$href ) {
-        foreach my $k2 ( keys %{ $$href{$k1} } ) {
+    foreach my $k1 (keys %$href) {
+        foreach my $k2 (keys %{ $$href{$k1} }) {
             next unless $$href{$k1}{$k2}{'rule'} =~ /^(alert|drop|pass)/;
             next
-              unless $$href{$k1}{$k2}{'rule'} =~
-                  /flowbits:\s*is(not)?set\s*,\s*[^;]+/i;
-            flowbit_check( $$href{$k1}{$k2}{'rule'}, \@flowbits );
+                unless $$href{$k1}{$k2}{'rule'}
+                =~ /flowbits:\s*is(not)?set\s*,\s*[^;]+/i;
+            flowbit_check($$href{$k1}{$k2}{'rule'}, \@flowbits);
         }
     }
     my %dups;
     map { $dups{$_} = 1 } @flowbits;
     @flowbits = keys %dups;
     undef %dups;
-    foreach my $k1 ( keys %$href ) {
-        foreach my $k2 ( keys %{ $$href{$k1} } ) {
+    foreach my $k1 (keys %$href) {
+        foreach my $k2 (keys %{ $$href{$k1} }) {
             foreach my $flowbit (@flowbits) {
                 next
-                  unless defined $$href{$k1}{$k2}{$flowbit}
-                      && $$href{$k1}{$k2}{'rule'} =~
-                      /^\s*#\s*(alert|drop|pass)/i;
+                    unless defined $$href{$k1}{$k2}{$flowbit}
+                    && $$href{$k1}{$k2}{'rule'}
+                    =~ /^\s*#\s*(alert|drop|pass)/i;
                 $$href{$k1}{$k2}{'rule'} =~ s/^\s*#\s*//;
-                if ( defined $$href{$k1}{$k2}{'disabled'} ) {
+                if (defined $$href{$k1}{$k2}{'disabled'}) {
                     print "\tWARN - $k1:$k2 is re-enabled by a",
-                      " check of the $flowbit flowbit!\n"
-                      if $Verbose && !$Quiet;
+                        " check of the $flowbit flowbit!\n"
+                        if $Verbose && !$Quiet;
                 }
                 $counter++;
             }
         }
     }
     undef @flowbits;
-    print "\tEnabled $counter flowbits\n" if ( $counter > 0 && !$Quiet );
+    print "\tEnabled $counter flowbits\n" if ($counter > 0 && !$Quiet);
     return $counter;
 }
 
 ## Make some changelog fun!
 sub changelog {
-    my ( $changelog, $new_hash, $old_hash, $blacklist_hash, $ips_policy, $enonly, $hmatch ) = @_;
+    my ($changelog, $new_hash, $old_hash, $blacklist_hash, $ips_policy,
+        $enonly, $hmatch)
+        = @_;
 
     print "Writing $changelog....\n" if !$Quiet;
-    my ( @newsids, @delsids );
+    my (@newsids, @delsids);
     undef @newsids;
     undef @delsids;
     my $rt       = 0;
@@ -1377,107 +1452,111 @@ sub changelog {
     my $dropped  = 0;
     my $enabled  = 0;
     my $disabled = 0;
-    my $ips	 = 0;
-    
-    foreach my $k1 ( keys %$new_hash ) {
+    my $ips      = 0;
 
-        foreach my $k2 ( keys %{ $$new_hash{$k1} } ) {
-            next if ( ($enonly) && ( $$new_hash{$k1}{$k2}{'rule'} =~ /^\s*#/ ) );
-            if ( !defined $$old_hash{$k1}{$k2}{'rule'} ) {
+    foreach my $k1 (keys %$new_hash) {
+
+        foreach my $k2 (keys %{ $$new_hash{$k1} }) {
+            next if (($enonly) && ($$new_hash{$k1}{$k2}{'rule'} =~ /^\s*#/));
+            if (!defined $$old_hash{$k1}{$k2}{'rule'}) {
                 my $msg_holder = $$new_hash{$k1}{$k2}{'rule'};
-                if ( $msg_holder =~ /msg:"[^"]+";/i ) {
+                if ($msg_holder =~ /msg:"[^"]+";/i) {
                     $msg_holder = $&;
                     $msg_holder =~ s/msg:"//;
                     $msg_holder =~ s/";//;
                 }
                 else { $msg_holder = "Unknown MSG" }
-                push( @newsids, "$msg_holder ($k1:$k2)" );
+                push(@newsids, "$msg_holder ($k1:$k2)");
             }
             $rt++ unless defined $$old_hash{$k1}{$k2}{'rule'};
             next  unless defined $$new_hash{$k1}{$k2}{'rule'};
-            if ( $$new_hash{$k1}{$k2}{'rule'} =~ /^\s*(alert|pass)/ ) {
+            if ($$new_hash{$k1}{$k2}{'rule'} =~ /^\s*(alert|pass)/) {
                 $enabled++;
             }
-            elsif ( $$new_hash{$k1}{$k2}{'rule'} =~ /^\s*drop/ ) {
+            elsif ($$new_hash{$k1}{$k2}{'rule'} =~ /^\s*drop/) {
                 $dropped++;
             }
             elsif (
-                $$new_hash{$k1}{$k2}{'rule'} =~ /^\s*#*\s*(alert|drop|pass)/ )
+                $$new_hash{$k1}{$k2}{'rule'} =~ /^\s*#*\s*(alert|drop|pass)/)
             {
                 $disabled++;
             }
         }
     }
-    foreach my $k1 ( sort keys %$old_hash ) {
-        for my $k2 ( sort keys %{ $$old_hash{$k1} } ) {
+    foreach my $k1 (sort keys %$old_hash) {
+        for my $k2 (sort keys %{ $$old_hash{$k1} }) {
             next if defined $$new_hash{$k1}{$k2}{'rule'};
             next
-              if ( ($enonly) && ( $$old_hash{$k1}{$k2}{'rule'} =~ /^\s*#/ ) );
+                if (($enonly) && ($$old_hash{$k1}{$k2}{'rule'} =~ /^\s*#/));
             my $msg_holder = $$old_hash{$k1}{$k2}{'rule'};
-            if ( $msg_holder =~ /msg:"[^"]+";/ ) {
+            if ($msg_holder =~ /msg:"[^"]+";/) {
                 $msg_holder = $&;
                 $msg_holder =~ s/msg:"//;
                 $msg_holder =~ s/";//;
             }
             else { $msg_holder = "Unknown MSG" }
-            push( @delsids, "$msg_holder ($k1:$k2)" );
+            push(@delsids, "$msg_holder ($k1:$k2)");
             $dt++;
         }
     }
-    if (%$blacklist_hash){
+    if (%$blacklist_hash) {
         $ips = keys(%$blacklist_hash);
     }
-    if ( -f $changelog ) {
-        open( WRITE,'>>',$changelog ) || croak "$changelog $!\n";
+    if (-f $changelog) {
+        open(WRITE, '>>', $changelog) || croak "$changelog $!\n";
     }
     else {
-        open( WRITE,'>',$changelog ) || croak "$changelog $!\n";
+        open(WRITE, '>', $changelog) || croak "$changelog $!\n";
         print WRITE
-          "-=BEGIN PULLEDPORK SNORT RULES CHANGELOG, Tracking started on "
-          . gmtime(time)
-          . " GMT=-\n\n\n";
+            "-=BEGIN PULLEDPORK SNORT RULES CHANGELOG, Tracking started on "
+            . gmtime(time)
+            . " GMT=-\n\n\n";
     }
     print WRITE "\n-=Begin Changes Logged for " . gmtime(time) . " GMT=-\n";
     if ($Process) {
-	print WRITE "\nNew Rules\n" if @newsids;
-	@newsids = sort(@newsids);
-	@delsids = sort(@delsids);
-	foreach (@newsids) { print WRITE "\t" . $_ . "\n"; }
-	print WRITE "\nDeleted Rules\n" if @delsids;
-	foreach (@delsids) { print WRITE "\t" . $_ . "\n"; }
-	print WRITE "\nSet Policy: $ips_policy\n" if $ips_policy;
-	print WRITE "\nRule Totals\n";
-	print WRITE "\tNew:-------$rt\n";
-	print WRITE "\tDeleted:---$dt\n";
-	print WRITE "\tEnabled:---$enabled\n";
-	print WRITE "\tDropped:---$dropped\n";
-	print WRITE "\tDisabled:--$disabled\n";
-	print WRITE "\tTotal:-----" . ( $enabled + $disabled + $dropped ) . "\n";
-    } else { print WRITE "\nNo Rule Changes\n"; }
-    if ($bmatch){
-	print WRITE "\nIP Blacklist Stats\n\tTotal IPs:-----$ips\n" if $ips;
-    } else { print WRITE "\nNo IP Blacklist Changes\n"; }
+        print WRITE "\nNew Rules\n" if @newsids;
+        @newsids = sort(@newsids);
+        @delsids = sort(@delsids);
+        foreach (@newsids) { print WRITE "\t" . $_ . "\n"; }
+        print WRITE "\nDeleted Rules\n" if @delsids;
+        foreach (@delsids) { print WRITE "\t" . $_ . "\n"; }
+        print WRITE "\nSet Policy: $ips_policy\n" if $ips_policy;
+        print WRITE "\nRule Totals\n";
+        print WRITE "\tNew:-------$rt\n";
+        print WRITE "\tDeleted:---$dt\n";
+        print WRITE "\tEnabled:---$enabled\n";
+        print WRITE "\tDropped:---$dropped\n";
+        print WRITE "\tDisabled:--$disabled\n";
+        print WRITE "\tTotal:-----"
+            . ($enabled + $disabled + $dropped) . "\n";
+    }
+    else { print WRITE "\nNo Rule Changes\n"; }
+    if ($bmatch) {
+        print WRITE "\nIP Blacklist Stats\n\tTotal IPs:-----$ips\n" if $ips;
+    }
+    else { print WRITE "\nNo IP Blacklist Changes\n"; }
     print WRITE "\n-=End Changes Logged for " . gmtime(time) . " GMT=-\n";
     close(WRITE);
 
-    if ( !$Quiet ) {
+    if (!$Quiet) {
         print "\tDone\n";
-	if ($Process) {
-	    print "Rule Stats...\n";
-	    print "\tNew:-------$rt\n";
-	    print "\tDeleted:---$dt\n";
-	    print "\tEnabled Rules:----$enabled\n";
-	    print "\tDropped Rules:----$dropped\n";
-	    print "\tDisabled Rules:---$disabled\n";
-	    print "\tTotal Rules:------"
-	      . ( $enabled + $dropped + $disabled );
-	} else { print "\nNo Rule Changes\n"; }
-	if ($bmatch){
-	    print "\nIP Blacklist Stats...\n\tTotal IPs:-----$ips\n" if $ips;
-	} else { print "\nNo IP Blacklist Changes\n"; }
+        if ($Process) {
+            print "Rule Stats...\n";
+            print "\tNew:-------$rt\n";
+            print "\tDeleted:---$dt\n";
+            print "\tEnabled Rules:----$enabled\n";
+            print "\tDropped Rules:----$dropped\n";
+            print "\tDisabled Rules:---$disabled\n";
+            print "\tTotal Rules:------" . ($enabled + $dropped + $disabled);
+        }
+        else { print "\nNo Rule Changes\n"; }
+        if ($bmatch) {
+            print "\nIP Blacklist Stats...\n\tTotal IPs:-----$ips\n" if $ips;
+        }
+        else { print "\nNo IP Blacklist Changes\n"; }
         print "\nDone\n";
-	print "Please review $sid_changelog for additional details\n"
-          if $sid_changelog;
+        print "Please review $sid_changelog for additional details\n"
+            if $sid_changelog;
     }
     undef @newsids;
     undef @delsids;
@@ -1495,11 +1574,11 @@ sub trim {
 
 ## Does it hurt when I slash you?
 sub slash {
-    my ( $operation, $string ) = @_;
-    if ( $operation == 0 && $string =~ /\/$/ && $string ne "" ) {
+    my ($operation, $string) = @_;
+    if ($operation == 0 && $string =~ /\/$/ && $string ne "") {
         $string =~ s/\/$//;
     }
-    elsif ( $operation == 1 && $string !~ /\/$/ && $string ne "" ) {
+    elsif ($operation == 1 && $string !~ /\/$/ && $string ne "") {
         $string = $string . "/";
     }
     return $string;
@@ -1527,13 +1606,13 @@ sub snort_version {
     my $cmd = shift;
     $cmd .= " -V";
     my $version;
-    open( FH, "$cmd 2>&1 |" );
+    open(FH, "$cmd 2>&1 |");
     while (<FH>) {
         next unless $_ =~ /Version/;
-        if ( $_ =~ /\d+\.\d+\.\d+\.\d+/ ) {
+        if ($_ =~ /\d+\.\d+\.\d+\.\d+/) {
             $version = $&;
         }
-        elsif ( $_ =~ /\d+\.\d+\.\d+(?!\.)/ ) {
+        elsif ($_ =~ /\d+\.\d+\.\d+(?!\.)/) {
             $version = $& . ".0";
         }
     }
@@ -1544,7 +1623,7 @@ sub snort_version {
 ## our arch
 sub get_arch {
     my $cmd = "uname -a";
-    open( FH, "$cmd |" );
+    open(FH, "$cmd |");
     my $arch;
     while (<FH>) {
         next unless $_ =~ /(i386|x86-64|x86_64|i686|amd64)/i;
@@ -1559,68 +1638,69 @@ sub get_arch {
 
 ## log to syslog
 sub syslogit {
-    my ( $level, $msg ) = @_;
+    my ($level, $msg) = @_;
 
-    openlog( 'pulledpork', 'ndelay,pid', 'local0' );
-    syslog( $level, $msg );
+    openlog('pulledpork', 'ndelay,pid', 'local0');
+    syslog($level, $msg);
     closelog;
 }
 
 ## Create some backup and archive foo!
 sub archive {
-    my ( $data, $filename ) = @_;
+    my ($data, $filename) = @_;
     my @records;
     my $compression = "COMPRESS_GZIP";
     $filename .= "." . time() . ".tgz";
     print "Creating backup at: $filename\n" unless $Quiet;
     foreach my $record (@$data) {
-        if ( -f $record ) {
+        if (-f $record) {
             print "\tAdding file: $record\n" if $Verbose && !$Quiet;
-            push( @records, $record );
+            push(@records, $record);
         }
-        elsif ( -d $record ) {
+        elsif (-d $record) {
             print "\tAdding dir: $record\n" if $Verbose && !$Quiet;
-            find( \&archive_wanted, $record );
+            find(\&archive_wanted, $record);
         }
     }
     print "\tWriting Archive: $filename - may take several minutes!\n"
-      if $Verbose && !$Quiet;
-    Archive::Tar->create_archive( $filename, $compression, @records );
+        if $Verbose && !$Quiet;
+    Archive::Tar->create_archive($filename, $compression, @records);
 }
 
 ## Define what we will find for the archive sub when dir is found!
 sub archive_wanted {
     return unless -f $_;
     print "\tAdding file: $File::Find::name\n" if $Verbose == 2 && !$Quiet;
-    push( @records, $File::Find::name );
+    push(@records, $File::Find::name);
 }
 
 ## Create ignore_files from conf file
 sub get_ignore_files {
-  my ($ignore_conf_file) = @_;
-  my $ignore_list;
+    my ($ignore_conf_file) = @_;
+    my $ignore_list;
 
-  print "\tReading ignore_file: $ignore_conf_file\n";
+    print "\tReading ignore_file: $ignore_conf_file\n";
 
-  # Read ignore file and exclude comments/blank lines
-  open ( FH, '<', $ignore_conf_file ) || croak "Couldn't read $ignore_conf_file $!\n";
-    while ( <FH> ) {
-      chomp;
-      s/#.*//;
-      if ( ! /^\s*$/ ) { $ignore_list .= "$_," };
-    };
-  close FH;
-  $ignore_list =~ s/,\s*$//g ;
-  return $ignore_list
+    # Read ignore file and exclude comments/blank lines
+    open(FH, '<', $ignore_conf_file)
+        || croak "Couldn't read $ignore_conf_file $!\n";
+    while (<FH>) {
+        chomp;
+        s/#.*//;
+        if (!/^\s*$/) { $ignore_list .= "$_," }
+    }
+    close FH;
+    $ignore_list =~ s/,\s*$//g;
+    return $ignore_list;
 }
 
 ###
 ### Main here, let's get on with it already
 ###
 
-if ( $#ARGV == -1 ) {
+if ($#ARGV == -1) {
     Help(
-"Please read the README for runtime options and configuration documentation"
+        "Please read the README for runtime options and configuration documentation"
     );
 }
 
@@ -1660,8 +1740,8 @@ GetOptions(
     "V!"     => sub { Version() },
     "v+"     => \$Verbose,
     "help|?" => sub { Help() },
-    "w" => \$skip_verify,
-    "W" => \$proxy_workaround
+    "w"      => \$skip_verify,
+    "W"      => \$proxy_workaround
 );
 
 ## Fly piggy fly!
@@ -1669,41 +1749,40 @@ pulledpork() if !$Quiet;
 
 # Dump our variables for verbose/debug output
 
-if ( !$Config_file ) { Help("No configuration file specified"); }
+if (!$Config_file) { Help("No configuration file specified"); }
 
 # Call the subroutine to fetch config values
-parse_config_file( $Config_file, \%Config_info );
+parse_config_file($Config_file, \%Config_info);
 
-if ( $Verbose && !$Quiet ) {
+if ($Verbose && !$Quiet) {
     print "Config File Variable Debug $Config_file\n";
-    foreach $Config_key ( keys %Config_info ) {
-        if ( $Config_info{$Config_key} ) {
+    foreach $Config_key (keys %Config_info) {
+        if ($Config_info{$Config_key}) {
             print "\t$Config_key = $Config_info{$Config_key}\n";
         }
     }
 
 }
 
-if ( exists $Config_info{'version'} ) {
+if (exists $Config_info{'version'}) {
     croak "You are not using the current version of pulledpork.conf!\n",
-      "Please use the version of pulledpork.conf that shipped with $VERSION!\n\n"
-      if $Config_info{'version'} ne "0.7.3";
+        "Please use the version of pulledpork.conf that shipped with $VERSION!\n\n"
+        if $Config_info{'version'} ne "0.7.3";
 }
 else {
     croak
-"You are not using the current version of pulledpork.conf!\nPlease use the version that shipped with $VERSION!\n\n";
+        "You are not using the current version of pulledpork.conf!\nPlease use the version that shipped with $VERSION!\n\n";
 }
 
 # Check to see if we have command line inputs, if so, they super-seed any config file values!
 # We also begin sub execution here
 
-$pid_path     = ( $Config_info{'pid_path'} ) if exists $Config_info{'pid_path'};
-$ignore_files = ( $Config_info{'ignore'} )   if exists $Config_info{'ignore'};
+$pid_path     = ($Config_info{'pid_path'}) if exists $Config_info{'pid_path'};
+$ignore_files = ($Config_info{'ignore'})   if exists $Config_info{'ignore'};
 
 # Allow ignores to be specified in a file, supercedes the regular ignore config option
-if ( exists $Config_info{'ignore_file'})
-{
-  $ignore_files = get_ignore_files($Config_info{'ignore_file'});
+if (exists $Config_info{'ignore_file'}) {
+    $ignore_files = get_ignore_files($Config_info{'ignore_file'});
 }
 
 if ($rule_file_path) {
@@ -1712,113 +1791,115 @@ if ($rule_file_path) {
 
 $sid_msg_version = $Config_info{'sid_msg_version'};
 
-if ( $keep_rulefiles && defined $Config_info{'out_path'} && !$rule_file_path ) {
+if ($keep_rulefiles && defined $Config_info{'out_path'} && !$rule_file_path) {
     $rule_file_path = $Config_info{'out_path'};
 }
 
 if ($rule_file_path) {
-    $rule_file_path = slash( 1, "$rule_file_path" );
+    $rule_file_path = slash(1, "$rule_file_path");
 }
 
-if ( !$ips_policy && defined $Config_info{'ips_policy'} ) {
+if (!$ips_policy && defined $Config_info{'ips_policy'}) {
     $ips_policy = $Config_info{'ips_policy'};
 }
 
-if ( !$black_list && defined $Config_info{'black_list'} ) {
+if (!$black_list && defined $Config_info{'black_list'}) {
     $black_list = $Config_info{'black_list'};
 }
 
-if ( !$sidmod{enable} && defined $Config_info{'enablesid'} ) {
+if (!$sidmod{enable} && defined $Config_info{'enablesid'}) {
     $sidmod{enable} = $Config_info{'enablesid'};
 }
 
-if ( !$sidmod{modify} && defined $Config_info{'modifysid'} ) {
+if (!$sidmod{modify} && defined $Config_info{'modifysid'}) {
     $sidmod{modify} = $Config_info{'modifysid'};
 }
 
-if ( !$sidmod{drop} && defined $Config_info{'dropsid'} ) {
+if (!$sidmod{drop} && defined $Config_info{'dropsid'}) {
     $sidmod{drop} = $Config_info{'dropsid'};
 }
 
-if ( !$sidmod{disable} && defined $Config_info{'disablesid'} ) {
+if (!$sidmod{disable} && defined $Config_info{'disablesid'}) {
     $sidmod{disable} = $Config_info{'disablesid'};
 }
 
-my @sidact = ( 'enable', 'drop', 'disable' );
+my @sidact = ('enable', 'drop', 'disable');
 
-if ( defined $Config_info{'state_order'} ) {
-    (@sidact) = split( /,/, $Config_info{'state_order'} );
+if (defined $Config_info{'state_order'}) {
+    (@sidact) = split(/,/, $Config_info{'state_order'});
 }
 
-if ( !@base_url ) {
+if (!@base_url) {
     @base_url = @{ $Config_info{'rule_url'} };
-    if ( !@base_url ) {
+    if (!@base_url) {
         Help(
-"You need to specify one rule_url at a minimum to fetch the rules files from!\n"
+            "You need to specify one rule_url at a minimum to fetch the rules files from!\n"
         );
     }
 }
 
-if ( !$Output ) {
-    $Output = ( $Config_info{'rule_path'} );
+if (!$Output) {
+    $Output = ($Config_info{'rule_path'});
 }
 
-if ( !$Output && !($keep_rulefiles && $rule_file_path) ) { Help("You need to specify an output rules file or output path!"); }
-
-$Output = slash( 0, $Output ) if $Output;
-
-if ( !$Sorules ) {
-    $Sorules = ( $Config_info{'sorule_path'} );
+if (!$Output && !($keep_rulefiles && $rule_file_path)) {
+    Help("You need to specify an output rules file or output path!");
 }
-$Sorules = slash( 1, $Sorules ) if $Sorules;
 
-if ( !$docs ) {
-    $docs = ( $Config_info{'docs'} );
+$Output = slash(0, $Output) if $Output;
+
+if (!$Sorules) {
+    $Sorules = ($Config_info{'sorule_path'});
+}
+$Sorules = slash(1, $Sorules) if $Sorules;
+
+if (!$docs) {
+    $docs = ($Config_info{'docs'});
 }
 
 undef $Sostubs if ($Textonly);
 undef $Sorules if ($Textonly);
 
-if ( !$Distro ) {
-    $Distro = ( $Config_info{'distro'} );
+if (!$Distro) {
+    $Distro = ($Config_info{'distro'});
 }
 
-if ( !$Snort ) {
-    $Snort = ( $Config_info{'snort_version'} );
+if (!$Snort) {
+    $Snort = ($Config_info{'snort_version'});
 }
 
-if ( !$Snort_path ) {
-    $Snort_path = ( $Config_info{'snort_path'} );
-    $Snort      = snort_version($Snort_path) if ( !$Snort && -B $Snort_path );
+if (!$Snort_path) {
+    $Snort_path = ($Config_info{'snort_path'});
+    $Snort      = snort_version($Snort_path) if (!$Snort && -B $Snort_path);
     $arch       = get_arch();
     $Textonly   = 1 unless $Snort;
 }
 
-if ( !$local_rules && ( $Config_info{'local_rules'} ) ) {
-    $local_rules = ( $Config_info{'local_rules'} );
+if (!$local_rules && ($Config_info{'local_rules'})) {
+    $local_rules = ($Config_info{'local_rules'});
 }
-elsif ( !$local_rules && !( $Config_info{'local_rules'} ) ) {
+elsif (!$local_rules && !($Config_info{'local_rules'})) {
     $local_rules = 0;
 }
 
-if ( !$Snort_config ) {
-    $Snort_config = ( $Config_info{'config_path'} );
+if (!$Snort_config) {
+    $Snort_config = ($Config_info{'config_path'});
 }
 
-if ( !$sid_msg_map ) {
-    $sid_msg_map = ( $Config_info{'sid_msg'} );
+if (!$sid_msg_map) {
+    $sid_msg_map = ($Config_info{'sid_msg'});
 }
-if ( !$sid_changelog ) {
-    $sid_changelog = ( $Config_info{'sid_changelog'} );
+if (!$sid_changelog) {
+    $sid_changelog = ($Config_info{'sid_changelog'});
 }
 
-if ( !$ips_policy ) {
+if (!$ips_policy) {
     $ips_policy = "Disabled";
 }
 
-if ( $Verbose && !$Quiet ) {
+if ($Verbose && !$Quiet) {
     print "MISC (CLI and Autovar) Variable Debug:\n";
-    if ($Process)	 { print "\tProcess flag specified!\n"; }
+    if ($Process)        { print "\tProcess flag specified!\n"; }
     if ($arch)           { print "\tarch Def is: $arch\n"; }
     if ($oSystem)        { print "\tOperating System is: $oSystem\n"; }
     if ($CAFile)         { print "\tCA Certificate File is: $CAFile\n"; }
@@ -1832,7 +1913,7 @@ if ( $Verbose && !$Quiet ) {
 
     if ($Hash) {
         print
-"\tNo MD5 Flag is Set, uhm, ok? I'm gonna fetch the latest file no matter what!\n";
+            "\tNo MD5 Flag is Set, uhm, ok? I'm gonna fetch the latest file no matter what!\n";
     }
     if ($ips_policy)  { print "\t$ips_policy policy specified\n"; }
     if ($local_rules) { print "\tlocal.rules path is: $local_rules\n"; }
@@ -1840,20 +1921,22 @@ if ( $Verbose && !$Quiet ) {
     if ($Output)      { print "\tRules file is: $Output\n"; }
     if ($rstate)      { print "\tReturn State flag is Set\n"; }
     if ($rule_file)   { print "\tRule File is: $rule_file\n"; }
-    if ( $sidmod{disable} ) {
+    if ($sidmod{disable}) {
         print "\tPath to disablesid file: $sidmod{disable}\n";
     }
-    if ( $sidmod{drop} ) { print "\tPath to dropsid file: $sidmod{drop}\n"; }
-    if ( $sidmod{enable} ) {
+    if ($sidmod{drop}) { print "\tPath to dropsid file: $sidmod{drop}\n"; }
+    if ($sidmod{enable}) {
         print "\tPath to enablesid file: $sidmod{enable}\n";
     }
-    if ( $sidmod{modify} ) {
+    if ($sidmod{modify}) {
         print "\tPath to modifysid file: $sidmod{modify}\n";
     }
     if ($sid_changelog) {
         print "\tsid changes will be logged to: $sid_changelog\n";
     }
-    if ($sid_msg_map)  { print "\tsid-msg.map Output Path is: $sid_msg_map\n"; }
+    if ($sid_msg_map) {
+        print "\tsid-msg.map Output Path is: $sid_msg_map\n";
+    }
     if ($SigName)      { print "\tSending signal Flag is Set: $SigName\n"; }
     if ($Snort)        { print "\tSnort Version is: $Snort\n"; }
     if ($Snort_config) { print "\tSnort Config File: $Snort_config\n"; }
@@ -1862,134 +1945,145 @@ if ( $Verbose && !$Quiet ) {
     if ($Sostubs)      { print "\tWill process SO rules\n"; }
     if ($Syslogging)   { print "\tLogging Flag is Set\n"; }
     if ($Textonly)     { print "\tText Rules only Flag is Set\n"; }
-    if ( $Verbose == 2 ) { print "\tExtra Verbose Flag is Set\n"; }
-    if ($Verbose)        { print "\tVerbose Flag is Set\n"; }
-    if ($skip_verify)     { print "\tSSL Hostname Verification disabled\n"; }
-    if ($proxy_workaround)     { print "\tLWP Workaround is set for Proxy connections\n"; }
-    if ($ignore_files)   { print "\tFile(s) to ignore = $ignore_files\n"; }
-    if (@base_url)       { print "\tBase URL is: @base_url\n"; }
+    if ($Verbose == 2) { print "\tExtra Verbose Flag is Set\n"; }
+    if ($Verbose)      { print "\tVerbose Flag is Set\n"; }
+    if ($skip_verify)  { print "\tSSL Hostname Verification disabled\n"; }
+
+    if ($proxy_workaround) {
+        print "\tLWP Workaround is set for Proxy connections\n";
+    }
+    if ($ignore_files) { print "\tFile(s) to ignore = $ignore_files\n"; }
+    if (@base_url)     { print "\tBase URL is: @base_url\n"; }
 }
 
 # We need a temp path to work with the files while we do magics on them.. make sure you have plenty
 # of space in this path.. ~200mb is a good starting point
-$temp_path = ( $Config_info{'temp_path'} );
-if ( !$temp_path ) {
+$temp_path = ($Config_info{'temp_path'});
+if (!$temp_path) {
     Help("You need to specify a valid temp path, check permissions too!");
 }
-$temp_path = slash( 1, $temp_path );
-if ( !-d $temp_path ) {
+$temp_path = slash(1, $temp_path);
+if (!-d $temp_path) {
     Help("Temporary file path $temp_path does not exist.\n");
 }
 
 # Validate sid_msg_map version
-Help("Please specify version 1 or 2 for sid_msg_version in your config file\n") unless $sid_msg_version =~ /(1|2)/;
+Help(
+    "Please specify version 1 or 2 for sid_msg_version in your config file\n")
+    unless $sid_msg_version =~ /(1|2)/;
 
 
 # set some UserAgent and other connection configs
 $ua->agent("$VERSION");
-$ua->show_progress(1) if ( $Verbose && !$Quiet );
+$ua->show_progress(1) if ($Verbose && !$Quiet);
 
 # check to see if SSL verfication is disabled
 if ($skip_verify) {
-    $ua->ssl_opts( verify_hostname => 0 )
+    $ua->ssl_opts(verify_hostname => 0);
 }
 
 
 # New Settings to allow proxy connections to use proper SSL formating - Thx pkthound!
 $ua->timeout(60);
-$ua->cookie_jar( {} );
-$ua->protocols_allowed( [ 'http', 'https' ] );
-$ua->proxy( ['http'], $ENV{http_proxy} ) if $ENV{http_proxy};
-$ua->proxy( ['https'], $ENV{https_proxy} ) if $ENV{https_proxy};
+$ua->cookie_jar({});
+$ua->protocols_allowed(['http', 'https']);
+$ua->proxy(['http'],  $ENV{http_proxy})  if $ENV{http_proxy};
+$ua->proxy(['https'], $ENV{https_proxy}) if $ENV{https_proxy};
 
 # Pull in our env vars before we load any of the modules!
 BEGIN {
     my $proxy = $ENV{http_proxy};
     if ($proxy) {
-	#Let's handle proxy variables with username / passphrase in them!
-	if ( $proxy =~ /^(http|https):\/\/([^:]+):([^:]+)@(.+)$/i ) {
-	    my $proxytype = $1;
-	    my $proxyuser = $2;
-	    my $proxypass = $3;
-	    my $proxyaddy = $4;
-    
-	    $ENV{HTTP_PROXY}           = "$proxytype://$proxyaddy";
-	    $ENV{HTTP_PROXY_USERNAME}  = $proxyuser;
-	    $ENV{HTTP_PROXY_PASSWORD}  = $proxypass;
-	    $ENV{HTTPS_PROXY}          = "$proxytype://$proxyaddy";
-	    $ENV{HTTPS_PROXY_USERNAME} = $proxyuser;
-	    $ENV{HTTPS_PROXY_PASSWORD} = $proxypass;
-	}
-	else {
-	    $ENV{HTTPS_PROXY} = $proxy;
-	    $ENV{HTTP_PROXY} = $proxy;
-	}
+
+        #Let's handle proxy variables with username / passphrase in them!
+        if ($proxy =~ /^(http|https):\/\/([^:]+):([^:]+)@(.+)$/i) {
+            my $proxytype = $1;
+            my $proxyuser = $2;
+            my $proxypass = $3;
+            my $proxyaddy = $4;
+
+            $ENV{HTTP_PROXY}           = "$proxytype://$proxyaddy";
+            $ENV{HTTP_PROXY_USERNAME}  = $proxyuser;
+            $ENV{HTTP_PROXY_PASSWORD}  = $proxypass;
+            $ENV{HTTPS_PROXY}          = "$proxytype://$proxyaddy";
+            $ENV{HTTPS_PROXY_USERNAME} = $proxyuser;
+            $ENV{HTTPS_PROXY_PASSWORD} = $proxypass;
+        }
+        else {
+            $ENV{HTTPS_PROXY} = $proxy;
+            $ENV{HTTP_PROXY}  = $proxy;
+        }
     }
     undef $proxy;
     $proxy = $ENV{https_proxy};    #check for https_proxy env var
     if ($proxy) {
-    
-	#Let's handle proxy variables with username / passphrase in them!
-	if ( $proxy =~ /^(http|https):\/\/([^:]+):([^:]+)@(.+)$/i ) {
-	    my $proxytype = $1;
-	    my $proxyuser = $2;
-	    my $proxypass = $3;
-	    my $proxyaddy = $4;
-    
-	    $ENV{HTTPS_PROXY}          = "$proxytype://$proxyaddy";
-	    $ENV{HTTPS_PROXY_USERNAME} = $proxyuser;
-	    $ENV{HTTPS_PROXY_PASSWORD} = $proxypass;
-	}
-	else {
-	    $ENV{HTTPS_PROXY} = $proxy;
-	}
+
+        #Let's handle proxy variables with username / passphrase in them!
+        if ($proxy =~ /^(http|https):\/\/([^:]+):([^:]+)@(.+)$/i) {
+            my $proxytype = $1;
+            my $proxyuser = $2;
+            my $proxypass = $3;
+            my $proxyaddy = $4;
+
+            $ENV{HTTPS_PROXY}          = "$proxytype://$proxyaddy";
+            $ENV{HTTPS_PROXY_USERNAME} = $proxyuser;
+            $ENV{HTTPS_PROXY_PASSWORD} = $proxypass;
+        }
+        else {
+            $ENV{HTTPS_PROXY} = $proxy;
+        }
     }
 }
 
-if ( $Verbose == 2 ) {
+if ($Verbose == 2) {
     $ENV{HTTPS_DEBUG} = 1;
-    $ENV{HTTP_DEBUG} = 1;
-    print "\n\nMY HTTPS PROXY = $ENV{HTTPS_PROXY}\n" if ( $ENV{HTTPS_PROXY} && !$Quiet );
-    print "\n\nMY HTTP PROXY = $ENV{HTTP_PROXY}\n" if ( $ENV{HTTP_PROXY} && !$Quiet );
+    $ENV{HTTP_DEBUG}  = 1;
+    print "\n\nMY HTTPS PROXY = $ENV{HTTPS_PROXY}\n"
+        if ($ENV{HTTPS_PROXY} && !$Quiet);
+    print "\n\nMY HTTP PROXY = $ENV{HTTP_PROXY}\n"
+        if ($ENV{HTTP_PROXY} && !$Quiet);
 }
 
 # let's fetch the most recent md5 file then compare and do our foo
-if ( @base_url && -d $temp_path ) {
+if (@base_url && -d $temp_path) {
 
-    if ( -d $temp_path . "tha_rules" ) {
+    if (-d $temp_path . "tha_rules") {
         print
-"\tdoh, we need to perform some cleanup ... an unclean run last time?\n"
-          if ( $Verbose && !$Quiet );
+            "\tdoh, we need to perform some cleanup ... an unclean run last time?\n"
+            if ($Verbose && !$Quiet);
         temp_cleanup($temp_path);
     }
 
-    if ( !$NoDownload ) {
-	# Crate a local hash that we will iterate through later for processing
-	my $filelist = ();
-	my $blk=0;
-	my $Snortv = "";
-	# Iterate through all of our urls and check md5 then process accordingly etc...
-        foreach (@base_url) {
-	    undef $Hash if ($Hash && $Hash == 2);
-	    #undef $Process if ($Process && $Process ==2);
-            my ( $base_url, $rule_file, $oinkcode ) = split( /\|/, $_ );
-            croak
-"You need to define an oinkcode, please review the rule_url section of the pulledpork config file!\n"
-              unless $oinkcode;
-            croak(
-                "please define the rule_url correctly in the pulledpork.conf\n")
-              unless defined $base_url;
-            croak(
-                "please define the rule_url correctly in the pulledpork.conf\n")
-              unless defined $rule_file;
+    if (!$NoDownload) {
 
-            if ( $base_url =~ /[^labs]\.snort\.org/i ) {
+        # Crate a local hash that we will iterate through later for processing
+        my $filelist = ();
+        my $blk      = 0;
+        my $Snortv   = "";
+
+        # Iterate through all of our urls and check md5 then process accordingly etc...
+        foreach (@base_url) {
+            undef $Hash if ($Hash && $Hash == 2);
+
+            #undef $Process if ($Process && $Process ==2);
+            my ($base_url, $rule_file, $oinkcode) = split(/\|/, $_);
+            croak
+                "You need to define an oinkcode, please review the rule_url section of the pulledpork config file!\n"
+                unless $oinkcode;
+            croak(
+                "please define the rule_url correctly in the pulledpork.conf\n"
+            ) unless defined $base_url;
+            croak(
+                "please define the rule_url correctly in the pulledpork.conf\n"
+            ) unless defined $rule_file;
+
+            if ($base_url =~ /[^labs]\.snort\.org/i) {
                 $prefix = "VRT-";
-                unless ( $rule_file =~ /snortrules-snapshot-\d{4,6}\.tar\.gz/
-                    || $rule_file =~ /opensource\.gz/ )
+                unless ($rule_file =~ /snortrules-snapshot-\d{4,6}\.tar\.gz/
+                    || $rule_file =~ /opensource\.gz/)
                 {
                     croak(
-"The specified Snort binary does not exist!\nPlease correct the value or specify the FULL",
+                        "The specified Snort binary does not exist!\nPlease correct the value or specify the FULL",
                         " rules tarball name in the pulledpork.conf!\n"
                     ) unless $Snort;
                     $Snortv = $Snort;
@@ -1997,137 +2091,153 @@ if ( @base_url && -d $temp_path ) {
                     $rule_file = "snortrules-snapshot-$Snortv.tar.gz";
                 }
             }
-            elsif ( $base_url =~ /(emergingthreats.net)/ ) {
+            elsif ($base_url =~ /(emergingthreats.net)/) {
                 $prefix = "ET-";
-		# These have to be handled separately, as emerginthreatspro will
-		# support a full version, but emergingthreats only supports the
-		# major and minor version.
-		# Currently this is a check that the version
-		# is in fact a Snort version, where Suricata
-		# will require suricata to be included in the version
-		# to work with suricata rules. Current open set uses
-		# only the first part of the version.
-		if ($Snort =~ /^\d+\.\d+\.\d+\.\d+/) {
-		 	$Snortv = $Snort;
-		   	$Snortv =~ s/^(\d+\.\d+)\.\d+\.\d/$1.0/;
-		   	$base_url .= "$oinkcode/snort-$Snortv/";
-		} elsif ($Snort =~ /suricata/i) {
-			# Assumption here, this will need to be fixed
-			# as the open ruleset does not handle suricata
-			# versions
-		    	$base_url .= "$oinkcode/$Snort/";
-		}
-	    } 
-            elsif ( $base_url =~ /emergingthreatspro.com/ ) {
-		# These have to be handled separately, as emerginthreatspro will
-		# support a full version, but emergingthreats only supports the
-		# major and minor version
-		if ($Snort =~ /^\d+\.\d+\.\d+\.\d+/) {
-		 	$Snortv = $Snort;
-		   	$Snortv =~ s/^(\d+\.\d+)\.\d+\.\d/$1.0/;
-		   	$base_url .= "$oinkcode/snort-$Snortv/";
-		} elsif ($Snort =~ /suricata/i) {
-			# Assumption here, this will need to be fixed
-			# as the open ruleset does not handle suricata
-			# versions
-		    	$base_url .= "$oinkcode/$Snort/";
-		}
-            }
-	    elsif ( $base_url =~ /snort\.org.+community/ ){
-		$prefix = "Snort-Community-"
-	    }
-        elsif ( $base_url =~ /secureworks/ ) {
-            $prefix = "SecureWorks-";
-            $base_url .= "$oinkcode/" unless $base_url =~ /\x2F$oinkcode\x2F/;
-        }
-	    
-	    $prefix = "Custom-" unless $prefix;
 
-            $Hash = 2 unless $base_url =~ /(secureworks|emergingthreats|[^labs]\.snort\.org)|snort\.org.+community/;
-	    if ($rule_file =~/IPBLACKLIST/) {
-		$Hash = 2;
-		$rule_file.=$blk++;
-	    }
-	    
-	    if ($rule_file =~/RULEFILE/) {
-		$Hash = 2;
-	    }
+                # These have to be handled separately, as emerginthreatspro will
+                # support a full version, but emergingthreats only supports the
+                # major and minor version.
+                # Currently this is a check that the version
+                # is in fact a Snort version, where Suricata
+                # will require suricata to be included in the version
+                # to work with suricata rules. Current open set uses
+                # only the first part of the version.
+                if ($Snort =~ /^\d+\.\d+\.\d+\.\d+/) {
+                    $Snortv = $Snort;
+                    $Snortv =~ s/^(\d+\.\d+)\.\d+\.\d/$1.0/;
+                    $base_url .= "$oinkcode/snort-$Snortv/";
+                }
+                elsif ($Snort =~ /suricata/i) {
 
-            if ( !$Hash ) {
-                $md5 = md5file( $oinkcode, $rule_file, $temp_path, $base_url );
-            }
-
-      # and now lets determine the md5 of the last saved rules file if it exists
-            if ( -f "$temp_path" . "$rule_file" && !$Hash ) {
-                $rule_digest = md5sum( $rule_file, $temp_path );
-            }
-            else {    # the file didn't exsist so lets get it
-                rulefetch( $oinkcode, $rule_file, $temp_path, $base_url );
-		$Process = 1 unless $rule_file =~ /IPBLACKLIST/;
-                if ( -f "$temp_path" . "$rule_file" && !$Hash ) {
-                    $rule_digest = md5sum( $rule_file, $temp_path );
+                    # Assumption here, this will need to be fixed
+                    # as the open ruleset does not handle suricata
+                    # versions
+                    $base_url .= "$oinkcode/$Snort/";
                 }
             }
-	    
-	    # Don't need to perform the following on the IP blacklist stuff...
-	    next if $rule_file =~ /IPBLACKLIST/;
-	    
-	    # Stuff it all into a hash for use in a bit...
-	    $filelist->{$rule_file} = {
-		'oinkcode' => $oinkcode,
-		'temp_path' => $temp_path,
-		'Hash' => $Hash,
-		'base_url' => $base_url,
-		'md5' => $md5,
-		'rule_digest' => $rule_digest,
-		'Distro' => $Distro,
-		'arch' => $arch,
-		'Snort' => $Snort,
-		'Sorules' => $Sorules,
-		'ignore_files' => $ignore_files,
-		'docs' => $docs,
-		'prefix' => $prefix,
-		'Process' => $Process,
-		'hmatch' => $hmatch
-	    };
+            elsif ($base_url =~ /emergingthreatspro.com/) {
 
-# compare the online current md5 against against the md5 of the rules file on system
+                # These have to be handled separately, as emerginthreatspro will
+                # support a full version, but emergingthreats only supports the
+                # major and minor version
+                if ($Snort =~ /^\d+\.\d+\.\d+\.\d+/) {
+                    $Snortv = $Snort;
+                    $Snortv =~ s/^(\d+\.\d+)\.\d+\.\d/$1.0/;
+                    $base_url .= "$oinkcode/snort-$Snortv/";
+                }
+                elsif ($Snort =~ /suricata/i) {
+
+                    # Assumption here, this will need to be fixed
+                    # as the open ruleset does not handle suricata
+                    # versions
+                    $base_url .= "$oinkcode/$Snort/";
+                }
+            }
+            elsif ($base_url =~ /snort\.org.+community/) {
+                $prefix = "Snort-Community-";
+            }
+            elsif ($base_url =~ /secureworks/) {
+                $prefix = "SecureWorks-";
+                $base_url .= "$oinkcode/"
+                    unless $base_url =~ /\x2F$oinkcode\x2F/;
+            }
+
+            $prefix = "Custom-" unless $prefix;
+
+            $Hash = 2
+                unless $base_url
+                =~ /(secureworks|emergingthreats|[^labs]\.snort\.org)|snort\.org.+community/;
+            if ($rule_file =~ /IPBLACKLIST/) {
+                $Hash = 2;
+                $rule_file .= $blk++;
+            }
+
+            if ($rule_file =~ /RULEFILE/) {
+                $Hash = 2;
+            }
+
+            if (!$Hash) {
+                $md5 = md5file($oinkcode, $rule_file, $temp_path, $base_url);
+            }
+
+            # and now lets determine the md5 of the last saved rules file if it exists
+            if (-f "$temp_path" . "$rule_file" && !$Hash) {
+                $rule_digest = md5sum($rule_file, $temp_path);
+            }
+            else {    # the file didn't exsist so lets get it
+                rulefetch($oinkcode, $rule_file, $temp_path, $base_url);
+                $Process = 1 unless $rule_file =~ /IPBLACKLIST/;
+                if (-f "$temp_path" . "$rule_file" && !$Hash) {
+                    $rule_digest = md5sum($rule_file, $temp_path);
+                }
+            }
+
+            # Don't need to perform the following on the IP blacklist stuff...
+            next if $rule_file =~ /IPBLACKLIST/;
+
+            # Stuff it all into a hash for use in a bit...
+            $filelist->{$rule_file} = {
+                'oinkcode'     => $oinkcode,
+                'temp_path'    => $temp_path,
+                'Hash'         => $Hash,
+                'base_url'     => $base_url,
+                'md5'          => $md5,
+                'rule_digest'  => $rule_digest,
+                'Distro'       => $Distro,
+                'arch'         => $arch,
+                'Snort'        => $Snort,
+                'Sorules'      => $Sorules,
+                'ignore_files' => $ignore_files,
+                'docs'         => $docs,
+                'prefix'       => $prefix,
+                'Process'      => $Process,
+                'hmatch'       => $hmatch
+            };
+
+            # compare the online current md5 against against the md5 of the rules file on system
             $hmatch = compare_md5(
                 $oinkcode, $rule_file, $temp_path,   $Hash,
                 $base_url, $md5,       $rule_digest, $Distro,
                 $arch,     $Snort,     $Sorules,     $ignore_files,
                 $docs,     $prefix,    $Process,     $hmatch,
-		$filelist
+                $filelist
             );
         }
-	# If any of our rules tarballs are new or changed then we need to process all of them
-	if (($filelist->{EXTRACT} && $filelist->{EXTRACT} == 1) || $Process) {
-	    foreach (keys %{$filelist}){
-		next if $_ eq "EXTRACT";
-		$Process = 1;
-		
-		if ($filelist->{$_}{oinkcode} !~ "RULEFILE") {
-			rule_extract(
-				$_,    			   $filelist->{$_}{temp_path},
-				$filelist->{$_}{Distro},	   $filelist->{$_}{arch},
-				$filelist->{$_}{Snort},        $filelist->{$_}{Sorules},
-				$filelist->{$_}{ignore_files}, $filelist->{$_}{docs},
-				$filelist->{$_}{prefix}
-			);
-		}
-	    }
-	}
+
+        # If any of our rules tarballs are new or changed then we need to process all of them
+        if (($filelist->{EXTRACT} && $filelist->{EXTRACT} == 1) || $Process) {
+            foreach (keys %{$filelist}) {
+                next if $_ eq "EXTRACT";
+                $Process = 1;
+
+                if ($filelist->{$_}{oinkcode} !~ "RULEFILE") {
+                    rule_extract(
+                        $_,
+                        $filelist->{$_}{temp_path},
+                        $filelist->{$_}{Distro},
+                        $filelist->{$_}{arch},
+                        $filelist->{$_}{Snort},
+                        $filelist->{$_}{Sorules},
+                        $filelist->{$_}{ignore_files},
+                        $filelist->{$_}{docs},
+                        $filelist->{$_}{prefix}
+                    );
+                }
+            }
+        }
     }
+
     # Only process a local rules tarball
-    if ( $NoDownload && !$grabonly ) {
+    if ($NoDownload && !$grabonly) {
         foreach (@base_url) {
-            my ( $base_url, $rule_file ) = split( /\|/, $_ );
-	    next if $rule_file =~ /IPBLACKLIST/;
-	    if ( $base_url =~ /[^labs]\.snort\.org/i ) {
+            my ($base_url, $rule_file) = split(/\|/, $_);
+            next if $rule_file =~ /IPBLACKLIST/;
+            if ($base_url =~ /[^labs]\.snort\.org/i) {
                 $prefix = "VRT-";
-                unless ( $rule_file =~ /snortrules-snapshot-\d{4,6}\.tar\.gz/ ) {
+                unless ($rule_file =~ /snortrules-snapshot-\d{4,6}\.tar\.gz/)
+                {
                     croak(
-"The specified Snort rules tarball does not exist!\nPlease correct the value or specify the FULL",
+                        "The specified Snort rules tarball does not exist!\nPlease correct the value or specify the FULL",
                         " rules tarball name in the pulledpork.conf!\n"
                     ) unless $Snort;
                     my $Snortv = $Snort;
@@ -2135,10 +2245,13 @@ if ( @base_url && -d $temp_path ) {
                     $rule_file = "snortrules-snapshot-$Snortv.tar.gz";
                 }
             }
-	    croak "file $temp_path/$rule_file does not exist!\n"
-              unless (-f "$temp_path/$rule_file");
-            $prefix = "ET-" if $base_url =~ /(emergingthreats.net|emergingthreatspro.com)/;
-	    $prefix = "Snort-Community-" if $base_url =~ /snort\.org.+community/;
+            croak "file $temp_path/$rule_file does not exist!\n"
+                unless (-f "$temp_path/$rule_file");
+            $prefix = "ET-"
+                if $base_url
+                =~ /(emergingthreats.net|emergingthreatspro.com)/;
+            $prefix = "Snort-Community-"
+                if $base_url =~ /snort\.org.+community/;
             rule_extract(
                 $rule_file,    $temp_path, $Distro,
                 $arch,         $Snort,     $Sorules,
@@ -2146,10 +2259,15 @@ if ( @base_url && -d $temp_path ) {
             ) if !$grabonly;
         }
     }
+
     # Read our rules and stuff them into a hash
-    if ( ( $Output || ($keep_rulefiles && $rule_file_path) ) && !$grabonly && $Process) {
-        read_rules( \%rules_hash, "$temp_path" . "tha_rules/", $local_rules );
+    if (   ($Output || ($keep_rulefiles && $rule_file_path))
+        && !$grabonly
+        && $Process)
+    {
+        read_rules(\%rules_hash, "$temp_path" . "tha_rules/", $local_rules);
     }
+
     # If we are using SO rules, generate the stubs and then stuff them into a hash
     if (   $Sorules
         && -e $Sorules
@@ -2157,115 +2275,129 @@ if ( @base_url && -d $temp_path ) {
         && $Snort
         && !$Textonly
         && !$grabonly
-	&& $Process)
+        && $Process)
     {
-        gen_stubs( $Snort_path, $Snort_config,
-            "$temp_path" . "tha_rules/so_rules/" );
-        read_rules( \%rules_hash, "$temp_path" . "tha_rules/so_rules/",
-            $local_rules );
+        gen_stubs($Snort_path, $Snort_config,
+            "$temp_path" . "tha_rules/so_rules/");
+        read_rules(\%rules_hash, "$temp_path" . "tha_rules/so_rules/",
+            $local_rules);
     }
 }
 else { Help("Check your oinkcode, temp path and freespace!"); }
 
 # Read our old rules so that we can determine what is new / changed / deleted
-if ( ( $Output || ($keep_rulefiles && $rule_file_path ) ) && !$grabonly && $Process) {
-    if ( $sid_changelog && defined $Output && -f $Output && !$keep_rulefiles ) {
-        read_rules( \%oldrules_hash, "$Output", $local_rules );
+if (   ($Output || ($keep_rulefiles && $rule_file_path))
+    && !$grabonly
+    && $Process)
+{
+    if ($sid_changelog && defined $Output && -f $Output && !$keep_rulefiles) {
+        read_rules(\%oldrules_hash, "$Output", $local_rules);
     }
-    if ( $sid_changelog && $keep_rulefiles && -d $rule_file_path ) {
-        read_rules( \%oldrules_hash, "$rule_file_path", $local_rules );
+    if ($sid_changelog && $keep_rulefiles && -d $rule_file_path) {
+        read_rules(\%oldrules_hash, "$rule_file_path", $local_rules);
     }
+
     #print Dumper(%oldrules_hash);
 }
 
 # Clean up temp path
-if ( -d $temp_path ) {
+if (-d $temp_path) {
     temp_cleanup();
 }
 
 # Process our blacklist data.. need to add a conditional where if we are not linux, we don't
 # use the control socket (linux only)
-if ($black_list && %blacklist && !$NoDownload){
-   $bmatch = blacklist_write(\%blacklist,$black_list);
-   iprep_control($Config_info{'snort_control'},$Config_info{'IPRVersion'}) if $bmatch;
+if ($black_list && %blacklist && !$NoDownload) {
+    $bmatch = blacklist_write(\%blacklist, $black_list);
+    iprep_control($Config_info{'snort_control'}, $Config_info{'IPRVersion'})
+        if $bmatch;
 }
 
 # Set our rule states, based on config files and specified base policy, also set our flowbit dependencies
-if ( ( $Output || ($keep_rulefiles && $rule_file_path) ) && !$grabonly && $Process) {
-    if ( $ips_policy ne "Disabled" ) {
-        policy_set( $ips_policy, \%rules_hash );
+if (   ($Output || ($keep_rulefiles && $rule_file_path))
+    && !$grabonly
+    && $Process)
+{
+    if ($ips_policy ne "Disabled") {
+        policy_set($ips_policy, \%rules_hash);
     }
 
-    if ( $sidmod{modify} && -f $sidmod{modify} ) {
-        modify_sid( \%rules_hash, $sidmod{modify} );
+    if ($sidmod{modify} && -f $sidmod{modify}) {
+        modify_sid(\%rules_hash, $sidmod{modify});
     }
-    
+
     foreach (@sidact) {
-        if ( $sidmod{$_} && -f $sidmod{$_} ) {
-            modify_state( $_, $sidmod{$_}, \%rules_hash, $rstate );
+        if ($sidmod{$_} && -f $sidmod{$_}) {
+            modify_state($_, $sidmod{$_}, \%rules_hash, $rstate);
         }
-        elsif ( $sidmod{$_} && !-f $sidmod{$_} ) {
+        elsif ($sidmod{$_} && !-f $sidmod{$_}) {
             carp "Unable to read: $sidmod{$_} - $!\n";
         }
     }
 
-   print "Setting Flowbit State....\n"
-      if ( !$Quiet );
+    print "Setting Flowbit State....\n"
+        if (!$Quiet);
 
     my $fbits = 1;
-    while ( $fbits > 0 ) {
-        $fbits = flowbit_set( \%rules_hash );
+    while ($fbits > 0) {
+        $fbits = flowbit_set(\%rules_hash);
     }
     print "\tDone\n"
-      if ( !$Quiet );
+        if (!$Quiet);
 
     if ($Output && $Process && !$keep_rulefiles) {
-        rule_write( \%rules_hash, $Output, $enonly );
+        rule_write(\%rules_hash, $Output, $enonly);
     }
 
     if ($keep_rulefiles && $rule_file_path && $Process) {
-        rule_category_write( \%rules_hash, $rule_file_path, $enonly, $local_rules );
+        rule_category_write(\%rules_hash, $rule_file_path, $enonly,
+            $local_rules);
     }
-    
+
     if ($sid_msg_map && $Process) {
-        sid_msg( \%rules_hash, \%sid_msg_map, $enonly );
-        sid_write( \%sid_msg_map, $sid_msg_map, $sid_msg_version );
+        sid_msg(\%rules_hash, \%sid_msg_map, $enonly);
+        sid_write(\%sid_msg_map, $sid_msg_map, $sid_msg_version);
     }
 
-    if ( $SigName && $pid_path ne "" && $Process) {
-	# This may need to be changed, but for now, error out
-	# if the signal name is not SIGHUP or SIGUSR2
-	if ( $SigName == "SIGHUP" || $SigName == "SIGUSR2" ) { 
-        	send_signal( $SigName, $pid_path) unless $Sostubs;
-        	print "WARNING, cannot send signal if also processing SO rules\n",
-          	"\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
-          	if ( $Sostubs && !$Quiet );
-	} else {
+    if ($SigName && $pid_path ne "" && $Process) {
+
+        # This may need to be changed, but for now, error out
+        # if the signal name is not SIGHUP or SIGUSR2
+        if ($SigName == "SIGHUP" || $SigName == "SIGUSR2") {
+            send_signal($SigName, $pid_path) unless $Sostubs;
+            print "WARNING, cannot send signal if also processing SO rules\n",
+                "\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
+                if ($Sostubs && !$Quiet);
+        }
+        else {
             carp "Bad signal name used: $SigName - $!\n";
-	}
+        }
     }
 
-    if ( $Config_info{backup} ) {
-        @records = split( /,/, $Config_info{backup} );
-        archive( \@records, $Config_info{backup_file} )
-          if $Config_info{backup_file};
+    if ($Config_info{backup}) {
+        @records = split(/,/, $Config_info{backup});
+        archive(\@records, $Config_info{backup_file})
+            if $Config_info{backup_file};
         if ($Verbose) {
             print
-"\tWARN - Unable to create a backup without defining backup_file in config!\n",
-              unless $Config_info{backup_file};
+                "\tWARN - Unable to create a backup without defining backup_file in config!\n",
+                unless $Config_info{backup_file};
         }
         print "\tDone\n" unless $Quiet;
     }
 }
 
-if ( $sid_changelog && ( ( defined $Output && -f $Output ) || ($keep_rulefiles && -d $rule_file_path)) ) {
-    changelog(
-        $sid_changelog, \%rules_hash, \%oldrules_hash,
-        \%blacklist, $ips_policy, $enonly, $hmatch, $bmatch
-    );
+if (
+    $sid_changelog
+    && (   (defined $Output && -f $Output)
+        || ($keep_rulefiles && -d $rule_file_path))
+    )
+{
+    changelog($sid_changelog, \%rules_hash, \%oldrules_hash, \%blacklist,
+        $ips_policy, $enonly, $hmatch, $bmatch);
 }
 
 print("Fly Piggy Fly!\n") if !$Quiet;
-syslogit( 'warning|local0', "INFO: Finished Cleanly" ) if $Syslogging;
+syslogit('warning|local0', "INFO: Finished Cleanly") if $Syslogging;
 
 __END__
