@@ -49,7 +49,7 @@ my $ua      = LWP::UserAgent->new;
 $ua->env_proxy;
 
 #Add PulledPork version to the user agent
-$ua->agent("$VERSION ");
+$ua->agent("$VERSION");
 
 # for certificate validation, check for the operating system
 # and set the path to the certificate store if required.
@@ -1109,10 +1109,12 @@ sub modify_state {
                             elsif ($function eq "drop") {
                                 if (exists $$hashref{$gid}{$sid}
                                     && $$hashref{$gid}{$sid}{'rule'}
-                                    =~ /^\s*alert/i)
+                                    =~ /^\s*#*\s*alert/i)
                                 {
                                     $$hashref{$gid}{$sid}{'rule'}
-                                        =~ s/^\s*alert/drop/;
+                                        =~ s/^\s*#*\s*//;
+                                    $$hashref{$gid}{$sid}{'rule'}
+                                        =~ s/^alert/drop/;
                                     if ($Verbose && !$Quiet) {
                                         print "\tWill drop $gid:$sid\n";
                                     }
