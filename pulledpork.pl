@@ -24,7 +24,7 @@ use File::Copy;
 use LWP::UserAgent;
 use HTTP::Request::Common;
 use HTTP::Status qw (is_success);
-use Crypt::SSLeay;
+#use Crypt::SSLeay;
 use Sys::Syslog;
 use Digest::MD5;
 use File::Path;
