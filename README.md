@@ -167,6 +167,7 @@ rule files is the `-S` flag being set to `suricata-3.1.3` or whatever version of
 
     ./pulledpork.pl -c pulledpork.conf -S suricata-3.1.3
 
+Pulledpork "should" work with Suricata and ET/ETPro rules. However there is no support for Talos rules to run on Suricata.
 
 ## Special Notes Section
 
