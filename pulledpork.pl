@@ -24,6 +24,7 @@ use File::Copy;
 use LWP::UserAgent;
 use HTTP::Request::Common;
 use HTTP::Status qw (is_success);
+
 #use Crypt::SSLeay;
 use Sys::Syslog;
 use Digest::MD5;
@@ -277,25 +278,26 @@ sub rule_extract {
         $rule_file, $temp_path, $Distro, $arch, $Snort,
         $Sorules,   $ignore,    $docs,   $prefix
     ) = @_;
+
     #special case to bypass file operations when -nPT are specified
     my $BypassTar = 0;
     if ($Textonly && $NoDownload && $Process) {
-	if ($rule_file =~ /opensource\.gz/) {
-	print "Skipping opensource.gz as -nPT was specified\n" if !$Quiet;
-	    $BypassTar=1;
-	}
+        if ($rule_file =~ /opensource\.gz/) {
+            print "Skipping opensource.gz as -nPT was specified\n" if !$Quiet;
+            $BypassTar = 1;
+        }
     }
     if (!$BypassTar) {
-     print "Prepping rules from $rule_file for work....\n" if !$Quiet;
-     print "\textracting contents of $temp_path$rule_file...\n"
-        if ($Verbose && !$Quiet);
+        print "Prepping rules from $rule_file for work....\n" if !$Quiet;
+        print "\textracting contents of $temp_path$rule_file...\n"
+            if ($Verbose && !$Quiet);
     }
     mkpath($temp_path . "tha_rules");
     mkpath($temp_path . "tha_rules/so_rules");
     my $tar = Archive::Tar->new();
     if (!$BypassTar) {
-    	$tar->read($temp_path . $rule_file);
-    	$tar->setcwd(cwd());
+        $tar->read($temp_path . $rule_file);
+        $tar->setcwd(cwd());
     }
     local $Archive::Tar::CHOWN = 0;
     my @ignores = split(/,/, $ignore) if (defined $ignore);
@@ -357,7 +359,8 @@ sub rule_extract {
         }
         elsif ($docs
             && $filename =~ /^(doc\/signatures\/)?.*\.txt/
-            && -d $docs && !$BypassTar)
+            && -d $docs
+            && !$BypassTar)
         {
             $singlefile =~ s/^doc\/signatures\///;
             $tar->extract_file("doc/signatures/$filename",
