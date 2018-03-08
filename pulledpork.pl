@@ -1491,9 +1491,9 @@ sub changelog {
             next if (($enonly) && ($$new_hash{$k1}{$k2}{'rule'} =~ /^\s*#/));
             if (!defined $$old_hash{$k1}{$k2}{'rule'}) {
                 my $msg_holder = $$new_hash{$k1}{$k2}{'rule'};
-                if ($msg_holder =~ /msg:\s+"[^"]+";/i) {
+                if ($msg_holder =~ /msg:"[^"]+";/i) {
                     $msg_holder = $&;
-                    $msg_holder =~ s/msg:\s+"//;
+                    $msg_holder =~ s/msg:"//;
                     $msg_holder =~ s/";//;
                 }
                 else { $msg_holder = "Unknown MSG" }
@@ -1520,9 +1520,9 @@ sub changelog {
             next
                 if (($enonly) && ($$old_hash{$k1}{$k2}{'rule'} =~ /^\s*#/));
             my $msg_holder = $$old_hash{$k1}{$k2}{'rule'};
-            if ($msg_holder =~ /msg:\s+"[^"]+";/) {
+            if ($msg_holder =~ /msg:"[^"]+";/) {
                 $msg_holder = $&;
-                $msg_holder =~ s/msg:\s+"//;
+                $msg_holder =~ s/msg:"//;
                 $msg_holder =~ s/";//;
             }
             else { $msg_holder = "Unknown MSG" }
