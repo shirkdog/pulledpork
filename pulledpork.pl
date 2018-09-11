@@ -1292,7 +1292,7 @@ sub rule_category_write {
 ## write our blacklist and blacklist version file!
 sub blacklist_write {
     my ($href, $path) = @_;
-    my $blv   = $Config_info{'IPRVersion'} . "IPRVersion.dat";
+    my $blv   = $Config_info{'IPRVersion'} . "/IPRVersion.dat";
     my $blver = 0;
 
     # First lets be sure that our data is new, if not skip the rest of it!
