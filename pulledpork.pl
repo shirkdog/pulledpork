@@ -2133,6 +2133,7 @@ if (@base_url && -d $temp_path) {
                 }
             }
             elsif ($base_url =~ /emergingthreatspro.com/) {
+                $prefix = "ET-";
 
                 # These have to be handled separately, as emerginthreatspro will
                 # support a full version, but emergingthreats only supports the
