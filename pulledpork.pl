@@ -944,7 +944,7 @@ sub modify_sid {
             undef @arry;
         }
 
-        # Handle use case where we want to mofidy multiple sids based on
+        # Handle use case where we want to modify multiple sids based on
         # comment in rule (think multiple rules with same or similar comment)
         if ( $_ =~ /^regex:'([^']+)'\s+"(.+)"\s+"(.*)"/ ) {
             my ( $regex, $from, $to ) = ( $1, $2, $3 );
