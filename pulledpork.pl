@@ -943,7 +943,21 @@ sub modify_sid {
             }
             undef @arry;
         }
+
+        # Handle use case where we want to mofidy multiple sids based on
+        # comment in rule (think multiple rules with same or similar comment)
+        if ( $_ =~ /^regex:'([^']+)'\s+"(.+)"\s+"(.*)"/ ) {
+            my ( $regex, $from, $to ) = ( $1, $2, $3 );
+            # Go through each rule in gid:1 and look for matching rules
+            foreach my $sid ( sort keys( %{ $$href{1} } ) ) {
+                next unless ( $$href{1}{$sid}{'rule'} =~ /$regex/ );
+                print "\tModifying SID:$sid from:$from to:$to\n"
+                  if ( $Verbose && !$Quiet );
+                $$href{1}{$sid}{'rule'} =~ s/$from/$to/;
+            }
+        }
     }
+
     print "\tDone!\n" if !$Quiet;
     close(FH);
 }
