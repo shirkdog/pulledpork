@@ -1241,7 +1241,7 @@ sub sid_msg {
                 if defined $$ruleshash{$k}{$k2}{'rule'};
             my @optarray = split(/(?<!\\);\s*/, $options) if $options;
             foreach my $option (reverse(@optarray)) {
-                my ($kw, $arg) = split(/:\s*/, $option) if $option;
+                my ($kw, $arg) = split(/:\s*/, $option, 2) if $option;
                 my $gid = $k;
                 $gid = 1 if $k == 0;
                 next
