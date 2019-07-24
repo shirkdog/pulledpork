@@ -2,7 +2,7 @@
 
 ## pulledpork v(whatever it says below!)
 
-# Copyright (C) 2009-2017 JJ Cummings, Michael Shirk and the PulledPork Team!
+# Copyright (C) 2009-2019 JJ Cummings, Michael Shirk and the PulledPork Team!
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -202,10 +202,14 @@ sub Help {
    -D What Distro are you running on, for the so_rules
       For latest supported options see http://www.snort.org/snort-rules/shared-object-rules
       Valid Distro Types:
-        Debian-6-0, Ubuntu-10-4, Ubuntu-12-04, Centos-5-4
-        FC-12, FC-14, RHEL-5-5, RHEL-6-0
-        FreeBSD-8-1, FreeBSD-9-0, FreeBSD-10-0, OpenBSD-5-2, OpenBSD-5-3
-        OpenSUSE-11-4, OpenSUSE-12-1, Slackware-13-1
+	Centos-5-4, Centos-6, Centos-7
+	Debian-7, Debian-8, Debian-9
+	FC-25, FC-26, FC-27, FC-30
+	FreeBSD-8-1, FreeBSD-9-0, FreeBSD-10-0, FreeBSD-11, FreeBSD-12
+	OpenBSD-5-2, OpenBSD-5-3, OpenBSD-6-2, OpenSUSE-15-0, OpenSUSE-42-3
+	RHEL-5-5, RHEL-6, RHEL-6-0, RHEL-7
+	Slackware-13-1, Slackware-14-2
+	Ubuntu-14-4, Ubuntu-16-4, Ubuntu-17-10, Ubuntu-18-4
    -e Where the enablesid config file lives.
    -E Write ONLY the enabled rules to the output files.
    -g grabonly (download tarball rule file(s) and do NOT process)
