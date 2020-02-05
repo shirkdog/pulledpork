@@ -96,8 +96,10 @@ A simple example of how to use PulledPork would be to specify all of your config
 `PulledPork.conf` file.  Specifically for minimal function, i.e. NO Shared Object rule processing you must define 
 at a minimum the `rule_file`, `oinkcode`, `temp_path`, `tar_path`, and `rule_path` values.  Below are some examples of this.
 
-    ./pulledpork.pl -o /usr/local/etc/snort/rules/ -O 12345667778523452344234234  \
-      -u http://www.snort.org/reg-rules/snortrules-snapshot-2973.tar.gz -i disablesid.conf -T -H
+```bash
+./pulledpork.pl -o /usr/local/etc/snort/rules/ -O 12345667778523452344234234  \
+  -u http://www.snort.org/reg-rules/snortrules-snapshot-2973.tar.gz -i disablesid.conf -T -H
+```
 
 The above will fetch the `snortrules-snapshot-2973.tar.gz` tarball from snort.org using the specified `oinkcode` of 
 `12345667778523452344234234` and put the rules files from that tarball into the output path of 
@@ -105,11 +107,15 @@ The above will fetch the `snortrules-snapshot-2973.tar.gz` tarball from snort.or
 `disablesid.conf` lives, and the `-T` option tells pulledpork to not process for any shared object rules and the final
 `-H` option tells pulledpork to send a `Hangup` signal to the snort pid that you defined in the `pulledpork.conf`.
 
-    ./pulledpork.pl -c pulledpork.conf -i disablesid.conf -T -H
+```bash
+./pulledpork.pl -c pulledpork.conf -i disablesid.conf -T -H
+```
 
 Similar to the first example but all options specified in the `pulledpork.conf` file (other than `disablesid` and `-H`)...
 
-    ./pulledpork.pl -c pulledpork.conf -i disablesid.conf -m /usr/local/etc/snort/sid-msg.map -Hn
+```bash
+./pulledpork.pl -c pulledpork.conf -i disablesid.conf -m /usr/local/etc/snort/sid-msg.map -Hn
+```
 
 The above will simply read the disablesid and disable as defined, then send a `Hangup` signal after generating the `sid-msg.map`
 at the specified location without downloading anything.
@@ -118,25 +124,33 @@ Highly useful when tuning / making changes etc..
 Next example, snort inline with rules that we want to drop and disable, then `HUP` our daemons after creating a `sid-msg.map`
 and writing change info to `sid_changes.log`!
 
-    ./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -m /usr/local/etc/snort/sid-msg.map \
-      -h /var/log/sid_changes.log -H
+```bash
+./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -m /usr/local/etc/snort/sid-msg.map \
+  -h /var/log/sid_changes.log -H
+```
 
 Next example, same as the previous but specifying that we want to run the default "security" based ruleset
 and that we want to enable rules specified in `enablesid.conf`.
 
-    ./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -e enablesid.conf -m /usr/local/etc/snort/sid-msg.map \
-      -h /var/log/sid_changes.log -I security -H
+```bash
+./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -e enablesid.conf -m /usr/local/etc/snort/sid-msg.map \
+  -h /var/log/sid_changes.log -I security -H
+```
 
 Next example, same as the previous but specifying that we want to `-K` (Keep) the originationg tarball names.
 and write them to `/usr/local/etc/snort/rules/`
 
-    ./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -e enablesid.conf -m /usr/local/etc/snort/sid-msg.map \
-      -h /var/log/sid_changes.log -I security -H -K /usr/local/etc/snort/rules/
+```bash
+./pulledpork.pl -c pulledpork.conf -i disablesid.conf -b dropsid.conf -e enablesid.conf -m /usr/local/etc/snort/sid-msg.map \
+  -h /var/log/sid_changes.log -I security -H -K /usr/local/etc/snort/rules/
+```
 
 For users of Suricata, the same steps are necessary for where your installation files reside, but all that pulledpork needs to process
 rule files is the `-S` flag being set to `suricata-3.1.3` or whatever version of suricata you are using
 
-    ./pulledpork.pl -c pulledpork.conf -S suricata-3.1.3
+```bash
+./pulledpork.pl -c pulledpork.conf -S suricata-3.1.3
+```
 
 Pulledpork "should" work with Suricata and ET/ETPro rules. However there is no support for Talos rules to run on Suricata.
 
