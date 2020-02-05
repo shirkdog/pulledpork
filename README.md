@@ -34,7 +34,7 @@ thoroughly so that you don't overlook something!
 
 ## Command Usage Reference
 
-    Usage: $0 [-dEgklnRTPVvv? -help] -c <config filename> -o <rule output path>
+    Usage: pulledpork.pl [-dEgklnRTPVvv? -help] -c <config filename> -o <rule output path>
      -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
      -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
      -h <changelog path> -H <signal_name> -I (security|connectivity|balanced) -i <path to disablesid.conf>
