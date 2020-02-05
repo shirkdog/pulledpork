@@ -1,4 +1,4 @@
-pulledpork
+PulledPork
 ==========
 
 PulledPork for Snort and Suricata rule management (from Google code)
@@ -6,7 +6,6 @@ PulledPork for Snort and Suricata rule management (from Google code)
 Find us on Freenode (IRC) [`#ppork`](https://webchat.freenode.net/?channels=ppork)
 
 Copyright (C) 2009-2019 JJ Cummings, Michael Shirk and the PulledPork Team!
-
 
 Thank you for choosing to use PulledPork!  This file provides some basic
 guidance on the usage of PulledPork.  Please be sure to read this file
@@ -35,92 +34,60 @@ thoroughly so that you don't overlook something!
 
 ## Command Usage Reference
 
-    Usage: ./pulledpork.pl [-dEgHklnRTPVvv? -help] -c <config filename> -o <rule output path>
-       -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
-       -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
-       -h <changelog path> -H <signal_name> -I (security|connectivity|balanced) -i <path to disablesid.conf>
-       -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
-       -r <path to docs folder> -K <directory for separate rules files>
+    Usage: $0 [-dEgklnRTPVvv? -help] -c <config filename> -o <rule output path>
+     -O <oinkcode> -s <so_rule output directory> -D <Distro> -S <SnortVer>
+     -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
+     -h <changelog path> -H <signal_name> -I (security|connectivity|balanced) -i <path to disablesid.conf>
+     -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
+     -r <path to docs folder> -K <directory for separate rules files>
 
-    Options:
-
-    -help/? Print this help info.
-
-    -b Where the dropsid config file lives.
-
-    -C Path to your snort.conf
-
-    -c Where the pulledpork config file lives.
-
-    -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
-
-    -D What Distro are you running on, for the so_rules
-       Valid Distro Types:
-	 Centos-5-4, Centos-6, Centos-7
-	 Debian-7, Debian-8, Debian-9
-	 FC-25, FC-26, FC-27, FC-30
-	 FreeBSD-8-1, FreeBSD-9-0, FreeBSD-10-0, FreeBSD-11, FreeBSD-12
-	 OpenBSD-5-2, OpenBSD-5-3, OpenBSD-6-2, OpenSUSE-15-0, OpenSUSE-42-3
-	 RHEL-5-5, RHEL-6, RHEL-6-0, RHEL-7
-	 Slackware-13-1, Slackware-14-2
-	 Ubuntu-14-4, Ubuntu-16-4, Ubuntu-17-10, Ubuntu-18-4
-
-    -e Where the enablesid config file lives.
-
-    -E Write ONLY the enabled rules to the output files.
-
-    -g grabonly (download tarball rule file(s) and do NOT process)
-
-    -h path to the sid_changelog if you want to keep one?
-
-    -H Send signal_name to the pids listed in the config file (SIGHUP or SIGUSR2)
-
-    -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
-
-    -i Where the disablesid config file lives.
-
-    -k Keep the rules in separate files (using same file names as found when reading)
-
-    -K Where (what directory) do you want me to put the separate rules files?
-
-    -l Log Important Info to Syslog (Errors, Successful run etc, all items logged as WARN or higher) 
-
-    -L Where do you want me to read your local.rules for inclusion in sid-msg.map
-
-    -m where do you want me to put the sid-msg.map file?
-
-    -M where the modifysid config file lives.
-
-    -n Do everything other than download of new files (disablesid, etc)
-
-    -o Where do you want me to put generic rules file?
-
-    -p Path to your Snort binary
-
-    -P Process rules even if no new rules were downloaded
-
-    -R When processing enablesid, return the rules to their ORIGINAL state
-
-    -r Where do you want me to put the reference docs (xxxx.txt)
-
-    -S What version of snort are you using
-
-    -s Where do you want me to put the so_rules?
-
-    -T Process text based rules files only, i.e. DO NOT process so_rules
-
-    -u Where do you want me to pull the rules tarball from
-    ** E.g., ET, Snort.org. See pulledpork config rule_url option for value ideas
-
-    -V Print Version and exit
-
-    -v Verbose mode, you know.. for troubleshooting and such nonsense.
-
-    -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
-
-    -w Skip the SSL verification (if there are issues pulling down rule files)
-
-    -W Where you want to work around the issue where some implementations of LWP do not work with pulledpork's proxy configuration.
+     Options:
+     -help/? Print this help info.
+     -b Where the dropsid config file lives.
+     -C Path to your snort.conf
+     -c Where the pulledpork config file lives.
+     -d Do not verify signature of rules tarball, i.e. downloading fron non VRT or ET locations.
+     -D What Distro are you running on, for the so_rules
+        For latest supported options see http://www.snort.org/snort-rules/shared-object-rules
+        Valid Distro Types:
+          Centos-5-4, Centos-6, Centos-7
+          Debian-7, Debian-8, Debian-9
+          FC-25, FC-26, FC-27, FC-30
+          FreeBSD-8-1, FreeBSD-9-0, FreeBSD-10-0, FreeBSD-11, FreeBSD-12
+          OpenBSD-5-2, OpenBSD-5-3, OpenBSD-6-2, OpenSUSE-15-0, OpenSUSE-42-3
+          RHEL-5-5, RHEL-6, RHEL-6-0, RHEL-7
+          Slackware-13-1, Slackware-14-2
+          Ubuntu-14-4, Ubuntu-16-4, Ubuntu-17-10, Ubuntu-18-4
+     -e Where the enablesid config file lives.
+     -E Write ONLY the enabled rules to the output files.
+     -g grabonly (download tarball rule file(s) and do NOT process)
+     -h path to the sid_changelog if you want to keep one?
+     -H Send signal_name to the pids listed in the config file (SIGHUP or SIGUSR2)
+     -I Specify a base ruleset( -I security,connectivity,or balanced, see README.RULESET)
+     -i Where the disablesid config file lives.
+     -k Keep the rules in separate files (using same file names as found when reading)
+     -K Where (what directory) do you want me to put the separate rules files?
+     -l Log Important Info to Syslog (Errors, Successful run etc, all items logged as WARN or higher)
+     -L Where do you want me to read your local.rules for inclusion in sid-msg.map
+     -m where do you want me to put the sid-msg.map file?
+     -M where the modifysid config file lives.
+     -n Do everything other than download of new files (disablesid, etc)
+     -o Where do you want me to put generic rules file?
+     -O Define the oinkcode on the command line (necessary for some users)
+     -p Path to your Snort binary
+     -P Process rules even if no new rules were downloaded
+     -R When processing enablesid, return the rules to their ORIGINAL state
+     -r Where do you want me to put the reference docs (xxxx.txt)
+     -S What version of snort are you using (2.8.6 or 2.9.0) are valid values
+     -s Where do you want me to put the so_rules?
+     -T Process text based rules files only, i.e. DO NOT process so_rules
+     -u Where do you want me to pull the rules tarball from
+        ** E.g., ET, Snort.org. See pulledpork config rule_url option for value ideas
+     -V Print Version and exit
+     -v Verbose mode, you know.. for troubleshooting and such nonsense.
+     -vv EXTRA Verbose mode, you know.. for in-depth troubleshooting and other such nonsense.
+     -w Skip the SSL verification (if there are issues pulling down rule files)
+     -W Where you want to work around the issue where some implementations of LWP do not work with pulledpork's proxy configuration.
 
 
 ## Basic Usage Examples
@@ -177,11 +144,9 @@ Pulledpork "should" work with Suricata and ET/ETPro rules. However there is no s
 
 Please note that pulledpork runs rule modification (enable, drop, disable, modify) in that order by default..
 
-1: enable
-
-2: drop
-
-3: disable
+1. enable
+2. drop
+3. disable
 
 This means that disable rules will always take precedence.. thusly if you specify the same `gid:sid` 
 in enable and disable configuration files, then that sid will be disabled.. keep this in mind 
