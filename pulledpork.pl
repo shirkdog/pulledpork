@@ -105,7 +105,7 @@ my ($Hash,         $ALogger,    $Config_file, $Sorules,       $Auto);
 my ($Output,       $Distro,     $Snort,       $sid_changelog, $ignore_files);
 my ($Snort_config, $Snort_path, $Textonly,    $grabonly,      $ips_policy,);
 my ($pid_path,     $SigName,    $NoDownload,  $sid_msg_map,   @base_url);
-my ($local_rules,  $arch,       $docs,        @records,       $enonly);
+my ($local_rules,  $arch,       @records,       $enonly);
 my ($rstate, $keep_rulefiles, $rule_file_path, $prefix, $black_list);
 my ($Process, $hmatch, $bmatch, $sid_msg_version, $skip_verify,
     $proxy_workaround);
@@ -191,7 +191,6 @@ sub Help {
    -p <path to your snort binary> -C <path to your snort.conf> -t <sostub output path>
    -h <changelog path> -H <signal_name> -I (security|connectivity|balanced) -i <path to disablesid.conf>
    -b <path to dropsid.conf> -e <path to enablesid.conf> -M <path to modifysid.conf>
-   -r <path to docs folder> -K <directory for separate rules files>
 
    Options:
    -help/? Print this help info.
@@ -229,7 +228,6 @@ sub Help {
    -p Path to your Snort binary
    -P Process rules even if no new rules were downloaded
    -R When processing enablesid, return the rules to their ORIGINAL state
-   -r Where do you want me to put the reference docs (xxxx.txt)
    -S What version of snort are you using (2.8.6 or 2.9.0) are valid values
    -s Where do you want me to put the so_rules?
    -T Process text based rules files only, i.e. DO NOT process so_rules
@@ -280,17 +278,10 @@ sub temp_cleanup {
 sub rule_extract {
     my (
         $rule_file, $temp_path, $Distro, $arch, $Snort,
-        $Sorules,   $ignore,    $docs,   $prefix
+        $Sorules,   $ignore,    $prefix
     ) = @_;
 
     #special case to bypass file operations when -nPT are specified
-    my $BypassTar = 0;
-    if ($Textonly && $NoDownload && $Process) {
-        if ($rule_file =~ /opensource\.gz/) {
-            print "Skipping opensource.gz as -nPT was specified\n" if !$Quiet;
-            $BypassTar = 1;
-        }
-    }
     if (!$BypassTar) {
         print "Prepping rules from $rule_file for work....\n" if !$Quiet;
         print "\textracting contents of $temp_path$rule_file...\n"
@@ -361,17 +352,6 @@ sub rule_extract {
             print "\tExtracted: $Sorules$singlefile\n"
                 if ($Verbose && !$Quiet);
         }
-        elsif ($docs
-            && $filename =~ /^(doc\/signatures\/)?.*\.txt/
-            && -d $docs
-            && !$BypassTar)
-        {
-            $singlefile =~ s/^doc\/signatures\///;
-            $tar->extract_file("doc/signatures/$filename",
-                $docs . $singlefile);
-            print "\tExtracted: $docs$singlefile\n"
-                if ($Verbose == 2 && !$Quiet);
-        }
     }
     print "\tDone!\n" if (!$Verbose && !$Quiet);
 }
@@ -382,7 +362,7 @@ sub compare_md5 {
         $oinkcode, $rule_file, $temp_path,   $Hash,
         $base_url, $md5,       $rule_digest, $Distro,
         $arch,     $Snort,     $Sorules,     $ignore_files,
-        $docs,     $prefix,    $Process,     $hmatch,
+        $prefix,    $Process,     $hmatch,
         $fref
     ) = @_;
     if ($rule_digest =~ $md5 && !$Hash) {
@@ -406,7 +386,7 @@ sub compare_md5 {
                 $oinkcode, $rule_file, $temp_path,   $Hash,
                 $base_url, $md5,       $rule_digest, $Distro,
                 $arch,     $Snort,     $Sorules,     $ignore_files,
-                $docs,     $prefix,    $Process,     $hmatch,
+                $prefix,    $Process,     $hmatch,
                 $fref
             )
         );
@@ -1767,7 +1747,6 @@ GetOptions(
     "P!"     => \$Process,
     "q"      => \$Quiet,
     "R!"     => \$rstate,
-    "r=s"    => \$docs,
     "S=s"    => \$Snort,
     "s=s"    => \$Sorules,
     "T!"     => \$Textonly,
@@ -1888,10 +1867,6 @@ if (!$Sorules) {
 }
 $Sorules = slash(1, $Sorules) if $Sorules;
 
-if (!$docs) {
-    $docs = ($Config_info{'docs'});
-}
-
 undef $Sostubs if ($Textonly);
 undef $Sorules if ($Textonly);
 
@@ -1940,7 +1915,6 @@ if ($Verbose && !$Quiet) {
     if ($CAFile)         { print "\tCA Certificate File is: $CAFile\n"; }
     if ($Config_file)    { print "\tConfig Path is: $Config_file\n"; }
     if ($Distro)         { print "\tDistro Def is: $Distro\n"; }
-    if ($docs)           { print "\tDocs Reference Location is: $docs\n"; }
     if ($keep_rulefiles) { print "\tKeep rulefiles flag is Set\n"; }
     if ($rule_file_path) { print "\tKeep rulefiles path: $rule_file_path\n"; }
     if ($enonly)         { print "\tWrite ONLY enabled rules flag is Set\n"; }
@@ -2115,7 +2089,6 @@ if (@base_url && -d $temp_path) {
             if ($base_url =~ /[^labs]\.snort\.org/i) {
                 $prefix = "VRT-";
                 unless ($rule_file =~ /snortrules-snapshot-\d{4,6}\.tar\.gz/
-                    || $rule_file =~ /opensource\.gz/)
                 {
                     croak(
                         "The specified Snort binary does not exist!\nPlease correct the value or specify the FULL",
@@ -2224,7 +2197,6 @@ if (@base_url && -d $temp_path) {
                 'Snort'        => $Snort,
                 'Sorules'      => $Sorules,
                 'ignore_files' => $ignore_files,
-                'docs'         => $docs,
                 'prefix'       => $prefix,
                 'Process'      => $Process,
                 'hmatch'       => $hmatch
@@ -2235,7 +2207,7 @@ if (@base_url && -d $temp_path) {
                 $oinkcode, $rule_file, $temp_path,   $Hash,
                 $base_url, $md5,       $rule_digest, $Distro,
                 $arch,     $Snort,     $Sorules,     $ignore_files,
-                $docs,     $prefix,    $Process,     $hmatch,
+                $prefix,    $Process,     $hmatch,
                 $filelist
             );
         }
@@ -2255,7 +2227,6 @@ if (@base_url && -d $temp_path) {
                         $filelist->{$_}{Snort},
                         $filelist->{$_}{Sorules},
                         $filelist->{$_}{ignore_files},
-                        $filelist->{$_}{docs},
                         $filelist->{$_}{prefix}
                     );
                 }
@@ -2291,7 +2262,7 @@ if (@base_url && -d $temp_path) {
             rule_extract(
                 $rule_file,    $temp_path, $Distro,
                 $arch,         $Snort,     $Sorules,
-                $ignore_files, $docs,      $prefix
+                $ignore_files, $prefix
             ) if !$grabonly;
         }
     }
