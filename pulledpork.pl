@@ -105,7 +105,7 @@ my ($Hash,         $ALogger,    $Config_file, $Sorules,       $Auto);
 my ($Output,       $Distro,     $Snort,       $sid_changelog, $ignore_files);
 my ($Snort_config, $Snort_path, $Textonly,    $grabonly,      $ips_policy,);
 my ($pid_path,     $SigName,    $NoDownload,  $sid_msg_map,   @base_url);
-my ($local_rules,  $arch,       @records,       $enonly);
+my ($local_rules,  $arch,       @records,     $enonly);
 my ($rstate, $keep_rulefiles, $rule_file_path, $prefix, $black_list);
 my ($Process, $hmatch, $bmatch, $sid_msg_version, $skip_verify,
     $proxy_workaround);
@@ -276,10 +276,9 @@ sub temp_cleanup {
 
 # subroutine to extract the files to a temp path so that we can do what we need to do..
 sub rule_extract {
-    my (
-        $rule_file, $temp_path, $Distro, $arch, $Snort,
-        $Sorules,   $ignore,    $prefix
-    ) = @_;
+    my ($rule_file, $temp_path, $Distro, $arch, $Snort,
+        $Sorules, $ignore, $prefix)
+        = @_;
 
     #special case to bypass file operations when -nPT are specified
     my $BypassTar = 0;
@@ -363,8 +362,7 @@ sub compare_md5 {
         $oinkcode, $rule_file, $temp_path,   $Hash,
         $base_url, $md5,       $rule_digest, $Distro,
         $arch,     $Snort,     $Sorules,     $ignore_files,
-        $prefix,    $Process,     $hmatch,
-        $fref
+        $prefix,   $Process,   $hmatch,      $fref
     ) = @_;
     if ($rule_digest =~ $md5 && !$Hash) {
         if ($Verbose && !$Quiet) {
@@ -387,8 +385,7 @@ sub compare_md5 {
                 $oinkcode, $rule_file, $temp_path,   $Hash,
                 $base_url, $md5,       $rule_digest, $Distro,
                 $arch,     $Snort,     $Sorules,     $ignore_files,
-                $prefix,    $Process,     $hmatch,
-                $fref
+                $prefix,   $Process,   $hmatch,      $fref
             )
         );
     }
@@ -410,7 +407,7 @@ sub compare_md5 {
 
 sub _get_ua_request {
     my ($ua, $method, $url, $file) = @_;
-    my $request = HTTP::Request->new($method => $url);
+    my $request  = HTTP::Request->new($method => $url);
     my $response = $ua->request($request, $file);
     if ($response->is_success) {
         return $response->code;
@@ -464,15 +461,15 @@ sub rulefetch {
     print "Rules tarball download of $rule_file....\n"
         if (!$Quiet
         && $rule_file !~ /IPBLACKLIST/
-        && $oinkcode !~ /RULEFILE/);
+        && $oinkcode  !~ /RULEFILE/);
     print "Rule file download of $rule_file....\n"
         if (!$Quiet
         && $rule_file !~ /IPBLACKLIST/
-        && $oinkcode =~ /RULEFILE/);
+        && $oinkcode  =~ /RULEFILE/);
     print "IP Blacklist download of $base_url....\n"
         if (!$Quiet
         && $rule_file =~ /IPBLACKLIST/
-        && $oinkcode !~ /RULEFILE/);
+        && $oinkcode  !~ /RULEFILE/);
     $base_url = slash(0, $base_url);
     my ($getrules_rule);
     if ($Verbose && !$Quiet) {
@@ -611,7 +608,7 @@ sub md5file {
 ## This sub allows for ip-reputation list de-duplication and processing:
 sub read_iplist {
     my ($href, $path) = @_;
-    print "\t" if ($Verbose && !$Quiet);
+    print "\t"                   if ($Verbose && !$Quiet);
     print "Reading IP List...\n" if !$Quiet;
     open(FH, '<', $path) || croak "Couldn't read $path - $!\n";
     while (<FH>) {
@@ -634,14 +631,14 @@ sub read_iplist {
 sub read_rules {
     my ($hashref, $path, $extra_rules) = @_;
     my ($file, $sid, $gid, @elements);
-    print "\t" if ($Verbose && !$Quiet);
+    print "\t"                 if ($Verbose && !$Quiet);
     print "Reading rules...\n" if !$Quiet;
     my $reading_old_rules = $path eq ($rule_file_path || '');
-    my @local_rules = split(/,/, $extra_rules);
+    my @local_rules       = split(/,/, $extra_rules);
     foreach (@local_rules)
     {    #First let's read our local rules and assign a gid of 0
         $extra_rules = slash(0, $_);
-        $file = basename($extra_rules);
+        $file        = basename($extra_rules);
         if ($extra_rules && -f $extra_rules) {
             open(DATA, "$extra_rules")
                 || croak "Couldn't read $extra_rules - $!\n";
@@ -703,10 +700,10 @@ sub read_rules {
     if (-d $path) {
         opendir(DIR, "$path");
         while (defined($file = readdir DIR)) {
-            next
-                if grep /^$path$file$/,
-                @local_rules;    #don't read local rule files
-            open(DATA, "$path$file") || croak "Couldn't read $file - $!\n";
+
+            #don't read local rule files
+            next if grep /^$path$file$/, @local_rules;
+            open(DATA, "$path$file") or die "Couldn't read $file - $!\n";
             @elements = <DATA>;
             close(DATA);
             foreach my $rule (@elements) {
@@ -902,7 +899,7 @@ sub modify_sid {
         if ($_ =~ /([(\d+)?\d+|,|\*]*)\s+"(.+)"\s+"(.*)"/) {
             my ($ruleids, $from, $to) = ($1, $2, $3);
             @arry = split(/,/, $ruleids) if $ruleids !~ /\*/;
-            @arry = "*" if $ruleids =~ /\*/;
+            @arry = "*"                  if $ruleids =~ /\*/;
             foreach my $ruleid (@arry) {
                 $ruleid = trim($ruleid);
                 my @rule_comp;
@@ -931,13 +928,14 @@ sub modify_sid {
 
         # Handle use case where we want to modify multiple sids based on
         # comment in rule (think multiple rules with same or similar comment)
-        if ( $_ =~ /^regex:'([^']+)'\s+"(.+)"\s+"(.*)"/ ) {
-            my ( $regex, $from, $to ) = ( $1, $2, $3 );
+        if ($_ =~ /^regex:'([^']+)'\s+"(.+)"\s+"(.*)"/) {
+            my ($regex, $from, $to) = ($1, $2, $3);
+
             # Go through each rule in gid:1 and look for matching rules
-            foreach my $sid ( sort keys( %{ $$href{1} } ) ) {
-                next unless ( $$href{1}{$sid}{'rule'} =~ /$regex/ );
+            foreach my $sid (sort keys(%{ $$href{1} })) {
+                next unless ($$href{1}{$sid}{'rule'} =~ /$regex/);
                 print "\tModifying SID:$sid from:$from to:$to\n"
-                  if ( $Verbose && !$Quiet );
+                    if ($Verbose && !$Quiet);
                 $$href{1}{$sid}{'rule'} =~ s/$from/$to/;
             }
         }
@@ -980,7 +978,7 @@ sub modify_state {
                     my ($lsid, $usid) = split(/-/, $&);
                     my $gid = $lsid;
                     $sid_mod[$sidcount] = $lsid;
-                    $gid =~ s/:\d+//;
+                    $gid  =~ s/:\d+//;
                     $lsid =~ s/\d+://;
                     $usid =~ s/\d+://;
                     while ($lsid < $usid) {
@@ -1299,7 +1297,7 @@ sub blacklist_write {
     my $hobj = Digest::MD5->new;
     $hobj->add(%$href);
     my $hash = $hobj->hexdigest;
-    my $ver = unpack("i", $hash);
+    my $ver  = unpack("i", $hash);
 
     if (-f $blv) {
         open(FH, '<', $blv);
@@ -1400,7 +1398,7 @@ sub sid_write {
 ## Pull the flowbits requirements from the currently enabled rules.
 # TODO: add extended functionality for setx, toggle and groups (Q1 of 2013)
 sub flowbit_check {
-    my ($rule, $aref) = @_;
+    my ($rule,   $aref)    = @_;
     my ($header, $options) = split(/^[^"]* \(\s*/, $rule);
     my @optarray = split(/(?<!\\);\s*/, $options) if $options;
     foreach my $option (reverse(@optarray)) {
@@ -1408,7 +1406,7 @@ sub flowbit_check {
         next unless ($kw && $arg && $kw eq "flowbits");
         my ($flowact, $flowbit) = split(/,/, $arg);
         next unless $flowact =~ /is(not)?set/i;
-        push(@$aref, trim($flowbit)) if $flowbit !~ /(&|\|)/;
+        push(@$aref, trim($flowbit))                  if $flowbit !~ /(&|\|)/;
         push(@$aref, split(/(&|\|)/, trim($flowbit))) if $flowbit =~ /(&|\|)/;
     }
 }
@@ -2208,8 +2206,7 @@ if (@base_url && -d $temp_path) {
                 $oinkcode, $rule_file, $temp_path,   $Hash,
                 $base_url, $md5,       $rule_digest, $Distro,
                 $arch,     $Snort,     $Sorules,     $ignore_files,
-                $prefix,    $Process,     $hmatch,
-                $filelist
+                $prefix,   $Process,   $hmatch,      $filelist
             );
         }
 
@@ -2260,11 +2257,9 @@ if (@base_url && -d $temp_path) {
                 =~ /(emergingthreats.net|emergingthreatspro.com)/;
             $prefix = "Snort-Community-"
                 if $base_url =~ /snort\.org.+community/;
-            rule_extract(
-                $rule_file,    $temp_path, $Distro,
-                $arch,         $Snort,     $Sorules,
-                $ignore_files, $prefix
-            ) if !$grabonly;
+            rule_extract($rule_file, $temp_path, $Distro,
+                $arch, $Snort, $Sorules, $ignore_files, $prefix)
+                if !$grabonly;
         }
     }
 
@@ -2405,7 +2400,7 @@ if (
         $ips_policy, $enonly, $hmatch, $bmatch);
 }
 
-print("Fly Piggy Fly!\n") if !$Quiet;
+print("Fly Piggy Fly!\n")                            if !$Quiet;
 syslogit('warning|local0', "INFO: Finished Cleanly") if $Syslogging;
 
 __END__
