@@ -2399,7 +2399,7 @@ if (   ($Output || ($keep_rulefiles && $rule_file_path))
 
         # This may need to be changed, but for now, error out
         # if the signal name is not SIGHUP or SIGUSR2
-        if ($SigName == "SIGHUP" || $SigName == "SIGUSR2") {
+        if ($SigName eq "SIGHUP" || $SigName eq "SIGUSR2") {
             send_signal($SigName, $pid_path) unless $Sostubs;
             print "WARNING, cannot send signal if also processing SO rules\n",
                 "\tsee README.SHAREDOBJECTS\n", "\tor use -T flag!\n"
