@@ -2,7 +2,7 @@
 
 ## pulledpork v(whatever it says below!)
 
-# Copyright (C) 2009-2019 JJ Cummings, Michael Shirk and the PulledPork Team!
+# Copyright (C) 2009-2020 JJ Cummings, Michael Shirk and the PulledPork Team!
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -282,6 +282,7 @@ sub rule_extract {
     ) = @_;
 
     #special case to bypass file operations when -nPT are specified
+    my $BypassTar = 0;
     if (!$BypassTar) {
         print "Prepping rules from $rule_file for work....\n" if !$Quiet;
         print "\textracting contents of $temp_path$rule_file...\n"
@@ -2088,7 +2089,7 @@ if (@base_url && -d $temp_path) {
 
             if ($base_url =~ /[^labs]\.snort\.org/i) {
                 $prefix = "VRT-";
-                unless ($rule_file =~ /snortrules-snapshot-\d{4,6}\.tar\.gz/
+                unless ($rule_file =~ /snortrules-snapshot-\d{4,6}\.tar\.gz/)
                 {
                     croak(
                         "The specified Snort binary does not exist!\nPlease correct the value or specify the FULL",
