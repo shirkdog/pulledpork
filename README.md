@@ -5,7 +5,7 @@ PulledPork for Snort and Suricata rule management (from Google code)
 
 Find us on Freenode (IRC) [`#ppork`](https://webchat.freenode.net/?channels=ppork)
 
-Copyright (C) 2009-2019 JJ Cummings, Michael Shirk and the PulledPork Team!
+Copyright (C) 2009-2020 JJ Cummings, Michael Shirk and the PulledPork Team!
 
 Thank you for choosing to use PulledPork!  This file provides some basic
 guidance on the usage of PulledPork.  Please be sure to read this file
@@ -51,14 +51,16 @@ Usage: pulledpork.pl [-dEgklnRTPVvv? -help] -c <config filename> -o <rule output
  -D What Distro are you running on, for the so_rules
     For latest supported options see http://www.snort.org/snort-rules/shared-object-rules
     Valid Distro Types:
-      Centos-5-4, Centos-6, Centos-7
-      Debian-7, Debian-8, Debian-9
-      FC-25, FC-26, FC-27, FC-30
-      FreeBSD-8-1, FreeBSD-9-0, FreeBSD-10-0, FreeBSD-11, FreeBSD-12
-      OpenBSD-5-2, OpenBSD-5-3, OpenBSD-6-2, OpenSUSE-15-0, OpenSUSE-42-3
-      RHEL-5-5, RHEL-6, RHEL-6-0, RHEL-7
-      Slackware-13-1, Slackware-14-2
-      Ubuntu-14-4, Ubuntu-16-4, Ubuntu-17-10, Ubuntu-18-4
+	Alpine-3-10
+	Centos-6, Centos-7, Centos-8
+	Debian-8, Debian-9, Debian-10
+	FC-27, FC-30
+	FreeBSD-11, FreeBSD-12
+	OpenBSD-6-2, OpenBSD-6-4, OpenBSD-6-5 
+	OpenSUSE-15-0, OpenSUS-15-1, OpenSUSE-42-3
+	RHEL-6, RHEL-7, RHEL-8
+	Slackware-14-2
+	Ubuntu-14-4, Ubuntu-16-4, Ubuntu-17-10, Ubuntu-18-4
  -e Where the enablesid config file lives.
  -E Write ONLY the enabled rules to the output files.
  -g grabonly (download tarball rule file(s) and do NOT process)

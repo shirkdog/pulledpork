@@ -1712,6 +1712,17 @@ sub get_ignore_files {
     return $ignore_list;
 }
 
+## Verify if directories or files actually exist
+sub check_file_dir {
+    my ($filedir_input) = @_;
+    my ($dir_check, $file_check) = ($filedir_input =~ /(^.*)\/(.*)$/);
+    if (!-d $dir_check && !-w $file_check) {
+        croak
+            "Error: $dir_check does not exist, please create this directory\n";
+        exit(1);
+    }
+}
+
 ###
 ### Main here, let's get on with it already
 ###
@@ -1822,6 +1833,7 @@ if (!$ips_policy && defined $Config_info{'ips_policy'}) {
 
 if (!$black_list && defined $Config_info{'black_list'}) {
     $black_list = $Config_info{'black_list'};
+    check_file_dir($black_list);
 }
 
 if (!$sidmod{enable} && defined $Config_info{'enablesid'}) {
@@ -1857,6 +1869,7 @@ if (!@base_url) {
 
 if (!$Output) {
     $Output = ($Config_info{'rule_path'});
+    check_file_dir($Output);
 }
 
 if (!$Output && !($keep_rulefiles && $rule_file_path)) {
@@ -2275,6 +2288,13 @@ if (@base_url && -d $temp_path) {
         read_rules(\%rules_hash, "$temp_path" . "tha_rules/", $local_rules);
     }
 
+    #Process things differently for Snort 3+ in future
+    if ($Snort =~ /3\.\d\.\d\.\d/) {
+        if (!$Quiet) {
+            print "Snort 3.0 detected, future Snort 3.0 processing\n";
+        }
+    }
+
     # If we are using SO rules, generate the stubs and then stuff them into a hash
     if (   $Sorules
         && -e $Sorules
@@ -2311,6 +2331,7 @@ if (   ($Output || ($keep_rulefiles && $rule_file_path))
 if (-d $temp_path) {
     temp_cleanup();
 }
+
 
 # Process our blacklist data.. need to add a conditional where if we are not linux, we don't
 # use the control socket (linux only)
