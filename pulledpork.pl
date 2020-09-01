@@ -106,7 +106,7 @@ my ($Output,       $Distro,     $Snort,       $sid_changelog, $ignore_files);
 my ($Snort_config, $Snort_path, $Textonly,    $grabonly,      $ips_policy,);
 my ($pid_path,     $SigName,    $NoDownload,  $sid_msg_map,   @base_url);
 my ($local_rules,  $arch,       @records,     $enonly);
-my ($rstate, $keep_rulefiles, $rule_file_path, $prefix, $black_list);
+my ($rstate, $keep_rulefiles, $rule_file_path, $prefix, $block_list);
 my ($Process, $hmatch, $bmatch, $sid_msg_version, $skip_verify,
     $proxy_workaround);
 my $Sostubs = 1;
@@ -126,7 +126,7 @@ undef($Hash);
 undef($ALogger);
 
 my %rules_hash    = ();
-my %blacklist     = ();
+my %blocklist     = ();
 my %oldrules_hash = ();
 my %sid_msg_map   = ();
 my %sidmod        = ();
@@ -462,22 +462,22 @@ sub rulefetch {
     my ($oinkcode, $rule_file, $temp_path, $base_url) = @_;
     print "Rules tarball download of $rule_file....\n"
         if (!$Quiet
-        && $rule_file !~ /IPBLACKLIST/
+        && $rule_file !~ /IPBLOCKLIST/
         && $oinkcode  !~ /RULEFILE/);
     print "Rule file download of $rule_file....\n"
         if (!$Quiet
-        && $rule_file !~ /IPBLACKLIST/
+        && $rule_file !~ /IPBLOCKLIST/
         && $oinkcode  =~ /RULEFILE/);
     print "IP Blacklist download of $base_url....\n"
         if (!$Quiet
-        && $rule_file =~ /IPBLACKLIST/
+        && $rule_file =~ /IPBLOCKLIST/
         && $oinkcode  !~ /RULEFILE/);
     $base_url = slash(0, $base_url);
     my ($getrules_rule);
     if ($Verbose && !$Quiet) {
         print "\tFetching rules file: $rule_file\n"
-            if ($rule_file !~ /IPBLACKLIST/ && $oinkcode !~ /RULEFILE/);
-        if ($Hash && $rule_file !~ /IPBLACKLIST/ && $oinkcode !~ /RULEFILE/) {
+            if ($rule_file !~ /IPBLOCKLIST/ && $oinkcode !~ /RULEFILE/);
+        if ($Hash && $rule_file !~ /IPBLOCKLIST/ && $oinkcode !~ /RULEFILE/) {
             print "But not verifying MD5\n";
         }
     }
@@ -487,12 +487,12 @@ sub rulefetch {
             "https://www.snort.org/rules/$rule_file\?oinkcode=$oinkcode",
             $temp_path . $rule_file);
     }
-    elsif ($rule_file =~ /IPBLACKLIST/ && !$NoDownload) {
+    elsif ($rule_file =~ /IPBLOCKLIST/ && !$NoDownload) {
         my $rand = rand(1000);
         $getrules_rule
-            = getstore($base_url, $temp_path . "$rand-black_list.rules");
-        read_iplist(\%blacklist, $temp_path . "$rand-black_list.rules");
-        unlink($temp_path . "$rand-black_list.rules");
+            = getstore($base_url, $temp_path . "$rand-block_list.rules");
+        read_iplist(\%blocklist, $temp_path . "$rand-block_list.rules");
+        unlink($temp_path . "$rand-block_list.rules");
     }
     elsif ($oinkcode =~ /RULEFILE/ && !$NoDownload) {
         my $rand = rand(1000);
@@ -530,7 +530,7 @@ sub rulefetch {
         croak "\tError $getrules_rule when fetching " . $rule_file;
     }
 
-    if ($Verbose && !$Quiet && $rule_file !~ /IPBLACKLIST/) {
+    if ($Verbose && !$Quiet && $rule_file !~ /IPBLOCKLIST/) {
         print("\tstoring file at: $temp_path$rule_file\n\n");
     }
     if (!$Verbose && !$Quiet) { "\tDone!\n"; }
@@ -1290,8 +1290,8 @@ sub rule_category_write {
     print "\tDone\n" if !$Quiet;
 }
 
-## write our blacklist and blacklist version file!
-sub blacklist_write {
+## write our blocklist and blocklist version file!
+sub blocklist_write {
     my ($href, $path) = @_;
     my $blv   = $Config_info{'IPRVersion'} . "/IPRVersion.dat";
     my $blver = 0;
@@ -1457,7 +1457,7 @@ sub flowbit_set {
 
 ## Make some changelog fun!
 sub changelog {
-    my ($changelog, $new_hash, $old_hash, $blacklist_hash, $ips_policy,
+    my ($changelog, $new_hash, $old_hash, $blocklist_hash, $ips_policy,
         $enonly, $hmatch)
         = @_;
 
@@ -1517,8 +1517,8 @@ sub changelog {
             $dt++;
         }
     }
-    if (%$blacklist_hash) {
-        $ips = keys(%$blacklist_hash);
+    if (%$blocklist_hash) {
+        $ips = keys(%$blocklist_hash);
     }
     if (-f $changelog) {
         open(WRITE, '>>', $changelog) || croak "$changelog $!\n";
@@ -1831,9 +1831,9 @@ if (!$ips_policy && defined $Config_info{'ips_policy'}) {
     $ips_policy = $Config_info{'ips_policy'};
 }
 
-if (!$black_list && defined $Config_info{'black_list'}) {
-    $black_list = $Config_info{'black_list'};
-    check_file_dir($black_list);
+if (!$block_list && defined $Config_info{'block_list'}) {
+    $block_list = $Config_info{'block_list'};
+    check_file_dir($block_list);
 }
 
 if (!$sidmod{enable} && defined $Config_info{'enablesid'}) {
@@ -2172,7 +2172,7 @@ if (@base_url && -d $temp_path) {
             $Hash = 2
                 unless $base_url
                 =~ /(secureworks|emergingthreats|[^labs]\.snort\.org)|snort\.org.+community/;
-            if ($rule_file =~ /IPBLACKLIST/) {
+            if ($rule_file =~ /IPBLOCKLIST/) {
                 $Hash = 2;
                 $rule_file .= $blk++;
             }
@@ -2191,14 +2191,14 @@ if (@base_url && -d $temp_path) {
             }
             else {    # the file didn't exsist so lets get it
                 rulefetch($oinkcode, $rule_file, $temp_path, $base_url);
-                $Process = 1 unless $rule_file =~ /IPBLACKLIST/;
+                $Process = 1 unless $rule_file =~ /IPBLOCKLIST/;
                 if (-f "$temp_path" . "$rule_file" && !$Hash) {
                     $rule_digest = md5sum($rule_file, $temp_path);
                 }
             }
 
-            # Don't need to perform the following on the IP blacklist stuff...
-            next if $rule_file =~ /IPBLACKLIST/;
+            # Don't need to perform the following on the IP blocklist stuff...
+            next if $rule_file =~ /IPBLOCKLIST/;
 
             # Stuff it all into a hash for use in a bit...
             $filelist->{$rule_file} = {
@@ -2253,7 +2253,7 @@ if (@base_url && -d $temp_path) {
     if ($NoDownload && !$grabonly) {
         foreach (@base_url) {
             my ($base_url, $rule_file) = split(/\|/, $_);
-            next if $rule_file =~ /IPBLACKLIST/;
+            next if $rule_file =~ /IPBLOCKLIST/;
             if ($base_url =~ /[^labs]\.snort\.org/i) {
                 $prefix = "VRT-";
                 unless ($rule_file =~ /snortrules-snapshot-\d{4,6}\.tar\.gz/)
@@ -2333,10 +2333,10 @@ if (-d $temp_path) {
 }
 
 
-# Process our blacklist data.. need to add a conditional where if we are not linux, we don't
+# Process our blocklist data.. need to add a conditional where if we are not linux, we don't
 # use the control socket (linux only)
-if ($black_list && %blacklist && !$NoDownload) {
-    $bmatch = blacklist_write(\%blacklist, $black_list);
+if ($block_list && %blocklist && !$NoDownload) {
+    $bmatch = blocklist_write(\%blocklist, $block_list);
     iprep_control($Config_info{'snort_control'}, $Config_info{'IPRVersion'})
         if $bmatch;
 }
@@ -2421,7 +2421,7 @@ if (
         || ($keep_rulefiles && -d $rule_file_path))
     )
 {
-    changelog($sid_changelog, \%rules_hash, \%oldrules_hash, \%blacklist,
+    changelog($sid_changelog, \%rules_hash, \%oldrules_hash, \%blocklist,
         $ips_policy, $enonly, $hmatch, $bmatch);
 }
 
