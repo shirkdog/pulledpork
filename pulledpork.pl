@@ -468,7 +468,7 @@ sub rulefetch {
         if (!$Quiet
         && $rule_file !~ /IPBLOCKLIST/
         && $oinkcode  =~ /RULEFILE/);
-    print "IP Blacklist download of $base_url....\n"
+    print "IP Blocklist download of $base_url....\n"
         if (!$Quiet
         && $rule_file =~ /IPBLOCKLIST/
         && $oinkcode  !~ /RULEFILE/);
@@ -1313,7 +1313,7 @@ sub blocklist_write {
     }
 
     if ($blver != $ver) {
-        print "Writing Blacklist File $path....\n" if !$Quiet;
+        print "Writing Blocklist File $path....\n" if !$Quiet;
         open(FH, '>', $path)
             || croak("Unable to open $path for writing! - $!\n");
         foreach (sort keys %$href) {
@@ -1321,7 +1321,7 @@ sub blocklist_write {
         }
         close(FH);
 
-        print "Writing Blacklist Version $ver to $blv....\n" if !$Quiet;
+        print "Writing Blocklist Version $ver to $blv....\n" if !$Quiet;
         open(FH, '>', $blv)
             || croak("Unable to open $blv for writing! - $!\n");
         print FH $ver;
@@ -1329,7 +1329,7 @@ sub blocklist_write {
         return (1);
     }
     else {
-        print "Blacklist version is unchanged, not updating!\n" if !$Quiet;
+        print "Blocklist version is unchanged, not updating!\n" if !$Quiet;
         return (0);
     }
 
@@ -1550,9 +1550,9 @@ sub changelog {
     }
     else { print WRITE "\nNo Rule Changes\n"; }
     if ($bmatch) {
-        print WRITE "\nIP Blacklist Stats\n\tTotal IPs:-----$ips\n" if $ips;
+        print WRITE "\nIP Blocklist Stats\n\tTotal IPs:-----$ips\n" if $ips;
     }
-    else { print WRITE "\nNo IP Blacklist Changes\n"; }
+    else { print WRITE "\nNo IP Blocklist Changes\n"; }
     print WRITE "\n-=End Changes Logged for " . gmtime(time) . " GMT=-\n";
     close(WRITE);
 
@@ -1569,9 +1569,9 @@ sub changelog {
         }
         else { print "\nNo Rule Changes\n"; }
         if ($bmatch) {
-            print "\nIP Blacklist Stats...\n\tTotal IPs:-----$ips\n" if $ips;
+            print "\nIP Blocklist Stats...\n\tTotal IPs:-----$ips\n" if $ips;
         }
-        else { print "\nNo IP Blacklist Changes\n"; }
+        else { print "\nNo IP Blocklist Changes\n"; }
         print "\nDone\n";
         print "Please review $sid_changelog for additional details\n"
             if $sid_changelog;

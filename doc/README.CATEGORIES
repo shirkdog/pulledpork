@@ -29,7 +29,7 @@ app-detect
 attack-responses
 backdoor
 bad-traffic
-blacklist
+blocklist
 botnet-cnc
 browser-chrome
 browser-firefox
