@@ -42,8 +42,8 @@ use Data::Dumper;
 
 # we are gonna need these!
 my ($oinkcode, $temp_path, $rule_file, $Syslogging);
-my $VERSION = "PulledPork v0.7.4";
-my $HUMOR   = "Helping you protect your bitcoin wallet!";
+my $VERSION = "PulledPork v0.8.0";
+my $HUMOR   = "The only positive thing to come out of 2020...well this and take-out liquor!";
 my $ua      = LWP::UserAgent->new;
 
 #Read in proxy settings from the environment
