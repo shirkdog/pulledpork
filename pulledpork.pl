@@ -42,7 +42,7 @@ use Data::Dumper;
 
 # we are gonna need these!
 my ($oinkcode, $temp_path, $rule_file, $Syslogging);
-my $VERSION = "PulledPork v0.8.0";
+my $VERSION = "0.8.0";
 my $HUMOR   = "The only positive thing to come out of 2020...well this and take-out liquor!";
 my $ua      = LWP::UserAgent->new;
 
@@ -50,7 +50,7 @@ my $ua      = LWP::UserAgent->new;
 $ua->env_proxy;
 
 #Add PulledPork version to the user agent
-$ua->agent("$VERSION");
+$ua->agent("PulledPork v$VERSION");
 
 # for certificate validation, check for the operating system
 # and set the path to the certificate store if required.
@@ -253,7 +253,7 @@ sub pulledpork {
     https://github.com/shirkdog/pulledpork
       _____ ____
      `----,\\    )
-      `--==\\\\  /    $VERSION - $HUMOR
+      `--==\\\\  /    PulledPork v$VERSION - $HUMOR
        `--==\\\\/
      .-~~~~-.Y|\\\\_  Copyright (C) 2009-2020 JJ Cummings, Michael Shirk
   \@_/        /  66\\_  and the PulledPork Team!
@@ -1615,7 +1615,7 @@ sub safe_defined {
 
 ## uh, yeah
 sub Version {
-    print("$VERSION - $HUMOR\n\n");
+    print("PulledPork v$VERSION - $HUMOR\n\n");
     exit(0);
 }
 
@@ -1795,7 +1795,7 @@ if ($Verbose && !$Quiet) {
 if (exists $Config_info{'version'}) {
     croak "You are not using the current version of pulledpork.conf!\n",
         "Please use the version of pulledpork.conf that shipped with $VERSION!\n\n"
-        if $Config_info{'version'} ne "0.8.0";
+        if $Config_info{'version'} ne "$VERSION";
 }
 else {
     croak
@@ -1999,7 +1999,7 @@ Help(
 
 
 # set some UserAgent and other connection configs
-$ua->agent("$VERSION");
+$ua->agent("PulledPork v$VERSION");
 $ua->show_progress(1) if ($Verbose && !$Quiet);
 
 # check to see if SSL verfication is disabled
