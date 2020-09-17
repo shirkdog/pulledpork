@@ -1795,7 +1795,7 @@ if ($Verbose && !$Quiet) {
 if (exists $Config_info{'version'}) {
     croak "You are not using the current version of pulledpork.conf!\n",
         "Please use the version of pulledpork.conf that shipped with $VERSION!\n\n"
-        if $Config_info{'version'} ne "0.7.4";
+        if $Config_info{'version'} ne "0.8.0";
 }
 else {
     croak
