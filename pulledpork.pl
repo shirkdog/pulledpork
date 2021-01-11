@@ -2,7 +2,7 @@
 
 ## pulledpork v(whatever it says below!)
 
-# Copyright (C) 2009-2020 JJ Cummings, Michael Shirk and the PulledPork Team!
+# Copyright (C) 2009-2021 JJ Cummings, Michael Shirk and the PulledPork Team!
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -255,7 +255,7 @@ sub pulledpork {
      `----,\\    )
       `--==\\\\  /    PulledPork v$VERSION - $HUMOR
        `--==\\\\/
-     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2020 JJ Cummings, Michael Shirk
+     .-~~~~-.Y|\\\\_  Copyright (C) 2009-2021 JJ Cummings, Michael Shirk
   \@_/        /  66\\_  and the PulledPork Team!
     |    \\   \\   _(\")
      \\   /-| ||'--'  Rules give me wings!
@@ -702,11 +702,12 @@ sub read_rules {
     if (-d $path) {
         opendir(DIR, "$path");
         while (defined($file = readdir DIR)) {
-            if (grep /^$path$file$/, @local_rules) {
+            my $fullpath = $path.$file;
+            if (grep /^$fullpath$/, @local_rules) {
                 next;
             }
             else {
-                open(DATA, "$path$file");
+                open(DATA, "$fullpath");
                 @elements = <DATA>;
                 close(DATA);
             }
