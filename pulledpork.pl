@@ -1715,7 +1715,7 @@ sub get_ignore_files {
 ## Verify if directories or files actually exist
 sub check_file_dir {
     my ($filedir_input) = @_;
-    my ($dir_check, $file_check) = ($filedir_input =~ /(^.*)\/(.*)$/);
+    my ($dir_check, $file_check) = ($filedir_input =~ /(^.*)(?:\/|\\)(.*)$/);
     if (!-d $dir_check && !-w $file_check) {
         croak
             "Error: $dir_check does not exist, please create this directory\n";
