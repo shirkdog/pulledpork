@@ -3,7 +3,7 @@ PulledPork
 
 PulledPork for Snort and Suricata rule management (from Google code)
 
-Find us on Libera.Chat (IRC) [`#pulledpork`](https://libera.chat/guides/connect/)
+Find us on Libera.Chat (IRC) [`#pulledpork`](https://libera.chat/guides/connect)
 
 Copyright (C) 2009-2021 JJ Cummings, Michael Shirk and the PulledPork Team!
 
