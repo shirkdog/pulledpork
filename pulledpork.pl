@@ -110,6 +110,7 @@ my ($rstate, $keep_rulefiles, $rule_file_path, $prefix, $block_list);
 my ($Process, $hmatch, $bmatch, $sid_msg_version, $skip_verify,
     $proxy_workaround);
 my $Sostubs = 1;
+my $Snortv3 = 0;
 
 # verbose and quiet control print()
 # default values if not set otherwise in getopt
@@ -279,7 +280,7 @@ sub temp_cleanup {
 # subroutine to extract the files to a temp path so that we can do what we need to do..
 sub rule_extract {
     my ($rule_file, $temp_path, $Distro, $arch, $Snort,
-        $Sorules, $ignore, $prefix)
+        $Sorules, $ignore, $prefix, $Snortv3)
         = @_;
 
     #special case to bypass file operations when -nPT are specified
@@ -324,6 +325,14 @@ sub rule_extract {
             $tar->remove("so_rules/precompiled/$Distro/$arch/$Snort/$_");
         }
     }
+    my $sofile_pat_base = "^so_rules\/precompiled\/";
+    if ($Snortv3 == 0) {
+        $sofile_pat_base = $sofile_pat_base . "($Distro)\/($arch)\/($Snort)\/";
+    }
+    else {
+	$sofile_pat_base = $sofile_pat_base . "($Distro)-($arch)\/";
+    }
+    my $sofile_pat = $sofile_pat_base . ".*\.so";
     my @files = $tar->get_files();
     foreach (@files) {
         my $filename   = $_->name;
@@ -344,12 +353,12 @@ sub rule_extract {
         }
         elsif ($Sorules
             && $filename
-            =~ /^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\/.*\.so/
+            =~ m/$sofile_pat/
             && -d $Sorules
             && !$Textonly)
         {
             $singlefile
-                =~ s/^so_rules\/precompiled\/($Distro)\/($arch)\/($Snort)\///;
+                =~ s/$sofile_pat_base//;
             $tar->extract_file($filename, $Sorules . $singlefile);
             print "\tExtracted: $Sorules$singlefile\n"
                 if ($Verbose && !$Quiet);
@@ -813,20 +822,29 @@ sub read_rules {
 
 ## sub to generate stub files using the snort --dump-dynamic-rules option
 sub gen_stubs {
-    my ($Snort_path, $Snort_config, $Sostubs) = @_;
+    my ($Snort_path, $Snort_config, $Sostubs, $Snortv3, $Sorules) = @_;
     print "Generating Stub Rules....\n" if !$Quiet;
     unless (-B $Snort_path) {
         Help("$Snort_path is not a valid binary file");
     }
     if (-d $Sostubs && -B $Snort_path && -f $Snort_config) {
+        my $cmd = "";
+        if ($Snortv3) {
+	    $cmd = "$Snort_path -c $Snort_config --plugin-path $Sorules --dump-dynamic-rules > $Sostubs/allso.rules";
+	}
+	else {
+	    $cmd = "$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs"
+	}
         if ($Verbose && !$Quiet) {
             print(
-                "\tGenerating shared object stubs via:$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs\n"
+                "\tGenerating shared object stubs via: $cmd\n"
             );
         }
-        open(FH,
-            "$Snort_path -c $Snort_config --dump-dynamic-rules=$Sostubs 2>&1|"
-        );
+        if (!$Snortv3) {
+            open(FH, "$cmd 2>&1|");
+        } else {
+			open(FH, "|-", "$cmd");
+		}
         while (<FH>) {
             print "\t$_" if $_ =~ /Dumping/i && ($Verbose && !$Quiet);
             next unless $_ =~ /(err|warn|fail)/i;
@@ -1902,6 +1920,12 @@ if (!$Snort_path) {
     $Textonly   = 1 unless $Snort;
 }
 
+# Check if version begins with 3
+if (ord($Snort) == 51) {
+	$Snortv3 = 1;
+	if ($arch) {$arch =~ s/x86-64/x64/;}
+}
+
 if (!$local_rules && ($Config_info{'local_rules'})) {
     $local_rules = ($Config_info{'local_rules'});
 }
@@ -1965,6 +1989,7 @@ if ($Verbose && !$Quiet) {
     }
     if ($SigName)      { print "\tSending signal Flag is Set: $SigName\n"; }
     if ($Snort)        { print "\tSnort Version is: $Snort\n"; }
+    if ($Snortv3)        { print "\tSnort V3 detected & processing enabled\n"; }
     if ($Snort_config) { print "\tSnort Config File: $Snort_config\n"; }
     if ($Snort_path)   { print "\tSnort Path is: $Snort_path\n"; }
     if ($Sorules)      { print "\tSO Output Path is: $Sorules\n"; }
@@ -2212,6 +2237,7 @@ if (@base_url && -d $temp_path) {
                 'Distro'       => $Distro,
                 'arch'         => $arch,
                 'Snort'        => $Snort,
+                'Snortv3'      => $Snortv3,
                 'Sorules'      => $Sorules,
                 'ignore_files' => $ignore_files,
                 'prefix'       => $prefix,
@@ -2243,7 +2269,8 @@ if (@base_url && -d $temp_path) {
                         $filelist->{$_}{Snort},
                         $filelist->{$_}{Sorules},
                         $filelist->{$_}{ignore_files},
-                        $filelist->{$_}{prefix}
+                        $filelist->{$_}{prefix},
+                        $filelist->{$_}{Snortv3}
                     );
                 }
             }
@@ -2276,7 +2303,7 @@ if (@base_url && -d $temp_path) {
             $prefix = "Snort-Community-"
                 if $base_url =~ /snort\.org.+community/;
             rule_extract($rule_file, $temp_path, $Distro,
-                $arch, $Snort, $Sorules, $ignore_files, $prefix)
+                $arch, $Snort, $Sorules, $ignore_files, $prefix, $Snortv3)
                 if !$grabonly;
         }
     }
@@ -2306,7 +2333,7 @@ if (@base_url && -d $temp_path) {
         && $Process)
     {
         gen_stubs($Snort_path, $Snort_config,
-            "$temp_path" . "tha_rules/so_rules/");
+            "$temp_path" . "tha_rules/so_rules/", $Snortv3, $Sorules);
         read_rules(\%rules_hash, "$temp_path" . "tha_rules/so_rules/",
             $local_rules);
     }
